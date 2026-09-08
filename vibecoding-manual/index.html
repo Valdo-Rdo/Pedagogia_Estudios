@@ -389,6 +389,17 @@ code { font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
   padding: 12px 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.15);
   display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
 }
+.manual-nav .back-home-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(56, 189, 248, 0.15); color: #38bdf8;
+  text-decoration: none; transition: all 0.2s;
+  margin-right: 4px;
+}
+.manual-nav .back-home-btn:hover {
+  background: rgba(56, 189, 248, 0.3); color: white;
+  transform: translateX(-3px);
+}
 .manual-nav .brand { font-weight: 700; font-size: 1.05rem; display: flex; align-items: center; gap: 10px; color: white; }
 .manual-nav .brand i { color: #38bdf8; }
 .manual-nav .nav-links { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; }
@@ -859,6 +870,7 @@ input[type="range"] { width: 100%; max-width: 240px; accent-color: var(--accent)
 <body>
 <div class="progress-bar" id="progressBar"></div>
 <nav class="manual-nav">
+  <a href="../index.html" class="back-home-btn" title="Regresar al inicio"><i class="fas fa-arrow-left"></i></a>
   <div class="brand"><i class="fas fa-brain"></i> Vibecoding</div>
   <div class="nav-links" id="navLinks">
     <a href="#ecosistema" class="active"><i class="fas fa-globe"></i> Ecosistema</a>
@@ -2579,6 +2591,17 @@ code { font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
   padding: 12px 24px; box-shadow: 0 2px 12px rgba(74,44,26,0.2);
   display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
 }
+.manual-nav .back-home-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(249, 115, 22, 0.18); color: #f97316;
+  text-decoration: none; transition: all 0.2s;
+  margin-right: 4px;
+}
+.manual-nav .back-home-btn:hover {
+  background: rgba(249, 115, 22, 0.35); color: white;
+  transform: translateX(-3px);
+}
 .manual-nav .brand { font-weight: 700; font-size: 1.05rem; display: flex; align-items: center; gap: 10px; color: var(--header-text); }
 .manual-nav .brand i { color: #f97316; }
 .manual-nav .nav-links { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; }
@@ -2929,6 +2952,7 @@ code { font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
 <body>
 <div class="progress-bar" id="progressBar"></div>
 <nav class="manual-nav">
+  <a href="../index.html" class="back-home-btn" title="Regresar al inicio"><i class="fas fa-arrow-left"></i></a>
   <div class="brand"><i class="fas fa-graduation-cap"></i> Vibecoding Pedagógico</div>
   <div class="nav-links" id="navLinks">
     <a href="#bienvenida" class="active"><i class="fas fa-hand-sparkles"></i> Inicio</a>

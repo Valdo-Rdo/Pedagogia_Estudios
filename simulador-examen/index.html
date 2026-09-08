@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Examen - Pedagogía</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #10b981;
+            --error: #ef4444;
+            --bg: #f3f4f6;
+            --card: #ffffff;
+            --text: #1f2937;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 { color: var(--primary); margin-bottom: 10px; }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-back { background-color: #6b7280; color: white; }
+        .btn-home { background-color: var(--primary); color: white; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        /* Pantallas */
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Selección de Materia */
+        .subject-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .subject-card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .subject-card:hover { transform: translateY(-5px); border-color: var(--primary); }
+        
+        .subject-icon { font-size: 2rem; margin-bottom: 10px; display: block; }
+
+        /* Colores por materia */
+        .comp-docentes { border-top: 5px solid #3b82f6; }
+        .des-curricular { border-top: 5px solid #10b981; }
+        .edu-virtual { border-top: 5px solid #f97316; }
+        .orientacion { border-top: 5px solid #ec4899; }
+        .andragogia { border-top: 5px solid #8b5cf6; }
+
+        /* Quiz Interface */
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e5e7eb;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .question-card {
+            background: var(--card);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .options-list { list-style: none; padding: 0; margin-top: 20px; }
+
+        .option-item {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .option-item:hover { background: #eff6ff; border-color: var(--primary); }
+
+        .option-item.correct {
+            background-color: #d1fae5;
+            border-color: var(--success);
+            color: #065f46;
+        }
+
+        .option-item.incorrect {
+            background-color: #fee2e2;
+            border-color: var(--error);
+            color: #991b1b;
+        }
+
+        .feedback-box {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .feedback-box.show { display: block; }
+        .feedback-correct { background: #d1fae5; color: #065f46; border: 1px solid var(--success); }
+        .feedback-incorrect { background: #fee2e2; color: #991b1b; border: 1px solid var(--error); }
+
+        .btn-next {
+            background-color: var(--primary);
+            color: white;
+            width: 100%;
+            margin-top: 20px;
+            padding: 15px;
+            font-size: 1.1rem;
+            display: none;
+        }
+
+        /* Resultados */
+        .results-card {
+            background: var(--card);
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 0 auto 20px;
+        }
+
+        /* Historial */
+        .history-section {
+            margin-top: 40px;
+            background: var(--card);
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .history-table th, .history-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .history-table th { background-color: #f9fafb; }
+        
+        .clear-history {
+            background: var(--error);
+            color: white;
+            font-size: 0.8rem;
+            padding: 5px 10px;
+            margin-top: 10px;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🎓 Simulador de Examen</h1>
+        <p>Practica con preguntas reales de cada materia</p>
+        <div style="margin-top: 15px;">
+            <a href="../index.html" class="btn btn-back">← Inicio</a>
+            <a href="../pedagogia/index.html" class="btn btn-home">Banco de Materias</a>
+        </div>
+    </header>
+
+    <!-- Pantalla 1: Selección de Materia -->
+    <div id="screen-select" class="screen active">
+        <h2 style="text-align: center;">Selecciona una materia para comenzar</h2>
+        <div class="subject-grid">
+            <div class="subject-card comp-docentes" onclick="startQuiz('competencias')">
+                <span class="subject-icon">👨‍🏫</span>
+                <h3>Competencias Docentes</h3>
+            </div>
+            <div class="subject-card des-curricular" onclick="startQuiz('curricular')">
+                <span class="subject-icon">📚</span>
+                <h3>Desarrollo Curricular</h3>
+            </div>
+            <div class="subject-card edu-virtual" onclick="startQuiz('virtual')">
+                <span class="subject-icon">💻</span>
+                <h3>Educación Virtual</h3>
+            </div>
+            <div class="subject-card orientacion" onclick="startQuiz('orientacion')">
+                <span class="subject-icon">🧭</span>
+                <h3>Orientación Educativa</h3>
+            </div>
+            <div class="subject-card andragogia" onclick="startQuiz('andragogia')">
+                <span class="subject-icon">🎓</span>
+                <h3>Andragogía</h3>
+            </div>
+        </div>
+
+        <div class="history-section">
+            <h3>📊 Tu Historial de Progreso</h3>
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Materia</th>
+                        <th>Calificación</th>
+                    </tr>
+                </thead>
+                <tbody id="history-body">
+                    <!-- Se llena con JS -->
+                </tbody>
+            </table>
+            <button onclick="clearHistory()" class="btn clear-history">Borrar Historial</button>
+        </div>
+    </div>
+
+    <!-- Pantalla 2: Quiz -->
+    <div id="screen-quiz" class="screen">
+        <div class="quiz-header">
+            <span id="quiz-subject-title">Materia</span>
+            <span>Pregunta <span id="current-q">1</span> de <span id="total-q">10</span></span>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+
+        <div class="question-card">
+            <h2 id="question-text">Pregunta aquí...</h2>
+            <ul class="options-list" id="options-list">
+                <!-- Opciones generadas por JS -->
+            </ul>
+
+            <div id="feedback" class="feedback-box">
+                <strong id="feedback-title"></strong>
+                <p id="feedback-text"></p>
+            </div>
+
+            <button id="btn-next" class="btn btn-next" onclick="nextQuestion()">Siguiente Pregunta →</button>
+        </div>
+    </div>
+
+    <!-- Pantalla 3: Resultados -->
+    <div id="screen-results" class="screen">
+        <div class="results-card">
+            <h2>¡Examen Completado!</h2>
+            <div class="score-circle" id="final-score">80%</div>
+            <p id="result-message">Buen trabajo</p>
+            
+            <div style="margin-top: 30px;">
+                <button onclick="restartQuiz()" class="btn btn-back">Intentar de nuevo</button>
+                <button onclick="showScreen('screen-select')" class="btn btn-home">Elegir otra materia</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- BASE DE DATOS DE PREGUNTAS (Extensible) ---
+    const questionsDB = {
+        competencias: [
+            { q: "¿Cuál es el principal objetivo de las competencias docentes según el modelo actual?", options: ["Memorizar contenidos", "Facilitar aprendizajes significativos", "Cumplir horarios", "Aplicar exámenes estandarizados"], correct: 1, feedback: "El objetivo central es facilitar aprendizajes significativos y desarrollar habilidades en los estudiantes." },
+            { q: "La competencia de 'Planificación didáctica' implica:", options: ["Copiar libros de texto", "Diseñar situaciones de aprendizaje contextualizadas", "Improvisar en clase", "Usar solo tecnología"], correct: 1, feedback: "Implica diseñar situaciones de aprendizaje pertinentes y contextualizadas a la realidad del alumno." },
+            { q: "¿Qué autor es fundamental en la teoría de las competencias?", options: ["Perrenoud", "Freire", "Piaget", "Skinner"], correct: 0, feedback: "Philippe Perrenoud es uno de los autores más citados en la construcción de competencias en educación." },
+            { q: "La evaluación formativa se caracteriza por:", options: ["Ser solo al final del curso", "Proporcionar retroalimentación continua", "Clasificar alumnos", "Ser punitiva"], correct: 1, feedback: "Su función principal es mejorar el proceso de enseñanza-aprendizaje mediante retroalimentación constante." },
+            { q: "¿Qué dimensión NO es parte de las competencias docentes?", options: ["Disciplinar", "Pedagógica", "Administrativa burocrática", "Ética"], correct: 2, feedback: "Aunque hay gestión, la competencia administrativa burocrática no es el núcleo de la práctica docente pedagógica." }
+        ],
+        curricular: [
+            { q: "El currículo oculto se refiere a:", options: ["Lo que no está escrito pero se aprende", "Los planes secretos", "Las materias optativas", "El reglamento escolar"], correct: 0, feedback: "Son los aprendizajes que se incorporan por los alumnos aunque no figuren en el currículo oficial." },
+            { q: "¿Quién propuso el modelo de objetivos conductuales?", options: ["Tyler", "Stenhouse", "Taba", "Dewey"], correct: 0, feedback: "Ralph Tyler es conocido por su enfoque en objetivos conductuales y evaluación." },
+            { q: "La evaluación curricular debe ser:", options: ["Un evento único", "Un proceso sistemático y continuo", "Solo cualitativa", "Solo cuantitativa"], correct: 1, feedback: "Debe ser un proceso sistemático para valorar la pertinencia y eficacia del plan de estudios." },
+            { q: "¿Qué elemento NO pertenece al currículo formal?", options: ["Objetivos", "Contenidos", "Relaciones informales entre alumnos", "Metodología"], correct: 2, feedback: "Las relaciones informales pertenecen al currículo oculto o vivido, no al formal escrito." },
+            { q: "El diseño curricular por competencias se centra en:", options: ["Contenidos enciclopédicos", "El saber hacer en contexto", "La memorización", "La transmisión oral"], correct: 1, feedback: "Se enfoca en la movilización de saberes (saber, saber hacer, saber ser) para resolver problemas." }
+        ],
+        virtual: [
+            { q: "El término 'Asincrónico' en educación virtual significa:", options: ["En tiempo real", "En tiempos diferidos", "Sin internet", "Con videoconferencia"], correct: 1, feedback: "La comunicación asincrónica ocurre en tiempos diferidos (foros, correos)." },
+            { q: "¿Qué es un LMS?", options: ["Learning Management System", "Local Memory Storage", "Long Math Study", "Linear Model System"], correct: 0, feedback: "Es un Sistema de Gestión de Aprendizaje (ej. Moodle, Canvas)." },
+            { q: "La principal barrera en educación virtual suele ser:", options: ["La tecnología", "La falta de autogestión del alumno", "Los contenidos", "El diseño gráfico"], correct: 1, feedback: "La autonomía y autogestión del tiempo son críticos para el éxito en línea." },
+            { q: "¿Qué herramienta favorece la colaboración en línea?", options: ["PDF estático", "Video grabado", "Wiki o Google Docs", "Examen de opción múltiple"], correct: 2, feedback: "Las herramientas que permiten edición conjunta fomentan el aprendizaje colaborativo." },
+            { q: "El rol del docente en virtualidad cambia a:", options: ["Transmisor de información", "Facilitador y curador de contenidos", "Vigilante", "Técnico de soporte"], correct: 1, feedback: "Pasa de ser la fuente única de conocimiento a guiar y curar recursos." }
+        ],
+        orientacion: [
+            { q: "La orientación educativa tiene un carácter:", options: ["Preventivo y de desarrollo", "Solo correctivo", "Punitivo", "Médico"], correct: 0, feedback: "Busca prevenir problemas y desarrollar el potencial del individuo." },
+            { q: "¿Quién es el principal agente de orientación en la escuela?", options: ["El psicólogo", "El director", "El docente tutor", "El padre de familia"], correct: 2, feedback: "El docente tutor tiene un rol primordial en la orientación diaria." },
+            { q: "La orientación vocacional busca:", options: ["Imponer una carrera", "Ayudar en la autoconocimiento y toma de decisiones", "Hacer tests infinitos", "Garantizar empleo"], correct: 1, feedback: "Facilita el autoconocimiento para tomar decisiones informadas sobre el futuro." },
+            { q: "¿Qué técnica NO es de orientación?", options: ["Entrevista", "Observación", "Castigo", "Sociometría"], correct: 2, feedback: "El castigo es una medida disciplinaria, no una técnica de orientación." },
+            { q: "La orientación familiar incluye:", options: ["Escuela para padres", "Terapia clínica", "Juicios morales", "Visitas domiciliarias obligatorias"], correct: 0, feedback: "Involucra asesoría y escuelas para padres para mejorar la crianza." }
+        ],
+        andragogia: [
+            { q: "La Andragogía es la ciencia que estudia:", options: ["La educación de niños", "La educación de adultos", "La tecnología educativa", "La psicología infantil"], correct: 1, feedback: "Se centra específicamente en el aprendizaje de las personas adultas." },
+            { q: "¿Cuál es un principio clave de la andragogía?", options: ["Dependencia del maestro", "La experiencia como recurso de aprendizaje", "Aprendizaje centrado en la materia", "Motivación externa"], correct: 1, feedback: "La experiencia previa del adulto es el recurso más rico para el aprendizaje." },
+            { q: "El aprendizaje en adultos es principalmente:", options: ["Impuesto", "Autodirigido", "Pasivo", "Memorístico"], correct: 1, feedback: "Los adultos necesitan tener control y dirección sobre su propio aprendizaje." },
+            { q: "¿Qué motiva más a un adulto a aprender?", options: ["Notas", "Presión social", "Necesidad de resolver problemas reales", "Obligación laboral"], correct: 2, feedback: "La motivación interna y la aplicación inmediata a la vida real son claves." },
+            { q: "El facilitador en andragogía debe:", options: ["Dar cátedras magistrales", "Crear un clima de respeto mutuo", "Evaluar punitivamente", "Ignorar la experiencia del alumno"], correct: 1, feedback: "Debe establecer un clima de confianza y respeto donde la experiencia sea valorada." }
+        ]
+    };
+
+    // --- ESTADO DEL QUIZ ---
+    let currentQuestions = [];
+    let currentIndex = 0;
+    let score = 0;
+    let currentSubjectName = "";
+
+    // --- FUNCIONES DE NAVEGACIÓN ---
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    function loadHistory() {
+        const history = JSON.parse(localStorage.getItem('quizHistory')) || [];
+        const tbody = document.getElementById('history-body');
+        tbody.innerHTML = '';
+        
+        if(history.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#999;">Aún no hay registros. ¡Realiza un examen!</td></tr>';
+            return;
+        }
+
+        history.slice().reverse().forEach(item => {
+            const row = `<tr>
+                <td>${item.date}</td>
+                <td>${item.subject}</td>
+                <td><strong>${item.score}%</strong></td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    function clearHistory() {
+        if(confirm('¿Estás seguro de borrar todo tu historial?')) {
+            localStorage.removeItem('quizHistory');
+            loadHistory();
+        }
+    }
+
+    // --- LÓGICA DEL QUIZ ---
+    function startQuiz(subjectKey) {
+        currentQuestions = [...questionsDB[subjectKey]]; // Copia del array
+        // Mezclar preguntas opcionalmente (aquí las dejamos ordenadas o se pueden mezclar)
+        // currentQuestions.sort(() => Math.random() - 0.5); 
+        
+        currentIndex = 0;
+        score = 0;
+        
+        const subjectNames = {
+            'competencias': 'Competencias Docentes',
+            'curricular': 'Desarrollo Curricular',
+            'virtual': 'Educación Virtual',
+            'orientacion': 'Orientación Educativa',
+            'andragogia': 'Andragogía'
+        };
+        
+        currentSubjectName = subjectNames[subjectKey];
+        document.getElementById('quiz-subject-title').textContent = currentSubjectName;
+        document.getElementById('total-q').textContent = currentQuestions.length;
+        
+        showScreen('screen-quiz');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        const qData = currentQuestions[currentIndex];
+        document.getElementById('current-q').textContent = currentIndex + 1;
+        document.getElementById('question-text').textContent = qData.q;
+        document.getElementById('progress-fill').style.width = `${((currentIndex) / currentQuestions.length) * 100}%`;
+        
+        // Resetear UI
+        document.getElementById('feedback').className = 'feedback-box';
+        document.getElementById('btn-next').style.display = 'none';
+        
+        const optionsList = document.getElementById('options-list');
+        optionsList.innerHTML = '';
+
+        qData.options.forEach((opt, index) => {
+            const li = document.createElement('li');
+            li.className = 'option-item';
+            li.textContent = opt;
+            li.onclick = () => checkAnswer(index, li);
+            optionsList.appendChild(li);
+        });
+    }
+
+    function checkAnswer(selectedIndex, element) {
+        // Prevenir múltiples clics
+        if(document.getElementById('btn-next').style.display === 'block') return;
+
+        const qData = currentQuestions[currentIndex];
+        const optionsItems = document.querySelectorAll('.option-item');
+        const feedbackBox = document.getElementById('feedback');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const feedbackText = document.getElementById('feedback-text');
+
+        // Deshabilitar clics en otras opciones
+        optionsItems.forEach(item => item.style.pointerEvents = 'none');
+
+        if (selectedIndex === qData.correct) {
+            score++;
+            element.classList.add('correct');
+            feedbackBox.className = 'feedback-box show feedback-correct';
+            feedbackTitle.textContent = "¡Correcto! ✅";
+        } else {
+            element.classList.add('incorrect');
+            // Mostrar la correcta
+            optionsItems[qData.correct].classList.add('correct');
+            feedbackBox.className = 'feedback-box show feedback-incorrect';
+            feedbackTitle.textContent = "Incorrecto ❌";
+        }
+
+        feedbackText.textContent = qData.feedback;
+        document.getElementById('btn-next').style.display = 'block';
+    }
+
+    function nextQuestion() {
+        currentIndex++;
+        if (currentIndex < currentQuestions.length) {
+            loadQuestion();
+        } else {
+            finishQuiz();
+        }
+    }
+
+    function finishQuiz() {
+        const percentage = Math.round((score / currentQuestions.length) * 100);
+        document.getElementById('final-score').textContent = `${percentage}%`;
+        
+        let msg = "";
+        if(percentage === 100) msg = "¡Perfecto! Eres un experto.";
+        else if(percentage >= 80) msg = "¡Excelente trabajo!";
+        else if(percentage >= 60) msg = "Bien, pero puedes mejorar.";
+        else msg = "Sigue estudiando las guías.";
+        
+        document.getElementById('result-message').textContent = msg;
+
+        // Guardar en LocalStorage
+        saveToHistory(currentSubjectName, percentage);
+
+        showScreen('screen-results');
+    }
+
+    function saveToHistory(subject, score) {
+        const history = JSON.parse(localStorage.getItem('quizHistory')) || [];
+        const now = new Date();
+        const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        history.push({
+            date: dateStr,
+            subject: subject,
+            score: score
+        });
+
+        localStorage.setItem('quizHistory', JSON.stringify(history));
+    }
+
+    function restartQuiz() {
+        currentIndex = 0;
+        score = 0;
+        showScreen('screen-quiz');
+        loadQuestion();
+    }
+
+    // Inicializar
+    loadHistory();
+
+</script>
+
+</body>
+</html>

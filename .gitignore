@@ -4,8 +4,6 @@
 __pycache__/
 
 # Dependencies
-.venv/
-venv/
 node_modules/
 
 # Logs and temp files
@@ -21,6 +19,8 @@ node_modules/
 # Editors
 .vscode/
 .idea/
+*.swp
+*.swo
 
 # OS generated files
 .DS_Store

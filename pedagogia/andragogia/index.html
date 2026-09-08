@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Andragogía | Pedagogía y Educación</title>
+    <link rel="icon" type="image/png" href="../../favicon.png" />
+    <link rel="apple-touch-icon" href="../../favicon.png" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+        h1, h2, h3, h4, h5 {
+            font-family: 'Outfit', sans-serif;
+        }
+        .content-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            transition: all 0.3s;
+        }
+        .content-card:hover {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .exam-tip {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            border-radius: 0.75rem 0.75rem 0.75rem 0;
+            margin: 1rem 0;
+            font-size: 0.875rem;
+            position: relative;
+        }
+        .exam-tip::before {
+            content: "🎯 Punto clave";
+            display: block;
+            font-weight: bold;
+            color: #b45309;
+            margin-bottom: 0.25rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        details {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        summary {
+            padding: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #1e293b;
+            background: white;
+        }
+        summary:hover {
+            background: #f8fafc;
+        }
+        summary::after {
+            content: '\f078';
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            color: #94a3b8;
+            transition: transform 0.3s;
+        }
+        details[open] summary::after {
+            transform: rotate(180deg);
+        }
+        .details-content {
+            padding: 1.25rem;
+            font-size: 0.875rem;
+            color: #475569;
+            border-top: 1px solid #e2e8f0;
+            background: white;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <!-- Header -->
+    <header class="bg-slate-900 text-white pt-16 pb-24 px-6 text-center relative overflow-hidden">
+        <a href="../../index.html" class="absolute top-4 right-4 md:top-8 md:right-8 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl backdrop-blur-lg transition-all text-xs font-bold flex items-center gap-2 border border-white/40 z-[100]">
+            <i class="fa-solid fa-house"></i> Inicio
+        </a>
+        <a href="../index.html" class="absolute top-4 left-4 md:top-8 md:left-8 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl backdrop-blur-lg transition-all text-xs font-bold flex items-center gap-2 border border-white/40 z-[100]">
+            <i class="fa-solid fa-arrow-left"></i> Volver
+        </a>
+        <div class="absolute inset-0 opacity-10">
+            <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0 100 C 20 0 50 0 100 100 Z" fill="white"></path></svg>
+        </div>
+        <span class="bg-violet-600 text-white text-[10px] font-bold uppercase px-3 py-1 rounded-full mb-4 inline-block relative z-10 tracking-widest">Tema 5</span>
+        <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight relative z-10 mt-2">Andragogía</h1>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 md:px-6 py-8">
+
+        <div class="content-card border-t-8 border-violet-800">
+            <h2 class="text-2xl font-bold mb-4 text-violet-900">📌 Resumen de Andragogía</h2>
+            <p class="text-sm text-slate-600 mb-4">
+                La <strong>andragogía</strong> es la ciencia que estudia la educación de los adultos, diferenciándola de la pedagogía (educación de niños). Su principal exponente es <strong>Malcolm Knowles</strong>, quien estableció los principios del aprendizaje adulto: los adultos necesitan saber por qué aprenden, tienen un autoconcepto de persona autónoma, acumulan experiencias que son recurso para el aprendizaje, están orientados a la aplicación práctica y su motivación es intrínseca. La andragogía es fundamental para la <strong>educación superior, la formación profesional, la educación continua y los programas de capacitación laboral</strong>.
+            </p>
+        </div>
+
+        <div class="content-card border-t-8 border-violet-700">
+            <h2 class="text-2xl font-bold mb-4 text-violet-900">🔑 Conceptos Clave</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm border-collapse bg-white shadow-sm rounded-lg overflow-hidden">
+                    <thead><tr class="bg-violet-50 text-left"><th class="p-3 border">Concepto</th><th class="p-3 border">Definición precisa</th></tr></thead>
+                    <tbody class="text-slate-600">
+                        <tr><td class="p-3 border font-bold">Andragogía</td><td class="p-3 border">Ciencia y arte de ayudar a los adultos a aprender, basada en sus características y necesidades.</td></tr>
+                        <tr><td class="p-3 border font-bold">Principios de Knowles</td><td class="p-3 border">Seis supuestos sobre los aprendices adultos: necesidad de saber, autoconcepto, experiencia, orientación al aprendizaje, motivación, y aplicación práctica.</td></tr>
+                        <tr><td class="p-3 border font-bold">Aprendizaje autodirigido</td><td class="p-3 border">Capacidad del adulto para planificar, ejecutar y evaluar su propio aprendizaje.</td></tr>
+                        <tr><td class="p-3 border font-bold">Facilitador</td><td class="p-3 border">Rol del docente en andragogía: guía, acompañante y generador de recursos, no transmisor autoritario.</td></tr>
+                        <tr><td class="p-3 border font-bold">Aprendizaje experiencial</td><td class="p-3 border">Teoría de Kolb: el aprendizaje se construye a partir de la experiencia concreta, la observación reflexiva, la conceptualización abstracta y la experimentación activa.</td></tr>
+                        <tr><td class="p-3 border font-bold">Motivación intrínseca</td><td class="p-3 border">El adulto aprende porque encuentra valor personal y profesional en el contenido, no por recompensas externas.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="content-card border-t-8 border-violet-600">
+            <h2 class="text-2xl font-bold mb-4 text-violet-900">📘 Bloque 1: Principios de la Andragogía (Knowles)</h2>
+            <ol class="list-decimal pl-5 space-y-3 text-sm text-slate-700">
+                <li><strong>Necesidad de saber:</strong> Los adultos necesitan conocer el <em>por qué</em> y el <em>para qué</em> de lo que aprenden.</li>
+                <li><strong>Autoconcepto del aprendiz:</strong> Se ven a sí mismos como autónomos y responsables de su propio aprendizaje.</li>
+                <li><strong>Experiencia previa:</strong> Traen una gran riqueza de experiencias que deben ser aprovechadas como recurso.</li>
+                <li><strong>Orientación al aprendizaje:</strong> Están motivados para aprender aquello que les resulta útil en su vida personal o profesional (aprendizaje centrado en problemas).</li>
+                <li><strong>Motivación:</strong> Su motivación principal es interna (crecimiento, autoestima, calidad de vida) más que externa (notas, certificados).</li>
+                <li><strong>Preparación para aprender:</strong> Están listos para aprender cuando lo necesitan para enfrentar situaciones reales.</li>
+            </ol>
+        </div>
+
+        <div class="content-card border-t-8 border-violet-500">
+            <h2 class="text-2xl font-bold mb-4 text-violet-900">📘 Bloque 2: Diferencias entre Pedagogía y Andragogía</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm border-collapse bg-white shadow-sm rounded-lg overflow-hidden">
+                    <thead><tr class="bg-violet-50 text-left"><th class="p-3 border">Dimensión</th><th class="p-3 border">Pedagogía (niños/jóvenes)</th><th class="p-3 border">Andragogía (adultos)</th></tr></thead>
+                    <tbody class="text-slate-600">
+                        <tr><td class="p-3 border font-bold">Rol del aprendiz</td><td class="p-3 border">Dependiente, receptor de información.</td><td class="p-3 border">Autónomo, autodirigido.</td></tr>
+                        <tr><td class="p-3 border font-bold">Experiencia</td><td class="p-3 border">Poca o nula; base para construir.</td><td class="p-3 border">Abundante y diversa; recurso para el aprendizaje.</td></tr>
+                        <tr><td class="p-3 border font-bold">Orientación</td><td class="p-3 border">Centrada en la materia y el currículo.</td><td class="p-3 border">Centrada en la vida, problemas y aplicación.</td></tr>
+                        <tr><td class="p-3 border font-bold">Motivación</td><td class="p-3 border">Principalmente externa (notas, presión social).</td><td class="p-3 border">Principalmente interna (interés, utilidad).</td></tr>
+                        <tr><td class="p-3 border font-bold">Rol del docente</td><td class="p-3 border">Transmisor, evaluador.</td><td class="p-3 border">Facilitador, guía, co-aprendiz.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="content-card border-t-8 border-violet-400">
+            <h2 class="text-2xl font-bold mb-4 text-violet-900">📘 Bloque 3: Aplicaciones y Estrategias Andragógicas</h2>
+            <ul class="list-disc pl-5 space-y-2 text-sm text-slate-700">
+                <li><strong>Aprendizaje basado en problemas (ABP):</strong> Presentar situaciones reales que los adultos deben resolver, integrando teoría y práctica.</li>
+                <li><strong>Estudio de casos:</strong> Analizar experiencias concretas de su ámbito profesional.</li>
+                <li><strong>Trabajo colaborativo:</strong> Aprovechar la diversidad de experiencias para el aprendizaje entre pares.</li>
+                <li><strong>Contratos de aprendizaje:</strong> Acuerdos entre facilitador y estudiante sobre objetivos, actividades y evaluación.</li>
+                <li><strong>Portafolios de aprendizaje:</strong> Recopilación de evidencias que demuestran el progreso y la reflexión.</li>
+                <li><strong>Evaluación auténtica:</strong> Evaluar mediante tareas que simulen el desempeño profesional real (proyectos, informes, presentaciones).</li>
+            </ul>
+            <div class="exam-tip mt-4">
+                En la práctica, la andragogía no es un "método" rígido, sino un <strong>conjunto de principios</strong> que deben adaptarse al contexto y a las características de los aprendices adultos.
+            </div>
+        </div>
+
+        <div class="content-card border-t-8 border-violet-300">
+            <h2 class="text-2xl font-bold mb-4 text-violet-900">👤 Autores fundamentales en Andragogía</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm border-collapse bg-white shadow-sm rounded-lg overflow-hidden">
+                    <thead><tr class="bg-violet-50 text-left"><th class="p-3 border">Autor</th><th class="p-3 border">Aporte principal</th></tr></thead>
+                    <tbody class="text-slate-600">
+                        <tr><td class="p-3 border font-bold">Malcolm Knowles</td><td class="p-3 border">Padre de la andragogía; formuló los principios del aprendizaje adulto.</td></tr>
+                        <tr><td class="p-3 border font-bold">David Kolb</td><td class="p-3 border">Teoría del aprendizaje experiencial y ciclo de aprendizaje.</td></tr>
+                        <tr><td class="p-3 border font-bold">Jack Mezirow</td><td class="p-3 border">Teoría del aprendizaje transformativo: los adultos cambian sus marcos de referencia a través de la reflexión crítica.</td></tr>
+                        <tr><td class="p-3 border font-bold">Stephen Brookfield</td><td class="p-3 border">Enfoque crítico de la andragogía: el pensamiento crítico es central en la educación de adultos.</td></tr>
+                        <tr><td class="p-3 border font-bold">Peter Jarvis</td><td class="p-3 border">Modelo de aprendizaje adulto como proceso de transformación continua.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-12 text-center text-sm border-t border-slate-800">
+        <p class="font-bold text-white mb-2">Guía Completa de Preparación</p>
+        <p>Pedagogía y Educación | 2026</p>
+    </footer>
+
+</body>
+</html>

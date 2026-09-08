@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Competencias docentes | Pedagogía y Educación</title>
+    <link rel="icon" type="image/png" href="../../favicon.png" />
+    <link rel="apple-touch-icon" href="../../favicon.png" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+        h1, h2, h3, h4, h5 {
+            font-family: 'Outfit', sans-serif;
+        }
+        .content-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            transition: all 0.3s;
+        }
+        .content-card:hover {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .exam-tip {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            border-radius: 0.75rem 0.75rem 0.75rem 0;
+            margin: 1rem 0;
+            font-size: 0.875rem;
+            position: relative;
+        }
+        .exam-tip::before {
+            content: "🎯 Punto clave";
+            display: block;
+            font-weight: bold;
+            color: #b45309;
+            margin-bottom: 0.25rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        details {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        summary {
+            padding: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #1e293b;
+            background: white;
+        }
+        summary:hover {
+            background: #f8fafc;
+        }
+        summary::after {
+            content: '\f078';
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            color: #94a3b8;
+            transition: transform 0.3s;
+        }
+        details[open] summary::after {
+            transform: rotate(180deg);
+        }
+        .details-content {
+            padding: 1.25rem;
+            font-size: 0.875rem;
+            color: #475569;
+            border-top: 1px solid #e2e8f0;
+            background: white;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <!-- Header -->
+    <header class="bg-slate-900 text-white pt-16 pb-24 px-6 text-center relative overflow-hidden">
+        <a href="../../index.html" class="absolute top-4 right-4 md:top-8 md:right-8 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl backdrop-blur-lg transition-all text-xs font-bold flex items-center gap-2 border border-white/40 z-[100]">
+            <i class="fa-solid fa-house"></i> Inicio
+        </a>
+        <a href="../index.html" class="absolute top-4 left-4 md:top-8 md:left-8 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl backdrop-blur-lg transition-all text-xs font-bold flex items-center gap-2 border border-white/40 z-[100]">
+            <i class="fa-solid fa-arrow-left"></i> Volver
+        </a>
+        <div class="absolute inset-0 opacity-10">
+            <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0 100 C 20 0 50 0 100 100 Z" fill="white"></path></svg>
+        </div>
+        <span class="bg-blue-600 text-white text-[10px] font-bold uppercase px-3 py-1 rounded-full mb-4 inline-block relative z-10 tracking-widest">Tema 1</span>
+        <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight relative z-10 mt-2">Competencias docentes</h1>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 md:px-6 py-8">
+
+        <div class="content-card border-t-8 border-blue-800">
+            <h2 class="text-2xl font-bold mb-4 text-blue-900">📌 Resumen de Competencias Docentes</h2>
+            <p class="text-sm text-slate-600 mb-4">
+                Las <strong>competencias docentes</strong> son el conjunto de conocimientos, habilidades, actitudes y valores que un educador necesita para desempeñarse eficazmente en contextos diversos. No se limitan al dominio de una materia, sino que abarcan la <strong>planificación, la gestión del aula, la evaluación, la comunicación, el uso de tecnologías, la atención a la diversidad y el desarrollo profesional continuo</strong>. El docente competente es un profesional reflexivo, ético y capaz de adaptarse a las demandas cambiantes del sistema educativo.
+            </p>
+        </div>
+
+        <div class="content-card border-t-8 border-blue-700">
+            <h2 class="text-2xl font-bold mb-4 text-blue-900">🔑 Conceptos Clave</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm border-collapse bg-white shadow-sm rounded-lg overflow-hidden">
+                    <thead><tr class="bg-blue-50 text-left"><th class="p-3 border">Concepto</th><th class="p-3 border">Definición precisa</th></tr></thead>
+                    <tbody class="text-slate-600">
+                        <tr><td class="p-3 border font-bold">Competencia docente</td><td class="p-3 border">Capacidad integrada para actuar eficazmente en situaciones educativas, movilizando recursos personales y profesionales.</td></tr>
+                        <tr><td class="p-3 border font-bold">Saber (conocimiento)</td><td class="p-3 border">Dominio teórico de la disciplina, la pedagogía y el contexto.</td></tr>
+                        <tr><td class="p-3 border font-bold">Saber hacer (habilidades)</td><td class="p-3 border">Capacidad para aplicar estrategias didácticas, gestionar el aula, evaluar, etc.</td></tr>
+                        <tr><td class="p-3 border font-bold">Saber ser (actitudes)</td><td class="p-3 border">Compromiso ético, empatía, reflexión, apertura al cambio.</td></tr>
+                        <tr><td class="p-3 border font-bold">Estándares docentes</td><td class="p-3 border">Criterios que definen el desempeño esperado de un docente en diferentes etapas de su carrera.</td></tr>
+                        <tr><td class="p-3 border font-bold">Enfoque por competencias</td><td class="p-3 border">Modelo formativo que prioriza el desarrollo de capacidades aplicadas sobre la mera transmisión de contenidos.</td></tr>
+                        <tr><td class="p-3 border font-bold">Práctica reflexiva</td><td class="p-3 border">Proceso de análisis crítico de la propia práctica para mejorar continuamente (Schön).</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="content-card border-t-8 border-blue-600">
+            <h2 class="text-2xl font-bold mb-4 text-blue-900">📘 Bloque 1: Modelos de Competencias Docentes</h2>
+            <div class="grid md:grid-cols-2 gap-4 text-sm">
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <h4 class="font-bold text-blue-700 border-b pb-1 mb-2">Modelo de Perrenoud (10 competencias)</h4>
+                    <p><strong>Philippe Perrenoud (1999):</strong> Propone diez competencias fundamentales para la enseñanza, agrupadas en tres ejes:</p>
+                    <ul class="list-disc pl-5 space-y-1 text-slate-700 mt-1">
+                        <li>Organizar y animar situaciones de aprendizaje.</li>
+                        <li>Gestionar la progresión de los aprendizajes.</li>
+                        <li>Concebir y hacer evolucionar dispositivos de diferenciación.</li>
+                        <li>Implicar a los alumnos en sus aprendizajes.</li>
+                        <li>Trabajar en equipo.</li>
+                        <li>Participar en la gestión de la escuela.</li>
+                        <li>Informar e implicar a los padres.</li>
+                        <li>Utilizar las nuevas tecnologías.</li>
+                        <li>Afrentar los deberes y dilemas éticos de la profesión.</li>
+                        <li>Organizar la propia formación continua.</li>
+                    </ul>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <h4 class="font-bold text-blue-700 border-b pb-1 mb-2">Modelo UNESCO (Docentes para el siglo XXI)</h4>
+                    <p>La UNESCO define competencias en tres dimensiones:</p>
+                    <ul class="list-disc pl-5 space-y-1 text-slate-700 mt-1">
+                        <li><strong>Competencias técnicas:</strong> Dominio de la materia, uso de TIC, evaluación.</li>
+                        <li><strong>Competencias relacionales:</strong> Comunicación, trabajo colaborativo, gestión de la convivencia.</li>
+                        <li><strong>Competencias éticas:</strong> Compromiso con la equidad, inclusión, respeto a la diversidad.</li>
+                    </ul>
+                    <p class="text-xs text-slate-500 mt-2">Además, el Marco de Competencias Docentes de la UNESCO (2019) añade la competencia digital como eje transversal.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-card border-t-8 border-blue-500">
+            <h2 class="text-2xl font-bold mb-4 text-blue-900">📘 Bloque 2: Evaluación de Competencias Docentes</h2>
+            <p class="text-sm text-slate-600 mb-4">La evaluación docente no debe ser punitiva, sino <strong>formativa</strong> y orientada al desarrollo profesional. Los principales enfoques son:</p>
+            <ul class="list-disc pl-5 space-y-2 text-sm text-slate-700 mb-4">
+                <li><strong>Autoevaluación:</strong> El docente reflexiona sobre su práctica mediante diarios, portafolios, grabaciones de clase.</li>
+                <li><strong>Heteroevaluación:</strong> Evaluación por pares, directivos o inspectores (con rúbricas y observación sistemática).</li>
+                <li><strong>Evaluación de estudiantes:</strong> Encuestas de satisfacción y percepción del aprendizaje.</li>
+                <li><strong>Portafolio docente:</strong> Evidencias del desempeño: planificaciones, producciones de estudiantes, reflexiones, proyectos.</li>
+            </ul>
+            <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                <h4 class="font-bold text-blue-700">Estándares de desempeño (ejemplo)</h4>
+                <table class="w-full text-sm border-collapse mt-2">
+                    <thead><tr class="bg-blue-50"><th class="p-2 border text-left">Dimensión</th><th class="p-2 border text-left">Indicador</th></tr></thead>
+                    <tbody class="text-slate-600">
+                        <tr><td class="p-2 border">Planificación</td><td class="p-2 border">Diseña secuencias didácticas coherentes con los objetivos.</td></tr>
+                        <tr><td class="p-2 border">Ambiente de aula</td><td class="p-2 border">Fomenta un clima de respeto y participación activa.</td></tr>
+                        <tr><td class="p-2 border">Evaluación</td><td class="p-2 border">Utiliza diversos instrumentos y retroalimenta oportunamente.</td></tr>
+                        <tr><td class="p-2 border">Desarrollo profesional</td><td class="p-2 border">Participa en actividades de formación y actualización.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="content-card border-t-8 border-blue-400">
+            <h2 class="text-2xl font-bold mb-4 text-blue-900">👤 Autores y referentes</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm border-collapse bg-white shadow-sm rounded-lg overflow-hidden">
+                    <thead><tr class="bg-blue-50 text-left"><th class="p-3 border">Autor</th><th class="p-3 border">Aporte principal</th></tr></thead>
+                    <tbody class="text-slate-600">
+                        <tr><td class="p-3 border font-bold">Philippe Perrenoud</td><td class="p-3 border">Diez competencias docentes; enfoque reflexivo.</td></tr>
+                        <tr><td class="p-3 border font-bold">UNESCO</td><td class="p-3 border">Marcos internacionales de competencias y estándares.</td></tr>
+                        <tr><td class="p-3 border font-bold">Donald Schön</td><td class="p-3 border">Práctica reflexiva y profesional reflexivo.</td></tr>
+                        <tr><td class="p-3 border font-bold">Lee Shulman</td><td class="p-3 border">Conocimiento didáctico del contenido (PCK).</td></tr>
+                        <tr><td class="p-3 border font-bold">José Gimeno Sacristán</td><td class="p-3 border">Crítica al tecnicismo y defensa de la autonomía docente.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-12 text-center text-sm border-t border-slate-800">
+        <p class="font-bold text-white mb-2">Guía Completa de Preparación</p>
+        <p>Pedagogía y Educación | 2026</p>
+    </footer>
+
+</body>
+</html>

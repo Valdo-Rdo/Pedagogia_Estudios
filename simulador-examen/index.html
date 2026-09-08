@@ -13,7 +13,7 @@
         h1 { color: var(--primary); margin-bottom: 10px; }
         .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; text-decoration: none; display: inline-block; }
         .btn-back { background-color: #6b7280; color: white; }
-        .btn-home { background-color: var(--primary); color: white; }
+        .btn-home { background: linear-gradient(135deg, #2563eb, #4f46e5); color: white; }
         .btn-history { position: absolute; top: 0; right: 0; background-color: #8b5cf6; color: white; font-size: 0.9rem; padding: 8px 15px; }
         .btn:hover { opacity: 0.9; transform: translateY(-1px); }
         .screen { display: none; }
@@ -64,8 +64,8 @@
         <p>30 preguntas aleatorias de un banco de 50 por materia</p>
         <button onclick="openHistoryModal()" class="btn btn-history">📊 Historial</button>
         <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-            <a href="../index.html" class="btn btn-home" style="background: linear-gradient(135deg, #2563eb, #4f46e5);"><i class="fa-solid fa-house"></i> Inicio</a>
             <a href="../pedagogia/index.html" class="btn btn-back"><i class="fa-solid fa-arrow-left"></i> Materias</a>
+            <a href="../index.html" class="btn btn-home"><i class="fa-solid fa-house"></i> Inicio</a>
         </div>
     </header>
 
@@ -115,7 +115,7 @@
             <p id="result-message">Buen trabajo</p>
             <div style="margin-top: 30px;">
                 <button onclick="restartQuiz()" class="btn btn-back">Intentar de nuevo</button>
-                <button onclick="showScreen('screen-select')" class="btn btn-home">Elegir otra materia</button>
+                <button onclick="showScreen('screen-select')" class="btn btn-home"><i class="fa-solid fa-house"></i> Inicio</button>
             </div>
         </div>
     </div>

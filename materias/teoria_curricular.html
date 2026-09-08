@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teoría Curricular | 7mo Cuatrimestre Pedagogía</title>
+<link rel="icon" type="image/png" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+.content-card { @apply bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm mb-8 transition-all hover:shadow-md; }
+.tab-btn { @apply px-4 py-2 rounded-full text-sm font-semibold transition-all border; }
+.tab-active { @apply bg-indigo-600 text-white shadow-lg scale-105 border-transparent; }
+.tab-inactive { @apply bg-white text-slate-600 hover:bg-slate-100 border-slate-200; }
+.flashcard { @apply bg-gradient-to-br from-indigo-500 to-indigo-700 text-white p-6 rounded-2xl shadow-lg cursor-pointer transform transition-all duration-500 hover:scale-105; }
+.flashcard.flipped .flashcard-back { transform: rotateY(180deg); }
+.flashcard-inner { @apply relative w-full h-full transition-transform duration-700; }
+.flashcard-front, .flashcard-back { @apply absolute inset-0 backface-hidden p-6 rounded-2xl flex flex-col justify-center items-center text-center; }
+.flashcard-back { @apply bg-white text-indigo-900 transform rotateY-180; }
+.quiz-option { @apply w-full p-4 rounded-xl border-2 border-slate-200 text-left cursor-pointer transition-all hover:bg-indigo-50 hover:border-indigo-300; }
+.quiz-option.correct { @apply bg-green-100 border-green-500 text-green-800; }
+.quiz-option.incorrect { @apply bg-red-100 border-red-500 text-red-800; }
+.hidden-section { display: none; }
+.connection-node { @apply bg-indigo-100 border-2 border-indigo-300 rounded-xl p-4 text-center cursor-pointer transition-all hover:bg-indigo-200 hover:scale-105; }
+</style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+<header class="bg-indigo-900 text-white py-8 shadow-lg">
+    <div class="max-w-6xl mx-auto px-4 md:px-6">
+        <a href="../index.html" class="inline-flex items-center gap-2 text-indigo-200 hover:text-white mb-4 transition-colors">
+            <i class="fa-solid fa-arrow-left"></i> Volver al Inicio
+        </a>
+        <h1 class="text-3xl md:text-4xl font-bold mb-2">📚 Teoría Curricular</h1>
+        <p class="text-indigo-200">7mo Cuatrimestre | Licenciatura en Pedagogía</p>
+    </div>
+</header>
+
+<nav class="sticky top-0 z-50 bg-white shadow-md border-b border-slate-200">
+    <div class="max-w-6xl mx-auto px-4 md:px-6 py-4">
+        <div class="flex flex-wrap gap-2 justify-center">
+            <button onclick="showSection('guia')" id="tab-guia" class="tab-btn tab-active"><i class="fa-solid fa-book-open mr-2"></i>Guía</button>
+            <button onclick="showSection('tarjetas')" id="tab-tarjetas" class="tab-btn tab-inactive"><i class="fa-solid fa-layer-group mr-2"></i>Tarjetas</button>
+            <button onclick="showSection('conexiones')" id="tab-conexiones" class="tab-btn tab-inactive"><i class="fa-solid fa-network-wired mr-2"></i>Conexiones</button>
+            <button onclick="showSection('examen')" id="tab-examen" class="tab-btn tab-inactive"><i class="fa-solid fa-clipboard-check mr-2"></i>Examen</button>
+        </div>
+    </div>
+</nav>
+
+<main class="max-w-6xl mx-auto px-4 md:px-6 py-8">
+
+<!-- GUÍA DE ESTUDIO -->
+<section id="guia" class="study-section">
+    <div class="content-card border-t-8 border-indigo-800">
+        <h2 class="text-2xl font-bold mb-4 text-indigo-900">📌 Resumen de Teoría Curricular</h2>
+        <p class="text-sm text-slate-600 mb-4">Estudia <strong>qué se enseña, por qué se enseña eso y no otra cosa, y cómo se organiza el conocimiento en la escuela</strong>. El currículo nunca es neutral: es un <strong>documento de identidad</strong> que forma un tipo específico de ser humano.</p>
+    </div>
+
+    <div class="content-card border-t-8 border-indigo-700">
+        <h2 class="text-2xl font-bold mb-4 text-indigo-900">🔑 Conceptos Clave</h2>
+        <table class="w-full text-sm border-collapse bg-white shadow-sm rounded-lg overflow-hidden">
+            <thead><tr class="bg-indigo-50 text-left"><th class="p-3 border">Concepto</th><th class="p-3 border">Definición</th></tr></thead>
+            <tbody class="text-slate-600">
+                <tr><td class="p-3 border font-bold">Currículo formal</td><td class="p-3 border">Lo que está escrito en el plan de estudios oficial.</td></tr>
+                <tr><td class="p-3 border font-bold">Currículo real</td><td class="p-3 border">Lo que efectivamente se enseña en el aula.</td></tr>
+                <tr><td class="p-3 border font-bold">Currículo oculto</td><td class="p-3 border">Valores y normas que se aprenden sin estar escritas (Philip Jackson, Apple).</td></tr>
+                <tr><td class="p-3 border font-bold">Arbitrario cultural</td><td class="p-3 border">Alicia de Alba: imposición de una cultura como "válida".</td></tr>
+                <tr><td class="p-3 border font-bold">Documento de identidad</td><td class="p-3 border">da Silva: el currículo PRODUCE identidad (género, raza, clase).</td></tr>
+                <tr><td class="p-3 border font-bold">Justicia curricular</td><td class="p-3 border">Connell: redistribuir conocimiento y dignificar identidades.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="content-card border-t-8 border-indigo-600">
+        <h2 class="text-2xl font-bold mb-4 text-indigo-900">📘 Paradigmas Históricos</h2>
+        <div class="grid md:grid-cols-3 gap-4 text-sm">
+            <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                <h4 class="font-bold text-indigo-700 border-b pb-1 mb-2">Técnico-Lineal (40-60)</h4>
+                <p><strong>Tyler (1949):</strong> Cuatro preguntas básicas.</p>
+                <p><strong>Hilda Taba (1962):</strong> Diagnóstico de necesidades.</p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                <h4 class="font-bold text-indigo-700 border-b pb-1 mb-2">Crítico (70-80)</h4>
+                <p><strong>Apple:</strong> Currículo oculto e ideología.</p>
+                <p><strong>Giroux:</strong> Pedagogía crítica y resistencia.</p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                <h4 class="font-bold text-indigo-700 border-b pb-1 mb-2">Poscrítico (90+)</h4>
+                <p><strong>da Silva:</strong> Currículo produce identidades (raza, género, sexualidad).</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-card border-t-8 border-indigo-300">
+        <h2 class="text-2xl font-bold mb-4 text-indigo-900">👤 Autores Clave</h2>
+        <table class="w-full text-sm border-collapse bg-white shadow-sm rounded-lg overflow-hidden">
+            <thead><tr class="bg-indigo-50 text-left"><th class="p-3 border">Autor</th><th class="p-3 border">Obra</th><th class="p-3 border">Aporte</th></tr></thead>
+            <tbody class="text-slate-600">
+                <tr><td class="p-3 border font-bold">Tyler</td><td class="p-3 border">"Principios básicos del currículo" (1949)</td><td class="p-3 border">Modelo técnico de 4 preguntas</td></tr>
+                <tr><td class="p-3 border font-bold">Apple</td><td class="p-3 border">"Ideología y currículo" (1979)</td><td class="p-3 border">Currículo oculto</td></tr>
+                <tr><td class="p-3 border font-bold">Alicia de Alba</td><td class="p-3 border">"Currículo: crisis, mito..."</td><td class="p-3 border">Síntesis cultural</td></tr>
+                <tr><td class="p-3 border font-bold">da Silva</td><td class="p-3 border">"Documentos de identidad"</td><td class="p-3 border">Producción de subjetividades</td></tr>
+                <tr><td class="p-3 border font-bold">Connell</td><td class="p-3 border">"Escuelas y justicia social"</td><td class="p-3 border">Justicia curricular</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- TARJETAS DIDÁCTICAS -->
+<section id="tarjetas" class="hidden-section">
+    <div class="content-card border-t-8 border-indigo-800">
+        <h2 class="text-2xl font-bold mb-4 text-indigo-900">🎴 Tarjetas de Memoria</h2>
+        <p class="text-sm text-slate-600 mb-6">Haz clic para voltear cada tarjeta.</p>
+        
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="flashcard relative h-48" onclick="this.classList.toggle('flipped')">
+                <div class="flashcard-inner absolute inset-0">
+                    <div class="flashcard-front absolute inset-0 backface-hidden">
+                        <i class="fa-solid fa-book text-4xl mb-4"></i>
+                        <h3 class="text-lg font-bold">¿Qué es el Currículo Oculto?</h3>
+                    </div>
+                    <div class="flashcard-back absolute inset-0 backface-hidden bg-white text-indigo-900 rounded-2xl flex flex-col justify-center items-center p-6 text-center transform rotateY-180" style="transform: rotateY(180deg);">
+                        <p class="text-sm">Valores y normas que se aprenden implícitamente (obediencia, competencia). Concepto de Philip Jackson y Michael Apple.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flashcard relative h-48" onclick="this.classList.toggle('flipped')">
+                <div class="flashcard-inner absolute inset-0">
+                    <div class="flashcard-front absolute inset-0 backface-hidden">
+                        <i class="fa-solid fa-identity-card text-4xl mb-4"></i>
+                        <h3 class="text-lg font-bold">Documento de Identidad</h3>
+                    </div>
+                    <div class="flashcard-back absolute inset-0 backface-hidden bg-white text-indigo-900 rounded-2xl flex flex-col justify-center items-center p-6 text-center transform rotateY-180" style="transform: rotateY(180deg);">
+                        <p class="text-sm">da Silva: el currículo no refleja quiénes somos, sino que PRODUCE nuestra identidad (género, raza, clase).</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flashcard relative h-48" onclick="this.classList.toggle('flipped')">
+                <div class="flashcard-inner absolute inset-0">
+                    <div class="flashcard-front absolute inset-0 backface-hidden">
+                        <i class="fa-solid fa-scale-balanced text-4xl mb-4"></i>
+                        <h3 class="text-lg font-bold">Justicia Curricular</h3>
+                    </div>
+                    <div class="flashcard-back absolute inset-0 backface-hidden bg-white text-indigo-900 rounded-2xl flex flex-col justify-center items-center p-6 text-center transform rotateY-180" style="transform: rotateY(180deg);">
+                        <p class="text-sm">Connell: redistribuir conocimiento valioso, reconocer identidades diversas y participación democrática.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flashcard relative h-48" onclick="this.classList.toggle('flipped')">
+                <div class="flashcard-inner absolute inset-0">
+                    <div class="flashcard-front absolute inset-0 backface-hidden">
+                        <i class="fa-solid fa-seedling text-4xl mb-4"></i>
+                        <h3 class="text-lg font-bold">Arbitrario Cultural</h3>
+                    </div>
+                    <div class="flashcard-back absolute inset-0 backface-hidden bg-white text-indigo-900 rounded-2xl flex flex-col justify-center items-center p-6 text-center transform rotateY-180" style="transform: rotateY(180deg);">
+                        <p class="text-sm">Alicia de Alba: el currículo impone una selección cultural beneficiosa para ciertos grupos como "la cultura válida".</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flashcard relative h-48" onclick="this.classList.toggle('flipped')">
+                <div class="flashcard-inner absolute inset-0">
+                    <div class="flashcard-front absolute inset-0 backface-hidden">
+                        <i class="fa-solid fa-person-chalkboard text-4xl mb-4"></i>
+                        <h3 class="text-lg font-bold">Ralph Tyler (1949)</h3>
+                    </div>
+                    <div class="flashcard-back absolute inset-0 backface-hidden bg-white text-indigo-900 rounded-2xl flex flex-col justify-center items-center p-6 text-center transform rotateY-180" style="transform: rotateY(180deg);">
+                        <p class="text-sm">Padre del modelo técnico-lineal. Cuatro preguntas: ¿objetivos?, ¿experiencias?, ¿organización?, ¿evaluación?</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flashcard relative h-48" onclick="this.classList.toggle('flipped')">
+                <div class="flashcard-inner absolute inset-0">
+                    <div class="flashcard-front absolute inset-0 backface-hidden">
+                        <i class="fa-solid fa-diagram-project text-4xl mb-4"></i>
+                        <h3 class="text-lg font-bold">Currículo Rizomático</h3>
+                    </div>
+                    <div class="flashcard-back absolute inset-0 backface-hidden bg-white text-indigo-900 rounded-2xl flex flex-col justify-center items-center p-6 text-center transform rotateY-180" style="transform: rotateY(180deg);">
+                        <p class="text-sm">Deleuze y Guattari: currículo sin centro fijo, que se ramifica, conecta y transforma constantemente.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CONEXIONES DE IDEAS -->
+<section id="conexiones" class="hidden-section">
+    <div class="content-card border-t-8 border-indigo-800">
+        <h2 class="text-2xl font-bold mb-4 text-indigo-900">🕸️ Mapa de Conexiones</h2>
+        <p class="text-sm text-slate-600 mb-6">Relaciones entre conceptos clave.</p>
+        
+        <div class="relative bg-slate-50 p-8 rounded-2xl border border-slate-200 min-h-[400px]">
+            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 connection-node bg-indigo-600 text-white border-indigo-800 z-10">
+                <h3 class="font-bold">TEORÍA CURRICULAR</h3>
+            </div>
+            <div class="absolute top-16 left-10 connection-node" onclick="alert('Técnico-Lineal: Tyler y Taba. Enfocado en objetivos medibles y procesos lineales.')">
+                <h4 class="font-bold text-indigo-800">Técnico-Lineal</h4>
+                <p class="text-xs">Tyler & Taba</p>
+            </div>
+            <div class="absolute top-16 right-10 connection-node" onclick="alert('Crítico: Apple y Giroux. Análisis del currículo como reproductor de ideología.')">
+                <h4 class="font-bold text-indigo-800">Crítico</h4>
+                <p class="text-xs">Apple & Giroux</p>
+            </div>
+            <div class="absolute bottom-16 left-10 connection-node" onclick="alert('Poscrítico: da Silva. El currículo produce identidades (raza, género, sexualidad).')">
+                <h4 class="font-bold text-indigo-800">Poscrítico</h4>
+                <p class="text-xs">da Silva</p>
+            </div>
+            <div class="absolute bottom-16 right-10 connection-node" onclick="alert('Decolonial: Alicia de Alba y Connell. Justicia curricular y saberes marginados.')">
+                <h4 class="font-bold text-indigo-800">Decolonial</h4>
+                <p class="text-xs">Latinoamérica</p>
+            </div>
+            <svg class="absolute inset-0 w-full h-full pointer-events-none">
+                <line x1="50%" y1="50%" x2="20%" y2="20%" stroke="#6366f1" stroke-width="2"/>
+                <line x1="50%" y1="50%" x2="80%" y2="20%" stroke="#6366f1" stroke-width="2"/>
+                <line x1="50%" y1="50%" x2="20%" y2="80%" stroke="#6366f1" stroke-width="2"/>
+                <line x1="50%" y1="50%" x2="80%" y2="80%" stroke="#6366f1" stroke-width="2"/>
+            </svg>
+        </div>
+    </div>
+</section>
+
+<!-- EXAMEN SIMULADO -->
+<section id="examen" class="hidden-section">
+    <div class="content-card border-t-8 border-indigo-800">
+        <h2 class="text-2xl font-bold mb-4 text-indigo-900">📝 Examen Simulado</h2>
+        <p class="text-sm text-slate-600 mb-6">5 preguntas de opción múltiple.</p>
+
+        <form id="quiz-form" class="space-y-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200">
+                <p class="font-bold text-lg mb-4 text-indigo-900">1. ¿Quién introdujo el concepto de "currículo oculto"?</p>
+                <div class="space-y-2">
+                    <label class="quiz-option block" data-correct="false"><input type="radio" name="q1" class="hidden" value="a"> A) Ralph Tyler</label>
+                    <label class="quiz-option block" data-correct="true"><input type="radio" name="q1" class="hidden" value="b"> B) Michael Apple</label>
+                    <label class="quiz-option block" data-correct="false"><input type="radio" name="q1" class="hidden" value="c"> C) Hilda Taba</label>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl border border-slate-200">
+                <p class="font-bold text-lg mb-4 text-indigo-900">2. Según da Silva, el currículo es principalmente:</p>
+                <div class="space-y-2">
+                    <label class="quiz-option block" data-correct="false"><input type="radio" name="q2" class="hidden" value="a"> A) Un reflejo de la realidad</label>
+                    <label class="quiz-option block" data-correct="true"><input type="radio" name="q2" class="hidden" value="b"> B) Un documento que produce identidades</label>
+                    <label class="quiz-option block" data-correct="false"><input type="radio" name="q2" class="hidden" value="c"> C) Una herramienta técnica</label>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl border border-slate-200">
+                <p class="font-bold text-lg mb-4 text-indigo-900">3. Propuesta de Connell para redistribuir conocimiento:</p>
+                <div class="space-y-2">
+                    <label class="quiz-option block" data-correct="true"><input type="radio" name="q3" class="hidden" value="a"> A) Justicia curricular</label>
+                    <label class="quiz-option block" data-correct="false"><input type="radio" name="q3" class="hidden" value="b"> B) Síntesis cultural</label>
+                    <label class="quiz-option block" data-correct="false"><input type="radio" name="q3" class="hidden" value="c"> C) Arbitrario cultural</label>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl border border-slate-200">
+                <p class="font-bold text-lg mb-4 text-indigo-900">4. El paradigma poscrítico incorpora:</p>
+                <div class="space-y-2">
+                    <label class="quiz-option block" data-correct="false"><input type="radio" name="q4" class="hidden" value="a"> A) Objetivos y contenidos</label>
+                    <label class="quiz-option block" data-correct="true"><input type="radio" name="q4" class="hidden" value="b"> B) Raza, género, sexualidad</label>
+                    <label class="quiz-option block" data-correct="false"><input type="radio" name="q4" class="hidden" value="c"> C) Métodos cuantitativos</label>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl border border-slate-200">
+                <p class="font-bold text-lg mb-4 text-indigo-900">5. Concepto de Alicia de Alba sobre imposición cultural:</p>
+                <div class="space-y-2">
+                    <label class="quiz-option block" data-correct="false"><input type="radio" name="q5" class="hidden" value="a"> A) Justicia curricular</label>
+                    <label class="quiz-option block" data-correct="true"><input type="radio" name="q5" class="hidden" value="b"> B) Arbitrario cultural</label>
+                    <label class="quiz-option block" data-correct="false"><input type="radio" name="q5" class="hidden" value="c"> C) Currículo rizomático</label>
+                </div>
+            </div>
+
+            <button type="button" onclick="calcularResultado()" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold hover:bg-indigo-700 transition-colors">Ver Resultado</button>
+        </form>
+
+        <div id="resultado" class="hidden mt-6 p-6 bg-indigo-50 rounded-xl border border-indigo-200 text-center">
+            <h3 class="text-2xl font-bold text-indigo-900 mb-2">Tu Puntuación</h3>
+            <p id="puntaje" class="text-4xl font-bold text-indigo-600"></p>
+            <p id="mensaje" class="mt-2 text-slate-600"></p>
+        </div>
+    </div>
+</section>
+
+</main>
+
+<footer class="bg-slate-900 text-slate-400 py-8 text-center text-sm border-t border-slate-800">
+    <p class="font-bold text-white mb-2">Teoría Curricular | 7mo Cuatrimestre</p>
+    <p>Licenciatura en Pedagogía | 2026</p>
+</footer>
+
+<script>
+function showSection(sectionId) {
+    document.querySelectorAll('.study-section, .hidden-section').forEach(el => el.style.display = 'none');
+    document.getElementById(sectionId).style.display = 'block';
+    
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('tab-active');
+        btn.classList.add('tab-inactive');
+    });
+    document.getElementById('tab-' + sectionId).classList.remove('tab-inactive');
+    document.getElementById('tab-' + sectionId).classList.add('tab-active');
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.querySelectorAll('.quiz-option').forEach(option => {
+    option.addEventListener('click', function() {
+        const radio = this.querySelector('input[type="radio"]');
+        radio.checked = true;
+        
+        this.parentElement.querySelectorAll('.quiz-option').forEach(opt => {
+            opt.classList.remove('border-indigo-300', 'bg-indigo-50');
+        });
+        this.classList.add('border-indigo-300', 'bg-indigo-50');
+    });
+});
+
+function calcularResultado() {
+    let correctas = 0;
+    const total = 5;
+    
+    for (let i = 1; i <= total; i++) {
+        const selected = document.querySelector(`input[name="q${i}"]:checked`);
+        if (selected) {
+            const parent = selected.closest('.quiz-option');
+            if (parent.dataset.correct === 'true') {
+                correctas++;
+                parent.classList.add('correct');
+                parent.classList.remove('incorrect');
+            } else {
+                parent.classList.add('incorrect');
+                parent.classList.remove('correct');
+            }
+        }
+    }
+    
+    const porcentaje = Math.round((correctas / total) * 100);
+    document.getElementById('puntaje').textContent = `${correctas}/${total} (${porcentaje}%)`;
+    
+    let mensaje = '';
+    if (porcentaje === 100) mensaje = '¡Excelente! Dominas perfectamente el tema.';
+    else if (porcentaje >= 80) mensaje = '¡Muy bien! Casi perfecto.';
+    else if (porcentaje >= 60) mensaje = 'Bien, pero repasa algunos conceptos.';
+    else mensaje = 'Necesitas estudiar más. Revisa la guía.';
+    
+    document.getElementById('mensaje').textContent = mensaje;
+    document.getElementById('resultado').classList.remove('hidden');
+    document.getElementById('resultado').scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

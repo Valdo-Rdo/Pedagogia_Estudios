@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Desarrollo y evaluación curricular | Pedagogía y Educación</title>
+    <link rel="icon" type="image/png" href="../../favicon.png" />
+    <link rel="apple-touch-icon" href="../../favicon.png" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+        h1, h2, h3, h4, h5 {
+            font-family: 'Outfit', sans-serif;
+        }
+        .content-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            transition: all 0.3s;
+        }
+        .content-card:hover {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .exam-tip {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            border-radius: 0.75rem 0.75rem 0.75rem 0;
+            margin: 1rem 0;
+            font-size: 0.875rem;
+            position: relative;
+        }
+        .exam-tip::before {
+            content: "🎯 Punto clave";
+            display: block;
+            font-weight: bold;
+            color: #b45309;
+            margin-bottom: 0.25rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        details {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        summary {
+            padding: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #1e293b;
+            background: white;
+        }
+        summary:hover {
+            background: #f8fafc;
+        }
+        summary::after {
+            content: '\f078';
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            color: #94a3b8;
+            transition: transform 0.3s;
+        }
+        details[open] summary::after {
+            transform: rotate(180deg);
+        }
+        .details-content {
+            padding: 1.25rem;
+            font-size: 0.875rem;
+            color: #475569;
+            border-top: 1px solid #e2e8f0;
+            background: white;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <!-- Header -->
+    <header class="bg-slate-900 text-white pt-16 pb-24 px-6 text-center relative overflow-hidden">
+        <a href="../../index.html" class="absolute top-4 right-4 md:top-8 md:right-8 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl backdrop-blur-lg transition-all text-xs font-bold flex items-center gap-2 border border-white/40 z-[100]">
+            <i class="fa-solid fa-house"></i> Inicio
+        </a>
+        <a href="../index.html" class="absolute top-4 left-4 md:top-8 md:left-8 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl backdrop-blur-lg transition-all text-xs font-bold flex items-center gap-2 border border-white/40 z-[100]">
+            <i class="fa-solid fa-arrow-left"></i> Volver
+        </a>
+        <div class="absolute inset-0 opacity-10">
+            <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0 100 C 20 0 50 0 100 100 Z" fill="white"></path></svg>
+        </div>
+        <span class="bg-emerald-600 text-white text-[10px] font-bold uppercase px-3 py-1 rounded-full mb-4 inline-block relative z-10 tracking-widest">Tema 2</span>
+        <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight relative z-10 mt-2">Desarrollo y evaluación curricular</h1>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 md:px-6 py-8">
+
+        <div class="content-card border-t-8 border-emerald-800">
+            <h2 class="text-2xl font-bold mb-4 text-emerald-900">📌 Resumen de Desarrollo y Evaluación Curricular</h2>
+            <p class="text-sm text-slate-600 mb-4">
+                El <strong>desarrollo curricular</strong> es el proceso dinámico y participativo de diseñar, implementar y revisar el currículo de una institución o sistema educativo. No se reduce a la elaboración de un plan de estudios, sino que implica <strong>negociación de significados, adaptación al contexto y mejora continua</strong>. La <strong>evaluación curricular</strong>, por su parte, es el juicio sistemático sobre la pertinencia, eficacia y eficiencia del currículo, con el fin de tomar decisiones informadas para su reajuste.
+            </p>
+        </div>
+
+        <div class="content-card border-t-8 border-emerald-700">
+            <h2 class="text-2xl font-bold mb-4 text-emerald-900">🔑 Conceptos Clave</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm border-collapse bg-white shadow-sm rounded-lg overflow-hidden">
+                    <thead><tr class="bg-emerald-50 text-left"><th class="p-3 border">Concepto</th><th class="p-3 border">Definición precisa</th></tr></thead>
+                    <tbody class="text-slate-600">
+                        <tr><td class="p-3 border font-bold">Desarrollo curricular</td><td class="p-3 border">Proceso que abarca desde el diagnóstico de necesidades hasta la implementación y evaluación del currículo.</td></tr>
+                        <tr><td class="p-3 border font-bold">Evaluación curricular</td><td class="p-3 border">Recogida y análisis de información para valorar el diseño, el proceso y los resultados del currículo.</td></tr>
+                        <tr><td class="p-3 border font-bold">Modelo CIPP</td><td class="p-3 border">Modelo de evaluación de Stufflebeam: Contexto, Insumo, Proceso, Producto.</td></tr>
+                        <tr><td class="p-3 border font-bold">Evaluación participativa</td><td class="p-3 border">Implica a docentes, estudiantes, familias y comunidad en el juicio curricular.</td></tr>
+                        <tr><td class="p-3 border font-bold">Reforma curricular</td><td class="p-3 border">Transformación profunda del currículo para responder a cambios sociales, políticos o epistemológicos.</td></tr>
+                        <tr><td class="p-3 border font-bold">Currículo oculto</td><td class="p-3 border">Valores y normas transmitidos implícitamente por la organización escolar.</td></tr>
+                        <tr><td class="p-3 border font-bold">Alineamiento curricular</td><td class="p-3 border">Coherencia entre objetivos, contenidos, metodología y evaluación (Biggs).</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="content-card border-t-8 border-emerald-600">
+            <h2 class="text-2xl font-bold mb-4 text-emerald-900">📘 Bloque 1: Fases del Desarrollo Curricular</h2>
+            <ol class="list-decimal pl-5 space-y-3 text-sm text-slate-700">
+                <li><strong>Diagnóstico de necesidades:</strong> Análisis del contexto social, económico, cultural y educativo; identificación de demandas de la población y del mercado laboral.</li>
+                <li><strong>Diseño curricular:</strong> Definición del perfil de egreso, objetivos/competencias, estructura curricular (asignaturas, módulos, créditos), metodología y sistema de evaluación.</li>
+                <li><strong>Implementación:</strong> Puesta en práctica del currículo mediante la acción docente, uso de recursos, formación del profesorado y gestión institucional.</li>
+                <li><strong>Evaluación:</strong> Recogida de evidencias sobre el logro de los objetivos, la satisfacción de los actores y el impacto en el contexto.</li>
+                <li><strong>Ajuste y mejora:</strong> Retroalimentación de la evaluación para introducir modificaciones en el diseño o la implementación.</li>
+            </ol>
+        </div>
+
+        <div class="content-card border-t-8 border-emerald-500">
+            <h2 class="text-2xl font-bold mb-4 text-emerald-900">📘 Bloque 2: Modelos de Evaluación Curricular</h2>
+            <div class="grid md:grid-cols-2 gap-4 text-sm">
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <h4 class="font-bold text-emerald-700 border-b pb-1 mb-2">Modelo CIPP (Stufflebeam)</h4>
+                    <ul class="space-y-1 text-slate-700">
+                        <li><strong>Contexto:</strong> ¿Cuáles son las necesidades del entorno?</li>
+                        <li><strong>Insumo:</strong> ¿Qué recursos humanos, materiales y financieros se necesitan?</li>
+                        <li><strong>Proceso:</strong> ¿Cómo se está desarrollando la implementación?</li>
+                        <li><strong>Producto:</strong> ¿Qué resultados se han obtenido?</li>
+                    </ul>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <h4 class="font-bold text-emerald-700 border-b pb-1 mb-2">Modelo de Stake (Evaluación respondiente)</h4>
+                    <p>Se centra en las <strong>expectativas</strong> de los actores y en los <strong>resultados observados</strong>. Realiza una matriz de congruencia entre lo planeado y lo observado, e involucra a los participantes en la interpretación de los datos.</p>
+                </div>
+            </div>
+            <div class="exam-tip mt-4">
+                La evaluación curricular debe ser <strong>formativa</strong> (durante el proceso) y <strong>sumativa</strong> (al final), y debe considerar tanto los resultados académicos como el impacto social y la equidad.
+            </div>
+        </div>
+
+        <div class="content-card border-t-8 border-emerald-400">
+            <h2 class="text-2xl font-bold mb-4 text-emerald-900">👤 Autores clave</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm border-collapse bg-white shadow-sm rounded-lg overflow-hidden">
+                    <thead><tr class="bg-emerald-50 text-left"><th class="p-3 border">Autor</th><th class="p-3 border">Aporte principal</th></tr></thead>
+                    <tbody class="text-slate-600">
+                        <tr><td class="p-3 border font-bold">Daniel Stufflebeam</td><td class="p-3 border">Modelo CIPP de evaluación.</td></tr>
+                        <tr><td class="p-3 border font-bold">Robert Stake</td><td class="p-3 border">Evaluación respondiente y matriz de congruencia.</td></tr>
+                        <tr><td class="p-3 border font-bold">Michael Scriven</td><td class="p-3 border">Diferenciación entre evaluación formativa y sumativa.</td></tr>
+                        <tr><td class="p-3 border font-bold">Stephen Kemmis</td><td class="p-3 border">Investigación-acción participativa para el desarrollo curricular.</td></tr>
+                        <tr><td class="p-3 border font-bold">Frida Díaz-Barriga</td><td class="p-3 border">Propuestas para el diseño curricular basado en competencias.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-12 text-center text-sm border-t border-slate-800">
+        <p class="font-bold text-white mb-2">Guía Completa de Preparación</p>
+        <p>Pedagogía y Educación | 2026</p>
+    </footer>
+
+</body>
+</html>

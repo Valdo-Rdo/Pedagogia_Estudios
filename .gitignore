@@ -1,48 +1,51 @@
-# Examples
-## Source code and config files only
-src/main.py
-README.md
-config.json
-utils.py
-old/unused.py
-
-## Build artifacts and dependencies
+# Compiled and build artifacts
 *.pyc
-pycache/
-dist/
-build/
-node_modules/
+__pycache__/
+*.o
+*.obj
+*.class
+*.exe
+*.dll
+*.so
+*.a
+*.out
+
+# Dependencies
 .venv/
 venv/
+node_modules/
+dist/
+build/
 target/
+.gradle/
+.mypy_cache/
+.pytest_cache/
 
-## Logs and temporary files
+# Logs and temp files
 *.log
 *.tmp
 *.swp
 *.swo
 
-## Environment variables
+# Environment
 .env
 .env.local
 *.env.*
 
-## IDE and editor files
+# Editors
 .vscode/
 .idea/
-*.swp
-*.swo
 
-## System files
+# System files
 .DS_Store
 Thumbs.db
 
-## Coverage and testing
+# Coverage
 coverage/
 htmlcov/
 .coverage
 
-## Compressed files
+# Compressed files
 *.zip
 *.gz
 *.tar

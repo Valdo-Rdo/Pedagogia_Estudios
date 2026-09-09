@@ -33,6 +33,7 @@ a:hover { text-decoration: underline; }
   align-items: stretch;
   transition: background 0.5s;
   z-index: 1000;
+  position: relative;
 }
 /* Fondo de la barra según pestaña activa (sobreescribe el default) */
 .tab-bar[data-active="tech"] { background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%); }
@@ -141,6 +142,32 @@ a:hover { text-decoration: underline; }
 .tab-panel#panel-tech .drawer-btn { background: #2563eb; }
 .tab-panel#panel-pedagogia .drawer-btn { background: #c2410c; }
 .tab-panel#panel-ejemplos .drawer-btn { background: #7c3aed; }
+
+/* ====== BOTÓN MODO OSCURO EN BARRA PRINCIPAL ====== */
+.dark-mode-btn-main {
+  position: absolute;
+  top: 10px; right: 20px;
+  z-index: 1001;
+  background: rgba(250, 204, 21, 0.15);
+  color: #facc15;
+  border: 1px solid rgba(250, 204, 21, 0.3);
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.dark-mode-btn-main:hover {
+  background: rgba(250, 204, 21, 0.3);
+  transform: scale(1.08);
+  color: white;
+}
+.dark-mode-btn-main.active {
+  background: rgba(250, 204, 21, 0.4);
+  color: white;
+}
 
 /* ====== DRAWER (panel lateral deslizable) ====== */
 .drawer-overlay {
@@ -261,6 +288,7 @@ a:hover { text-decoration: underline; }
   .back-home-btn-float { width: 38px; height: 38px; top: 10px; left: 10px; font-size: 1rem; }
   .drawer-btn { top: 10px; left: 58px; padding: 9px 14px; font-size: 0.85rem; }
   .drawer-panel { width: 90vw; left: -95vw; }
+  .dark-mode-btn-main { top: 8px; right: 10px; width: 36px; height: 36px; font-size: 1rem; }
 }
 
 @media print {
@@ -296,6 +324,10 @@ a:hover { text-decoration: underline; }
       <span class="tab-subtitle">12 ejemplos funcionales copiables</span>
     </span>
   </button>
+  <!-- Botón Modo Oscuro Global -->
+  <button class="dark-mode-btn-main" id="darkModeBtnMain" title="Modo oscuro global">
+    <i class="fas fa-moon"></i>
+  </button>
 </nav>
 
 <!-- ====== INFO STRIP ====== -->
@@ -303,7 +335,7 @@ a:hover { text-decoration: underline; }
   <span><i class="fas fa-book-bookmark"></i> <strong>Compilación integral</strong> · 3 manuales en 1</span>
   <span><i class="fas fa-bars"></i> Botón <strong>Índice</strong> arriba a la izquierda de cada pestaña</span>
   <span><i class="fas fa-keyboard"></i> <kbd>Alt</kbd>+<kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> cambia de pestaña</span>
-  <span><i class="fas fa-moon"></i> Modo oscuro dentro de cada manual</span>
+  <span><i class="fas fa-moon"></i> <strong>Botón 🌙</strong> arriba a la derecha activa modo oscuro en todos los manuales</span>
 </div>
 
 <!-- ====== PANELES CON IFRAMES + BOTÓN ÍNDICE + BOTÓN REGRESAR ====== -->
@@ -6782,7 +6814,34 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeDrawer();
 });
 
-console.log('Compilación Integral · 3 manuales en 1 · cargada. Usa Alt+1/2/3 para pestañas, ESC para cerrar drawer.');
+// === MODO OSCURO GLOBAL PARA IFRAMES ===
+const darkModeBtnMain = document.getElementById('darkModeBtnMain');
+const darkModeIcon = darkModeBtnMain.querySelector('i');
+let globalDarkMode = false;
+
+function setIframeTheme(frame, isDark) {
+  const innerDoc = frame.contentDocument;
+  if (!innerDoc) return;
+  innerDoc.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  const toggleBtn = innerDoc.getElementById('themeToggle');
+  const icon = toggleBtn ? toggleBtn.querySelector('i') : null;
+  if (icon) {
+    icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+  }
+}
+
+darkModeBtnMain.addEventListener('click', () => {
+  globalDarkMode = !globalDarkMode;
+  darkModeBtnMain.classList.toggle('active', globalDarkMode);
+  darkModeIcon.className = globalDarkMode ? 'fas fa-sun' : 'fas fa-moon';
+  // Aplicar a los 3 iframes
+  ['tech', 'pedagogia', 'ejemplos'].forEach(tabName => {
+    const frame = document.getElementById('frame-' + tabName);
+    setIframeTheme(frame, globalDarkMode);
+  });
+});
+
+console.log('Compilación Integral · 3 manuales en 1 · cargada. Usa Alt+1/2/3 para pestañas, ESC para cerrar drawer, botón 🌙 para modo oscuro global.');
 </script>
 
 </body>

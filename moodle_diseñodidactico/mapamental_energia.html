@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="auto">
+<head>
+<!--
+═══════════════════════════════════════════════════════════════════════════════
+  EL VIAJE DE LA ENERGÍA · Recurso Educativo Digital Rediseñado (v2.0)
+═══════════════════════════════════════════════════════════════════════════════
+  MEJORAS PEDAGÓGICAS:
+  · Microlearning: contenido fragmentado en tarjetas breves (≤1 idea c/u).
+  · Andamiaje: secuencia Mapa → Aprende → Practica → Evalúa (de menor a
+    mayor demanda cognitiva), con ejemplos y explicaciones graduadas.
+  · Aprendizaje activo: mapa mental explorable, clasificación drag & drop
+    (con alternativa 100% por teclado), flashcards de recuperación activa
+    (active recall) y quiz con feedback formativo inmediato (no solo ✓/✗,
+    sino POR QUÉ, reforzando la corrección de errores conceptuales).
+  · Motivación: barra de progreso persistente y refuerzo positivo.
+  MEJORAS TÉCNICAS:
+  · HTML5 semántico (header/nav/main/section/article/footer) + ARIA
+    (aria-expanded, aria-live, roles, aria-describedby).
+  · CSS moderno: custom properties, modo claro/oscuro (manual + sistema),
+    mobile-first, tipografía fluida con clamp(), prefers-reduced-motion.
+  · JS vanilla modular (patrón módulo/revelación), sin dependencias.
+  · Persistencia en localStorage (tema, progreso, notas, mejor puntuación).
+  · Accesibilidad WCAG 2.2: foco visible, contraste AA, navegación por
+    teclado en TODAS las interacciones, anuncios por lector de pantalla.
+═══════════════════════════════════════════════════════════════════════════════
+-->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Recurso educativo interactivo sobre la energía: fuentes renovables, tipos de energía y principio de conservación.">
+<title>El Viaje de la Energía · Recurso Educativo Interactivo</title>
+
+<style>
+/* ══════════════════════════════════════════════════════════════════════
+   1. VARIABLES DE DISEÑO (Design Tokens) — Modo claro por defecto
+   ══════════════════════════════════════════════════════════════════════ */
+:root {
+  /* Paleta clara (contraste AA verificado) */
+  --c-bg: #f7f9fc;
+  --c-surface: #ffffff;
+  --c-surface-2: #eef2f8;
+  --c-text: #1a2233;
+  --c-text-soft: #4a5568;
+  --c-primary: #1d6f42;      /* verde energía */
+  --c-primary-strong: #145230;
+  --c-accent: #b45309;       /* ámbar solar */
+  --c-accent-soft: #fef3c7;
+  --c-info: #1e5fa8;
+  --c-info-soft: #dbeafe;
+  --c-ok: #166534;
+  --c-ok-soft: #dcfce7;
+  --c-err: #b91c1c;
+  --c-err-soft: #fee2e2;
+  --c-border: #d5dce8;
+  --c-focus: #1e5fa8;
+  --shadow-sm: 0 1px 3px rgba(15, 30, 60, .10);
+  --shadow-md: 0 6px 20px rgba(15, 30, 60, .12);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --transicion: .25s ease;
+  /* Tipografía fluida con clamp() */
+  --fs-h1: clamp(1.6rem, 1.1rem + 2.6vw, 2.6rem);
+  --fs-h2: clamp(1.3rem, 1rem + 1.6vw, 1.9rem);
+  --fs-h3: clamp(1.05rem, .95rem + .6vw, 1.25rem);
+  --fs-body: clamp(.95rem, .9rem + .3vw, 1.05rem);
+  --fs-small: clamp(.8rem, .75rem + .2vw, .9rem);
+}
+
+/* Modo oscuro manual */
+[data-theme="dark"] {
+  --c-bg: #0f1522;
+  --c-surface: #1a2233;
+  --c-surface-2: #232e45;
+  --c-text: #eef2f8;
+  --c-text-soft: #b6c0d4;
+  --c-primary: #6ee7a0;
+  --c-primary-strong: #a7f3c9;
+  --c-accent: #fbbf24;
+  --c-accent-soft: #3d2e0a;
+  --c-info: #93c5fd;
+  --c-info-soft: #1c2f4a;
+  --c-ok: #86efac;
+  --c-ok-soft: #14351f;
+  --c-err: #fca5a5;
+  --c-err-soft: #3f1616;
+  --c-border: #33405c;
+  --c-focus: #93c5fd;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.45);
+  --shadow-md: 0 8px 24px rgba(0,0,0,.5);
+}
+
+/* Modo oscuro automático (preferencia del sistema) si data-theme="auto" */
+@media (prefers-color-scheme: dark) {
+  [data-theme="auto"] {
+    --c-bg: #0f1522;
+    --c-surface: #1a2233;
+    --c-surface-2: #232e45;
+    --c-text: #eef2f8;
+    --c-text-soft: #b6c0d4;
+    --c-primary: #6ee7a0;
+    --c-primary-strong: #a7f3c9;
+    --c-accent: #fbbf24;
+    --c-accent-soft: #3d2e0a;
+    --c-info: #93c5fd;
+    --c-info-soft: #1c2f4a;
+    --c-ok: #86efac;
+    --c-ok-soft: #14351f;
+    --c-err: #fca5a5;
+    --c-err-soft: #3f1616;
+    --c-border: #33405c;
+    --c-focus: #93c5fd;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.45);
+    --shadow-md: 0 8px 24px rgba(0,0,0,.5);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   2. RESET Y BASE — Mobile first
+   ══════════════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; scroll-padding-top: 6.5rem; }
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: var(--fs-body);
+  line-height: 1.65;
+  color: var(--c-text);
+  background: var(--c-bg);
+  transition: background var(--transicion), color var(--transicion);
+}
+
+img, svg { max-width: 100%; display: block; }
+
+/* Foco visible accesible (WCAG 2.2 · 2.4.11) */
+:focus-visible {
+  outline: 3px solid var(--c-focus);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Respeto a usuarios con sensibilidad al movimiento */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* Enlace "saltar al contenido" (WCAG 2.4.1) */
+.skip-link {
+  position: absolute; left: -9999px; top: 0;
+  background: var(--c-primary); color: #fff;
+  padding: .7rem 1.2rem; border-radius: 0 0 var(--radius-sm) 0;
+  z-index: 200; font-weight: 700;
+}
+.skip-link:focus { left: 0; }
+
+/* Visualmente oculto pero disponible para lectores de pantalla */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+.contenedor { width: min(100% - 2rem, 1100px); margin-inline: auto; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   3. CABECERA, BARRA DE PROGRESO Y NAVEGACIÓN
+   ══════════════════════════════════════════════════════════════════════ */
+.cabecera {
+  position: sticky; top: 0; z-index: 100;
+  background: color-mix(in srgb, var(--c-surface) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--c-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.cabecera__fila {
+  display: flex; align-items: center; gap: .8rem;
+  padding: .7rem 0; flex-wrap: wrap;
+}
+
+.cabecera__titulo {
+  font-size: var(--fs-h3); font-weight: 800;
+  display: flex; align-items: center; gap: .5rem; flex: 1 1 auto;
+}
+
+.badge-progreso {
+  font-size: var(--fs-small); font-weight: 700;
+  background: var(--c-surface-2); color: var(--c-text-soft);
+  border: 1px solid var(--c-border);
+  padding: .25rem .7rem; border-radius: 999px; white-space: nowrap;
+}
+
+/* Botón de tema */
+.btn-tema {
+  background: var(--c-surface-2); border: 1px solid var(--c-border);
+  color: var(--c-text); cursor: pointer;
+  border-radius: 999px; padding: .45rem .9rem;
+  font-size: var(--fs-small); font-weight: 600;
+  display: inline-flex; align-items: center; gap: .4rem;
+  transition: background var(--transicion), transform var(--transicion);
+}
+.btn-tema:hover { background: var(--c-border); transform: translateY(-1px); }
+
+/* Barra de progreso global de aprendizaje */
+.progreso-barra {
+  height: 6px; background: var(--c-surface-2); width: 100%;
+}
+.progreso-barra__relleno {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--c-primary), var(--c-accent));
+  transition: width .6s cubic-bezier(.4,0,.2,1);
+}
+
+/* Navegación */
+.nav { background: var(--c-surface); border-bottom: 1px solid var(--c-border); }
+.nav__lista {
+  list-style: none; display: flex; gap: .25rem;
+  overflow-x: auto; padding: .4rem 0;
+  -webkit-overflow-scrolling: touch;
+}
+.nav__lista a {
+  display: block; padding: .5rem .9rem;
+  color: var(--c-text-soft); text-decoration: none;
+  font-weight: 600; font-size: var(--fs-small);
+  border-radius: 999px; white-space: nowrap;
+  transition: background var(--transicion), color var(--transicion);
+}
+.nav__lista a:hover { background: var(--c-surface-2); color: var(--c-text); }
+.nav__lista a[aria-current="true"] {
+  background: var(--c-primary); color: #fff;
+}
+[data-theme="dark"] .nav__lista a[aria-current="true"],
+:root[data-theme="auto"] .nav__lista a[aria-current="true"] { color: #0f1522; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   4. ESTRUCTURA GENERAL DE SECCIONES
+   ══════════════════════════════════════════════════════════════════════ */
+main { padding-block: 2rem 4rem; }
+
+.seccion { margin-bottom: 3.5rem; }
+
+.seccion__cabecera { margin-bottom: 1.4rem; }
+.seccion__etiqueta {
+  display: inline-block; font-size: var(--fs-small); font-weight: 800;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--c-primary); background: color-mix(in srgb, var(--c-primary) 12%, transparent);
+  padding: .25rem .8rem; border-radius: 999px; margin-bottom: .6rem;
+}
+.seccion h2 { font-size: var(--fs-h2); font-weight: 800; line-height: 1.25; }
+.seccion__descripcion { color: var(--c-text-soft); margin-top: .4rem; max-width: 70ch; }
+
+.tarjeta {
+  background: var(--c-surface); border: 1px solid var(--c-border);
+  border-radius: var(--radius); padding: 1.4rem;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Botones genéricos */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  font: inherit; font-weight: 700; cursor: pointer;
+  border-radius: var(--radius-sm); padding: .65rem 1.3rem;
+  border: 2px solid transparent;
+  transition: background var(--transicion), transform var(--transicion), border-color var(--transicion);
+}
+.btn:active { transform: scale(.97); }
+.btn--primario { background: var(--c-primary); color: #fff; }
+[data-theme="dark"] .btn--primario { color: #0f1522; }
+.btn--primario:hover { background: var(--c-primary-strong); }
+[data-theme="dark"] .btn--primario:hover { background: var(--c-primary-strong); }
+.btn--secundario {
+  background: transparent; color: var(--c-primary);
+  border-color: var(--c-primary);
+}
+.btn--secundario:hover { background: color-mix(in srgb, var(--c-primary) 10%, transparent); }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   5. PORTADA (HERO)
+   ══════════════════════════════════════════════════════════════════════ */
+.hero {
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--c-primary) 14%, var(--c-surface)),
+    color-mix(in srgb, var(--c-accent) 10%, var(--c-surface)));
+  border: 1px solid var(--c-border); border-radius: var(--radius);
+  padding: clamp(1.5rem, 4vw, 3rem); margin-bottom: 3.5rem;
+}
+.hero h1 { font-size: var(--fs-h1); font-weight: 900; line-height: 1.15; }
+.hero__sub { color: var(--c-text-soft); margin-top: .8rem; max-width: 65ch; font-size: var(--fs-body); }
+
+.objetivos { list-style: none; margin-top: 1.4rem; display: grid; gap: .6rem; }
+.objetivos li {
+  display: flex; gap: .6rem; align-items: flex-start;
+  background: var(--c-surface); border: 1px solid var(--c-border);
+  padding: .7rem 1rem; border-radius: var(--radius-sm);
+  font-size: var(--fs-small);
+}
+.objetivos li::before { content: "🎯"; flex-shrink: 0; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   6. MAPA MENTAL INTERACTIVO (árbol CSS accesible)
+   ══════════════════════════════════════════════════════════════════════ */
+.mapa { padding: 1rem .5rem; overflow-x: auto; }
+.mapa ul { list-style: none; padding-left: 1.6rem; }
+.mapa > ul { padding-left: 0; }
+.mapa li { position: relative; padding: .35rem 0; }
+/* Líneas conectoras del árbol */
+.mapa ul ul li::before {
+  content: ""; position: absolute; left: -1.1rem; top: 0; bottom: 50%;
+  width: 2px; background: var(--c-border);
+}
+.mapa ul ul li::after {
+  content: ""; position: absolute; left: -1.1rem; top: 50%;
+  width: .8rem; height: 2px; background: var(--c-border);
+}
+.mapa ul ul li:first-child::before { top: 50%; }
+.mapa ul ul li:last-child::before { bottom: 50%; }
+.mapa ul ul li:only-child::before { display: none; }
+
+.nodo {
+  display: inline-flex; align-items: center; gap: .5rem;
+  background: var(--c-surface); border: 2px solid var(--c-border);
+  color: var(--c-text); font: inherit; font-weight: 700;
+  padding: .55rem 1rem; border-radius: 999px; cursor: pointer;
+  transition: border-color var(--transicion), background var(--transicion), transform var(--transicion);
+}
+.nodo:hover { transform: translateX(3px); border-color: var(--c-primary); }
+.nodo[aria-expanded="true"] { border-color: var(--c-primary); background: color-mix(in srgb, var(--c-primary) 10%, var(--c-surface)); }
+.nodo--raiz {
+  background: var(--c-primary); color: #fff; border-color: var(--c-primary);
+  font-size: var(--fs-h3); padding: .8rem 1.6rem;
+}
+[data-theme="dark"] .nodo--raiz { color: #0f1522; }
+.nodo__indicador { font-size: .75em; transition: transform var(--transicion); display: inline-block; }
+.nodo[aria-expanded="true"] .nodo__indicador { transform: rotate(90deg); }
+
+/* Panel de detalle de cada nodo */
+.nodo-detalle {
+  margin: .5rem 0 .3rem; padding: .9rem 1.1rem;
+  background: var(--c-info-soft); border-left: 4px solid var(--c-info);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--c-text); font-size: var(--fs-small); max-width: 60ch;
+}
+.nodo-detalle[hidden] { display: none; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   7. MICROLEARNING: TARJETAS DE CONTENIDO
+   ══════════════════════════════════════════════════════════════════════ */
+.grid-tarjetas {
+  display: grid; gap: 1.2rem;
+  grid-template-columns: 1fr; /* mobile first */
+}
+@media (min-width: 640px)  { .grid-tarjetas { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1000px) { .grid-tarjetas { grid-template-columns: repeat(3, 1fr); } }
+
+.micro {
+  display: flex; flex-direction: column; gap: .7rem;
+  border-top: 5px solid var(--c-primary);
+  transition: transform var(--transicion), box-shadow var(--transicion);
+}
+.micro:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+.micro--completada { border-top-color: var(--c-ok); }
+.micro__icono { font-size: 2rem; }
+.micro h3 { font-size: var(--fs-h3); }
+.micro p { color: var(--c-text-soft); font-size: var(--fs-small); flex: 1; }
+.micro__dato {
+  background: var(--c-accent-soft); border-radius: var(--radius-sm);
+  padding: .6rem .8rem; font-size: var(--fs-small);
+}
+.micro__dato strong { color: var(--c-accent); }
+[data-theme="dark"] .micro__dato strong { color: var(--c-accent); }
+.micro__pie { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-top: .3rem; }
+.estado-completada {
+  color: var(--c-ok); font-weight: 700; font-size: var(--fs-small);
+  display: inline-flex; align-items: center; gap: .3rem;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   8. ACTIVIDAD: CLASIFICAR (DRAG & DROP + TECLADO)
+   ══════════════════════════════════════════════════════════════════════ */
+.dd-instruccion {
+  background: var(--c-info-soft); border-left: 4px solid var(--c-info);
+  padding: .8rem 1rem; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: var(--fs-small); margin-bottom: 1.2rem;
+}
+
+.dd-bandeja {
+  display: flex; flex-wrap: wrap; gap: .6rem;
+  min-height: 3.6rem; padding: .9rem;
+  background: var(--c-surface-2); border: 2px dashed var(--c-border);
+  border-radius: var(--radius); margin-bottom: 1.4rem;
+}
+
+.dd-fichas { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+@media (min-width: 640px) { .dd-fichas { grid-template-columns: 1fr 1fr; } }
+
+.dd-zona {
+  border: 2px dashed var(--c-border); border-radius: var(--radius);
+  padding: 1rem; min-height: 11rem; background: var(--c-surface);
+  transition: border-color var(--transicion), background var(--transicion);
+}
+.dd-zona--activa { border-color: var(--c-primary); background: color-mix(in srgb, var(--c-primary) 7%, var(--c-surface)); }
+.dd-zona h3 { font-size: var(--fs-h3); margin-bottom: .7rem; }
+.dd-zona__lista { display: flex; flex-direction: column; gap: .5rem; }
+
+.dd-item {
+  display: inline-flex; align-items: center; gap: .5rem;
+  background: var(--c-surface); border: 2px solid var(--c-border);
+  color: var(--c-text); font: inherit; font-weight: 600; font-size: var(--fs-small);
+  padding: .5rem .9rem; border-radius: 999px; cursor: grab;
+  transition: border-color var(--transicion), transform var(--transicion), background var(--transicion);
+  user-select: none;
+}
+.dd-item:hover { border-color: var(--c-primary); transform: translateY(-2px); }
+.dd-item--seleccionado {
+  border-color: var(--c-accent); background: var(--c-accent-soft);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-accent) 30%, transparent);
+}
+.dd-item--arrastrando { opacity: .4; }
+.dd-item--correcto { border-color: var(--c-ok); background: var(--c-ok-soft); cursor: pointer; }
+.dd-item--incorrecto { border-color: var(--c-err); background: var(--c-err-soft); cursor: pointer; }
+
+.dd-zona__accion {
+  width: 100%; margin-top: .6rem; background: var(--c-surface-2);
+  border: 2px solid var(--c-border); color: var(--c-text-soft);
+  font: inherit; font-size: var(--fs-small); font-weight: 700;
+  padding: .55rem; border-radius: var(--radius-sm); cursor: pointer;
+}
+.dd-zona__accion:hover { border-color: var(--c-primary); color: var(--c-text); }
+
+.dd-feedback {
+  margin-top: 1.2rem; padding: .9rem 1.1rem; border-radius: var(--radius-sm);
+  font-weight: 600; font-size: var(--fs-small);
+}
+.dd-feedback--ok  { background: var(--c-ok-soft);  color: var(--c-ok); }
+.dd-feedback--err { background: var(--c-err-soft); color: var(--c-err); }
+.dd-feedback[hidden] { display: none; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   9. FLASHCARDS (tarjetas giratorias · active recall)
+   ══════════════════════════════════════════════════════════════════════ */
+.fc-escenario { perspective: 1200px; max-width: 34rem; margin-inline: auto; }
+.fc-tarjeta {
+  position: relative; width: 100%; min-height: 15rem;
+  transform-style: preserve-3d; cursor: pointer;
+  transition: transform .55s cubic-bezier(.4,0,.2,1);
+  background: none; border: 0; font: inherit; display: block;
+}
+.fc-tarjeta--girada { transform: rotateY(180deg); }
+.fc-cara {
+  position: absolute; inset: 0; backface-visibility: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: .8rem; padding: 1.6rem; text-align: center;
+  border-radius: var(--radius); border: 2px solid var(--c-border);
+  background: var(--c-surface); box-shadow: var(--shadow-md);
+}
+.fc-cara--frontal .fc-titulo { font-size: var(--fs-h2); font-weight: 800; }
+.fc-cara--frontal .fc-pista { color: var(--c-text-soft); font-size: var(--fs-small); }
+.fc-cara--trasera {
+  transform: rotateY(180deg);
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--c-primary) 12%, var(--c-surface)),
+    var(--c-surface));
+}
+.fc-cara--trasera p { font-size: var(--fs-body); max-width: 45ch; }
+.fc-controles {
+  display: flex; justify-content: center; align-items: center;
+  gap: .8rem; margin-top: 1.2rem; flex-wrap: wrap;
+}
+.fc-contador { font-weight: 700; color: var(--c-text-soft); font-size: var(--fs-small); }
+.fc-visitas { color: var(--c-ok); font-weight: 700; font-size: var(--fs-small); min-height: 1.4em; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   10. QUIZ CON FEEDBACK FORMATIVO
+   ══════════════════════════════════════════════════════════════════════ */
+.quiz-progreso { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.4rem; }
+.quiz-progreso__barra {
+  flex: 1; height: 10px; background: var(--c-surface-2);
+  border-radius: 999px; overflow: hidden;
+}
+.quiz-progreso__relleno {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--c-info), var(--c-primary));
+  transition: width .4s ease;
+}
+.quiz-progreso__texto { font-size: var(--fs-small); font-weight: 700; color: var(--c-text-soft); white-space: nowrap; }
+
+.quiz-pregunta h3 { font-size: var(--fs-h3); margin-bottom: 1.1rem; }
+.quiz-opciones { display: grid; gap: .7rem; }
+.quiz-opcion {
+  display: flex; align-items: center; gap: .8rem; width: 100%;
+  background: var(--c-surface); border: 2px solid var(--c-border);
+  color: var(--c-text); font: inherit; font-size: var(--fs-body);
+  padding: .85rem 1.1rem; border-radius: var(--radius-sm); cursor: pointer;
+  text-align: left;
+  transition: border-color var(--transicion), background var(--transicion), transform var(--transicion);
+}
+.quiz-opcion:hover:not([disabled]) { border-color: var(--c-primary); transform: translateX(4px); }
+.quiz-opcion__letra {
+  flex-shrink: 0; width: 2rem; height: 2rem; border-radius: 50%;
+  display: grid; place-items: center; font-weight: 800; font-size: var(--fs-small);
+  background: var(--c-surface-2); border: 1px solid var(--c-border);
+}
+.quiz-opcion--correcta { border-color: var(--c-ok); background: var(--c-ok-soft); }
+.quiz-opcion--incorrecta { border-color: var(--c-err); background: var(--c-err-soft); }
+.quiz-opcion[disabled] { cursor: default; }
+
+.quiz-feedback {
+  margin-top: 1.2rem; padding: 1rem 1.2rem; border-radius: var(--radius-sm);
+  font-size: var(--fs-small);
+}
+.quiz-feedback[hidden] { display: none; }
+.quiz-feedback--ok { background: var(--c-ok-soft); border-left: 5px solid var(--c-ok); }
+.quiz-feedback--err { background: var(--c-err-soft); border-left: 5px solid var(--c-err); }
+.quiz-feedback strong { display: block; margin-bottom: .25rem; font-size: var(--fs-body); }
+
+.quiz-pie { display: flex; justify-content: flex-end; margin-top: 1.4rem; }
+
+.quiz-resultado { text-align: center; padding: 1.5rem 1rem; }
+.quiz-resultado__puntaje { font-size: clamp(2.4rem, 8vw, 3.6rem); font-weight: 900; color: var(--c-primary); }
+.quiz-resultado__mensaje { color: var(--c-text-soft); margin: .6rem auto 1.4rem; max-width: 50ch; }
+.quiz-mejor { font-size: var(--fs-small); font-weight: 700; color: var(--c-accent); margin-bottom: 1rem; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   11. PANEL DE PROGRESO Y PIE
+   ══════════════════════════════════════════════════════════════════════ */
+.progreso-grid { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+@media (min-width: 640px) { .progreso-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 900px) { .progreso-grid { grid-template-columns: repeat(4, 1fr); } }
+
+.stat { text-align: center; padding: 1.2rem .8rem; }
+.stat__valor { font-size: 1.8rem; font-weight: 900; color: var(--c-primary); }
+.stat__etiqueta { font-size: var(--fs-small); color: var(--c-text-soft); font-weight: 600; }
+
+.pie {
+  border-top: 1px solid var(--c-border);
+  padding: 1.6rem 0; text-align: center;
+  color: var(--c-text-soft); font-size: var(--fs-small);
+}
+</style>
+</head>
+
+<body>
+<!-- Enlace de salto para teclado/lector de pantalla -->
+<a class="skip-link" href="#contenido">Saltar al contenido principal</a>
+
+<!-- Anunciador global para lectores de pantalla (aria-live) -->
+<div id="anunciador" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<!-- ═══════════════ CABECERA ═══════════════ -->
+<header class="cabecera">
+  <div class="contenedor cabecera__fila">
+    <p class="cabecera__titulo"><span aria-hidden="true">⚡</span> El Viaje de la Energía</p>
+    <span class="badge-progreso" id="badgeProgreso" aria-hidden="true">0%</span>
+    <span class="sr-only" id="progresoSR">Progreso del módulo: 0 por ciento</span>
+    <button class="btn-tema" id="btnTema" type="button" aria-label="Cambiar tema de color">
+      <span aria-hidden="true" id="iconoTema">🌙</span><span id="textoTema">Oscuro</span>
+    </button>
+  </div>
+  <!-- Barra de progreso global de aprendizaje -->
+  <div class="progreso-barra" role="progressbar" aria-labelledby="progresoSR"
+       aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="barraProgreso">
+    <div class="progreso-barra__relleno" id="rellenoProgreso"></div>
+  </div>
+  <!-- Navegación por secciones -->
+  <nav class="nav" aria-label="Secciones del módulo">
+    <div class="contenedor">
+      <ul class="nav__lista" id="navLista">
+        <li><a href="#inicio">Inicio</a></li>
+        <li><a href="#mapa">Mapa mental</a></li>
+        <li><a href="#aprende">Aprende</a></li>
+        <li><a href="#clasifica">Clasifica</a></li>
+        <li><a href="#flashcards">Flashcards</a></li>
+        <li><a href="#quiz">Quiz</a></li>
+        <li><a href="#progreso">Mi progreso</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<main id="contenido" class="contenedor">
+
+  <!-- ═══════════════ PORTADA / OBJETIVOS ═══════════════ -->
+  <section class="hero" id="inicio" aria-labelledby="tituloHero">
+    <h1 id="tituloHero">🗺️ El Viaje de la Energía</h1>
+    <p class="hero__sub">
+      Un recorrido interactivo y breve por el mundo de la energía: descubre de dónde viene,
+      cómo se transforma y por qué nunca desaparece. Explora, practica y pon a prueba lo aprendido.
+    </p>
+    <ul class="objetivos" aria-label="Objetivos de aprendizaje">
+      <li>Identificar fuentes de energía renovables y no renovables.</li>
+      <li>Diferenciar los tipos de energía: cinética, lumínica y eléctrica.</li>
+      <li>Comprender el principio de conservación de la energía.</li>
+      <li>Aplicar lo aprendido en actividades prácticas y un quiz final.</li>
+    </ul>
+  </section>
+
+  <!-- ═══════════════ MAPA MENTAL INTERACTIVO ═══════════════ -->
+  <section class="seccion" id="mapa" aria-labelledby="tituloMapa">
+    <header class="seccion__cabecera">
+      <span class="seccion__etiqueta">Paso 1 · Explora</span>
+      <h2 id="tituloMapa">Red conceptual: Energía</h2>
+      <p class="seccion__descripcion">
+        Pulsa cada nodo (o navega con <kbd>Tab</kbd> y <kbd>Enter</kbd>) para desplegar la información.
+        Este mapa organiza visualmente lo que aprenderás en el módulo.
+      </p>
+    </header>
+
+    <div class="tarjeta mapa">
+      <ul role="tree" aria-label="Mapa mental de la energía">
+        <li role="none">
+          <button class="nodo nodo--raiz" type="button" aria-expanded="true"
+                  aria-controls="det-raiz" role="treeitem">
+            <span aria-hidden="true">⚡</span> ENERGÍA
+            <span class="nodo__indicador" aria-hidden="true">▶</span>
+          </button>
+          <div class="nodo-detalle" id="det-raiz" role="group">
+            La energía es la capacidad de los cuerpos para producir cambios: moverse, emitir luz,
+            calentarse o transformarse. Se mide en <strong>julios (J)</strong>.
+          </div>
+
+          <ul role="group">
+            <li role="none">
+              <button class="nodo" type="button" aria-expanded="false" aria-controls="det-renov" role="treeitem">
+                <span class="nodo__indicador" aria-hidden="true">▶</span>
+                <span aria-hidden="true">🌱</span> Fuentes Renovables
+              </button>
+              <div class="nodo-detalle" id="det-renov" role="group" hidden>
+                Se regeneran de forma natural y no se agotan con su uso. Ejemplos: el viento (eólica)
+                y el sol (solar).
+                <ul role="group" style="margin-top:.6rem">
+                  <li role="none">
+                    <button class="nodo" type="button" aria-expanded="false" aria-controls="det-eolica" role="treeitem">
+                      <span class="nodo__indicador" aria-hidden="true">▶</span>
+                      <span aria-hidden="true">💨</span> Energía Eólica
+                    </button>
+                    <div class="nodo-detalle" id="det-eolica" role="group" hidden>
+                      Se obtiene del movimiento del aire. Los aerogeneradores convierten la energía
+                      cinética del viento en energía eléctrica.
+                    </div>
+                  </li>
+                  <li role="none">
+                    <button class="nodo" type="button" aria-expanded="false" aria-controls="det-solar" role="treeitem">
+                      <span class="nodo__indicador" aria-hidden="true">▶</span>
+                      <span aria-hidden="true">☀️</span> Energía Solar
+                    </button>
+                    <div class="nodo-detalle" id="det-solar" role="group" hidden>
+                      Proviene del Sol. Los paneles fotovoltaicos la transforman directamente
+                      en electricidad; los colectores térmicos la usan para calentar.
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </li>
+
+            <li role="none">
+              <button class="nodo" type="button" aria-expanded="false" aria-controls="det-tipos" role="treeitem">
+                <span class="nodo__indicador" aria-hidden="true">▶</span>
+                <span aria-hidden="true">💡</span> Tipos de Energía
+              </button>
+              <div class="nodo-detalle" id="det-tipos" role="group" hidden>
+                La energía se manifiesta de muchas formas y puede transformarse de una a otra.
+                <ul role="group" style="margin-top:.6rem">
+                  <li role="none">
+                    <button class="nodo" type="button" aria-expanded="false" aria-controls="det-cinetica" role="treeitem">
+                      <span class="nodo__indicador" aria-hidden="true">▶</span>
+                      <span aria-hidden="true">🏃</span> Cinética
+                    </button>
+                    <div class="nodo-detalle" id="det-cinetica" role="group" hidden>
+                      Es la energía del movimiento. Depende de la masa y de la velocidad del cuerpo.
+                    </div>
+                  </li>
+                  <li role="none">
+                    <button class="nodo" type="button" aria-expanded="false" aria-controls="det-luminica" role="treeitem">
+                      <span class="nodo__indicador" aria-hidden="true">▶</span>
+                      <span aria-hidden="true">🔦</span> Lumínica
+                    </button>
+                    <div class="nodo-detalle" id="det-luminica" role="group" hidden>
+                      Energía que viaja en ondas y percibimos como luz. El Sol es su fuente natural
+                      más importante.
+                    </div>
+                  </li>
+                  <li role="none">
+                    <button class="nodo" type="button" aria-expanded="false" aria-controls="det-electrica" role="treeitem">
+                      <span class="nodo__indicador" aria-hidden="true">▶</span>
+                      <span aria-hidden="true">🔌</span> Eléctrica
+                    </button>
+                    <div class="nodo-detalle" id="det-electrica" role="group" hidden>
+                      Flujo de cargas eléctricas a través de un conductor. Es la más versátil:
+                      se transforma fácilmente en luz, calor o movimiento.
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </li>
+
+            <li role="none">
+              <button class="nodo" type="button" aria-expanded="false" aria-controls="det-conserv" role="treeitem">
+                <span class="nodo__indicador" aria-hidden="true">▶</span>
+                <span aria-hidden="true">⚖️</span> Conservación
+              </button>
+              <div class="nodo-detalle" id="det-conserv" role="group" hidden>
+                Principio fundamental: <em>«La energía no se crea ni se destruye, solo se
+                transforma»</em>. La cantidad total de energía en un sistema aislado permanece constante.
+              </div>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ═══════════════ MICROLEARNING ═══════════════ -->
+  <section class="seccion" id="aprende" aria-labelledby="tituloAprende">
+    <header class="seccion__cabecera">
+      <span class="seccion__etiqueta">Paso 2 · Aprende</span>
+      <h2 id="tituloAprende">Cápsulas de microlearning</h2>
+      <p class="seccion__descripcion">
+        Cada tarjeta contiene una sola idea clave. Léela y pulsa <strong>«Entendido»</strong> para
+        registrar tu avance (se guarda automáticamente).
+      </p>
+    </header>
+    <div class="grid-tarjetas" id="gridMicro"><!-- Generado por JS --></div>
+  </section>
+
+  <!-- ═══════════════ DRAG & DROP ═══════════════ -->
+  <section class="seccion" id="clasifica" aria-labelledby="tituloClasifica">
+    <header class="seccion__cabecera">
+      <span class="seccion__etiqueta">Paso 3 · Practica</span>
+      <h2 id="tituloClasifica">Clasifica las fuentes de energía</h2>
+      <p class="seccion__descripcion">
+        Arrastra cada fuente a su categoría. ¿Prefieres el teclado? Pulsa <kbd>Enter</kbd> sobre una
+        fuente para seleccionarla y <kbd>Enter</kbd> sobre una categoría para colocarla.
+      </p>
+    </header>
+
+    <div class="tarjeta">
+      <p class="dd-instruccion" id="ddInstruccion">
+        💡 <strong>Pista:</strong> las fuentes renovables se regeneran de forma natural;
+        las no renovables existen en cantidades limitadas y tardan millones de años en formarse.
+        Si fallas, podrás devolver la ficha y volver a intentarlo: el error también enseña.
+      </p>
+
+      <div class="dd-bandeja" id="ddBandeja" aria-label="Fuentes de energía por clasificar"></div>
+
+      <div class="dd-fichas">
+        <div class="dd-zona" id="zona-renovable" data-categoria="renovable">
+          <h3>🌱 Renovables</h3>
+          <div class="dd-zona__lista" id="lista-renovable"></div>
+          <button class="dd-zona__accion" type="button" data-accion-zona="renovable">
+            Colocar aquí la fuente seleccionada
+          </button>
+        </div>
+        <div class="dd-zona" id="zona-norenovable" data-categoria="norenovable">
+          <h3>🛢️ No renovables</h3>
+          <div class="dd-zona__lista" id="lista-norenovable"></div>
+          <button class="dd-zona__accion" type="button" data-accion-zona="norenovable">
+            Colocar aquí la fuente seleccionada
+          </button>
+        </div>
+      </div>
+
+      <p class="dd-feedback" id="ddFeedback" hidden role="status"></p>
+
+      <div class="quiz-pie">
+        <button class="btn btn--secundario" type="button" id="btnReiniciarDD">🔄 Reiniciar actividad</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ FLASHCARDS ═══════════════ -->
+  <section class="seccion" id="flashcards" aria-labelledby="tituloFlash">
+    <header class="seccion__cabecera">
+      <span class="seccion__etiqueta">Paso 4 · Recuerda</span>
+      <h2 id="tituloFlash">Flashcards de recuperación activa</h2>
+      <p class="seccion__descripcion">
+        Intenta recordar la definición <em>antes</em> de girar la tarjeta: el esfuerzo de recuperar
+        la información consolida la memoria. Gira con clic, <kbd>Enter</kbd> o <kbd>Espacio</kbd>.
+      </p>
+    </header>
+
+    <div class="tarjeta">
+      <div class="fc-escenario">
+        <button class="fc-tarjeta" type="button" id="fcTarjeta"
+                aria-label="Flashcard. Pulsa para girar y ver la respuesta.">
+          <div class="fc-cara fc-cara--frontal" id="fcFrontal" aria-hidden="false">
+            <span class="fc-icono" id="fcIcono" aria-hidden="true" style="font-size:2.4rem">💡</span>
+            <p class="fc-titulo" id="fcTitulo">Término</p>
+            <p class="fc-pista">Pulsa para ver la respuesta</p>
+          </div>
+          <div class="fc-cara fc-cara--trasera" id="fcTrasera" aria-hidden="true">
+            <p id="fcDefinicion">Definición</p>
+          </div>
+        </button>
+      </div>
+
+      <div class="fc-controles">
+        <button class="btn btn--secundario" type="button" id="fcAnterior" aria-label="Flashcard anterior">← Anterior</button>
+        <span class="fc-contador" id="fcContador" aria-live="polite">1 / 6</span>
+        <button class="btn btn--secundario" type="button" id="fcSiguiente" aria-label="Flashcard siguiente">Siguiente →</button>
+      </div>
+      <p class="fc-visitas" id="fcVisitas" style="text-align:center; margin-top:.8rem"></p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ QUIZ ═══════════════ -->
+  <section class="seccion" id="quiz" aria-labelledby="tituloQuiz">
+    <header class="seccion__cabecera">
+      <span class="seccion__etiqueta">Paso 5 · Evalúa</span>
+      <h2 id="tituloQuiz">Quiz: ¿qué has aprendido?</h2>
+      <p class="seccion__description seccion__descripcion">
+        8 preguntas con explicación inmediata tras cada respuesta. No hay prisa: el objetivo es
+        comprender, no solo acertar.
+      </p>
+    </header>
+
+    <div class="tarjeta" id="quizContenedor" aria-live="polite">
+      <!-- Contenido dinámico: pregunta, opciones, feedback o resultado -->
+      <div class="quiz-progreso" id="quizProgreso">
+        <div class="quiz-progreso__barra">
+          <div class="quiz-progreso__relleno" id="quizRelleno"></div>
+        </div>
+        <span class="quiz-progreso__texto" id="quizContador">Pregunta 1 de 8</span>
+      </div>
+      <div id="quizCuerpo"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ PANEL DE PROGRESO ═══════════════ -->
+  <section class="seccion" id="progreso" aria-labelledby="tituloProgreso">
+    <header class="seccion__cabecera">
+      <span class="seccion__etiqueta">Seguimiento</span>
+      <h2 id="tituloProgreso">Mi progreso</h2>
+      <p class="seccion__descripcion">Tu avance se guarda automáticamente en este dispositivo.</p>
+    </header>
+
+    <div class="progreso-grid">
+      <article class="tarjeta stat"><p class="stat__valor" id="statGeneral">0%</p><p class="stat__etiqueta">Módulo completado</p></article>
+      <article class="tarjeta stat"><p class="stat__valor" id="statMicro">0/6</p><p class="stat__etiqueta">Cápsulas leídas</p></article>
+      <article class="tarjeta stat"><p class="stat__valor" id="statFlash">0/6</p><p class="stat__etiqueta">Flashcards vistas</p></article>
+      <article class="tarjeta stat"><p class="stat__valor" id="statQuiz">–</p><p class="stat__etiqueta">Mejor nota del quiz</p></article>
+    </div>
+
+    <div style="margin-top:1.4rem; display:flex; gap:.8rem; flex-wrap:wrap;">
+      <button class="btn btn--secundario" type="button" id="btnResetProgreso">🗑️ Reiniciar todo mi progreso</button>
+    </div>
+  </section>
+</main>
+
+<footer class="pie">
+  <div class="contenedor">
+    <p>⚡ <strong>El Viaje de la Energía</strong> · Recurso educativo accesible (WCAG 2.2 AA) ·
+    HTML5 + CSS3 + JavaScript vanilla, sin dependencias externas.</p>
+  </div>
+</footer>
+
+<script>
+"use strict";
+/* ══════════════════════════════════════════════════════════════════════════
+   JAVASCRIPT MODULAR — cada módulo encapsula una responsabilidad (IIFE).
+   Comunicación entre módulos mediante callbacks e interfaces explícitas.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────────────────────────────
+   MÓDULO 1 · Store: persistencia segura en localStorage
+   ────────────────────────────────────────────────────────────────────────── */
+const Store = (() => {
+  const CLAVE = "energia-viaje-v2";
+
+  // Estado por defecto la primera vez que se visita el recurso
+  const defecto = {
+    tema: "auto",
+    micro: {},        // { id: true } cápsulas marcadas como entendidas
+    flashVistas: {},  // { índice: true } flashcards ya giradas
+    ddCompletado: false,
+    quizMejor: null,  // mejor puntuación (0-8)
+    ultimoVisto: null
+  };
+
+  function cargar() {
+    try {
+      const raw = localStorage.getItem(CLAVE);
+      return raw ? { ...defecto, ...JSON.parse(raw) } : { ...defecto };
+    } catch (e) {
+      console.warn("localStorage no disponible; se usará memoria temporal.", e);
+      return { ...defecto };
+    }
+  }
+
+  let estado = cargar();
+
+  function guardar() {
+    try { localStorage.setItem(CLAVE, JSON.stringify(estado)); }
+    catch (e) { /* almacenamiento lleno o bloqueado: la app sigue funcionando */ }
+  }
+
+  return {
+    get: () => estado,
+    set(parciales) { Object.assign(estado, parciales); guardar(); },
+    actualizar(clave, valor) {
+      if (typeof estado[clave] === "object" && estado[clave] !== null) {
+        estado[clave] = { ...estado[clave], ...valor };
+      } else {
+        estado[clave] = valor;
+      }
+      guardar();
+    },
+    resetear() { estado = { ...defecto, micro: {}, flashVistas: {} }; guardar(); }
+  };
+})();
+
+/* ──────────────────────────────────────────────────────────────────────────
+   MÓDULO 2 · Anunciador: mensajes por lector de pantalla (aria-live)
+   ────────────────────────────────────────────────────────────────────────── */
+const Anunciador = (() => {
+  const el = document.getElementById("anunciador");
+  return {
+    decir(mensaje) {
+      el.textContent = "";
+      // Pequeño retardo para garantizar que el live region se relanza
+      setTimeout(() => { el.textContent = mensaje; }, 60);
+    }
+  };
+})();
+
+/* ──────────────────────────────────────────────────────────────────────────
+   MÓDULO 3 · Tema: claro / oscuro / automático con persistencia
+   ────────────────────────────────────────────────────────────────────────── */
+const Tema = (() => {
+  const btn = document.getElementById("btnTema");
+  const icono = document.getElementById("iconoTema");
+  const texto = document.getElementById("textoTema");
+  const orden = ["auto", "light", "dark"];
+  const etiquetas = { auto: "Auto", light: "Claro", dark: "Oscuro" };
+  const iconos = { auto: "🌗", light: "☀️", dark: "🌙" };
+
+  function pintar() {
+    const t = Store.get().tema;
+    document.documentElement.setAttribute("data-theme", t);
+    icono.textContent = iconos[t];
+    texto.textContent = etiquetas[t];
+    btn.setAttribute("aria-label", `Cambiar tema de color. Actual: ${etiquetas[t]}`);
+  }
+
+  function alternar() {
+    const actual = Store.get().tema;
+    const siguiente = orden[(orden.indexOf(actual) + 1) % orden.length];
+    Store.set({ tema: siguiente });
+    pintar();
+    Anunciador.decir(`Tema cambiado a ${etiquetas[siguiente]}`);
+  }
+
+  btn.addEventListener("click", alternar);
+  pintar();
+  return { pintar };
+})();
+
+/* ──────────────────────────────────────────────────────────────────────────
+   MÓDULO 4 · Progreso: calcula y pinta el avance global del módulo
+   Unidades: 6 cápsulas + 6 flashcards + drag&drop + quiz = 14
+   ────────────────────────────────────────────────────────────────────────── */
+const Progreso = (() => {
+  const TOTAL = 14;
+  const relleno = document.getElementById("rellenoProgreso");
+  const barra = document.getElementById("barraProgreso");
+  const badge = document.getElementById("badgeProgreso");
+  const sr = document.getElementById("progresoSR");
+
+  function calcular() {
+    const e = Store.get();
+    const micro = Object.keys(e.micro).length;
+    const flash = Object.keys(e.flashVistas).length;
+    const dd = e.ddCompletado ? 1 : 0;
+    const quiz = e.quizMejor !== null ? 1 : 0;
+    return Math.min(micro + flash + dd + quiz, TOTAL);
+  }
+
+  function pintar() {
+    const hechos = calcular();
+    const pct = Math.round((hechos / TOTAL) * 100);
+    relleno.style.width = pct + "%";
+    barra.setAttribute("aria-valuenow", pct);
+    badge.textContent = pct + "%";
+    sr.textContent = `Progreso del módulo: ${pct} por ciento`;
+
+    // Panel de estadísticas
+    const e = Store.get();
+    document.getElementById("statGeneral").textContent = pct + "%";
+    document.getElementById("statMicro").textContent = `${Object.keys(e.micro).length}/6`;
+    document.getElementById("statFlash").textContent = `${Object.keys(e.flashVistas).length}/6`;
+    document.getElementById("statQuiz").textContent =
+      e.quizMejor !== null ? `${e.quizMejor}/8` : "–";
+  }
+
+  return { registrar() { pintar(); }, pintar };
+})();
+
+/* ──────────────────────────────────────────────────────────────────────────
+   MÓDULO 5 · Mapa mental: despliegue/repliegue accesible de nodos
+   ────────────────────────────────────────────────────────────────────────── */
+const MapaMental = (() => {
+  const nodos = document.querySelectorAll(".mapa .nodo[aria-controls]");
+
+  nodos.forEach(boton => {
+    const panel = document.getElementById(boton.getAttribute("aria-controls"));
+    boton.addEventListener("click", () => {
+      const expandido = boton.getAttribute("aria-expanded") === "true";
+      boton.setAttribute("aria-expanded", String(!expandido));
+      panel.hidden = expandido;
+      Anunciador.decir(expandido ? "Nodo replegado" : "Nodo desplegado: " + panel.textContent.slice(0, 90));
+    });
+  });
+})();
+
+/* ──────────────────────────────────────────────────────────────────────────
+   MÓDULO 6 · Microlearning: tarjetas de contenido con botón "Entendido"
+   ────────────────────────────────────────────────────────────────────────── */
+const Microlearning = (() => {
+  const datos = [
+    { id: "eolica", icono: "💨", titulo: "Energía Eólica",
+      texto: "Se obtiene de la fuerza del viento. Los aerogeneradores transforman el movimiento de las palas (energía cinética) en electricidad.",
+      dato: "Un solo aerogenerador grande puede abastecer a más de 1.000 hogares." },
+    { id: "solar", icono: "☀️", titulo: "Energía Solar",
+      texto: "Proviene de la radiación del Sol. Los paneles fotovoltaicos la convierten directamente en energía eléctrica sin piezas móviles.",
+      dato: "En una hora el Sol envía a la Tierra más energía de la que la humanidad consume en un año." },
+    { id: "cinetica", icono: "🏃", titulo: "Energía Cinética",
+      texto: "Es la energía que posee todo cuerpo en movimiento. Cuanta más masa y más velocidad, mayor energía cinética.",
+      dato: "Una bicicleta cuesta abajo gana velocidad: su energía potencial se transforma en cinética." },
+    { id: "luminica", icono: "🔦", titulo: "Energía Lumínica",
+      texto: "Forma de energía que viaja en ondas electromagnéticas y percibimos como luz. El Sol es la principal fuente natural.",
+      dato: "La luz viaja a 300.000 km/s: la energía lumínica más rápida que conocemos." },
+    { id: "electrica", icono: "🔌", titulo: "Energía Eléctrica",
+      texto: "Flujo de cargas eléctricas (electrones) a través de un conductor. Es la más versátil: se convierte en luz, calor o movimiento.",
+      dato: "Una bombilla LED transforma la electricidad en luz gastando hasta un 80% menos que una incandescente." },
+    { id: "conservacion", icono: "⚖️", titulo: "Conservación de la Energía",
+      texto: "Principio clave de la física: la energía no se crea ni se destruye, solo se transforma de un tipo a otro.",
+      dato: "En una central eólica: cinética del viento → cinética de las palas → eléctrica. Nada se pierde, todo se transforma." }
+  ];
+
+  const grid = document.getElementById("gridMicro");
+
+  function render() {
+    const guardado = Store.get().micro;
+    grid.innerHTML = "";
+    datos.forEach(d => {
+      const completada = Boolean(guardado[d.id]);
+      const art = document.createElement("article");
+      art.className = "tarjeta micro" + (completada ? " micro--completada" : "");
+      art.setAttribute("aria-labelledby", `micro-t-${d.id}`);
+      art.innerHTML = `
+        <span class="micro__icono" aria-hidden="true">${d.icono}</span>
+        <h3 id="micro-t-${d.id}">${d.titulo}</h3>
+        <p>${d.texto}</p>
+        <p class="micro__dato"><strong>¿Sabías que…?</strong> ${d.dato}</p>
+        <div class="micro__pie">
+          ${completada
+            ? `<span class="estado-completada"><span aria-hidden="true">✅</span> Completada</span>
+               <button class="btn btn--secundario" type="button" data-micro-deshacer="${d.id}"
+                       style="padding:.4rem .9rem; font-size:.8rem">Deshacer</button>`
+            : `<button class="btn btn--primario" type="button" data-micro-ok="${d.id}"
+                       style="padding:.45rem 1rem; font-size:.85rem">✔ Entendido</button>`}
+        </div>`;
+      grid.appendChild(art);
+    });
+  }
+
+  // Delegación de eventos: funciona aunque se re-renderice el grid
+  grid.addEventListener("click", (ev) => {
+    const ok = ev.target.closest("[data-micro-ok]");
+    const deshacer = ev.target.closest("[data-micro-deshacer]");
+    if (ok) {
+      const id = ok.dataset.microOk;
+      Store.actualizar("micro", { [id]: true });
+      Anunciador.decir("Cápsula marcada como entendida");
+      render(); Progreso.registrar();
+    } else if (deshacer) {
+      const id = deshacer.dataset.microDeshacer;
+      const micro = { ...Store.get().micro };
+      delete micro[id];
+      Store.actualizar("micro", micro);
+      render(); Progreso.registrar();
+    }
+  });
+
+  render();
+  return { render };
+})();
+
+/* ──────────────────────────────────────────────────────────────────────────
+   MÓDULO 7 · Drag & Drop accesible (ratón + teclado)
+   ────────────────────────────────────────────────────────────────────────── */
+const Clasificar = (() => {
+  const fuentes = [
+    { id: "f-solar",    nombre: "☀️ Solar",           categoria: "renovable" },
+    { id: "f-eolica",   nombre: "💨 Eólica",          categoria: "renovable" },
+    { id: "f-hidraulica", nombre: "💧 Hidráulica",    categoria: "renovable" },
+    { id: "f-biomasa",  nombre: "🌾 Biomasa",         categoria: "renovable" },
+    { id: "f-carbon",   nombre: "⛏️ Carbón",          categoria: "norenovable" },
+    { id: "f-petroleo", nombre: "🛢️ Petróleo",       categoria: "norenovable" },
+    { id: "f-gas",      nombre: "🔥 Gas natural",     categoria: "norenovable" },
+    { id: "f-uranio",   nombre: "☢️ Uranio (nuclear)", categoria: "norenovable" }
+  ];
+
+  const bandeja = document.getElementById("ddBandeja");
+  const zonaRen = document.getElementById("zona-renovable");
+  const zonaNo = document.getElementById("zona-norenovable");
+  const listaRen = document.getElementById("lista-renovable");
+  const listaNo = document.getElementById("lista-norenovable");
+  const feedback = document.getElementById("ddFeedback");
+  const zonas = { renovable: zonaRen, norenovable: zonaNo };
+  const listas = { renovable: listaRen, norenovable: listaNo };
+
+  let seleccionado = null; // id de la ficha seleccionada por teclado/clic
+  let colocadas = 0;
+
+  /* — Construcción de la interfaz — */
+  function render() {
+    bandeja.innerHTML = "";
+    listaRen.innerHTML = "";
+    listaNo.innerHTML = "";
+    colocado = {};
+    colocadas = 0;
+    seleccionado = null;
+    feedback.hidden = true;
+
+    // Orden aleatorio para evitar aprendizaje memorístico de posiciones
+    const barajadas = [...fuentes].sort(() => Math.random() - 0.5);
+    barajadas.forEach(f => {
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "dd-item";
+      item.id = f.id;
+      item.dataset.id = f.id;
+      item.draggable = true;
+      item.textContent = f.nombre;
+      item.setAttribute("aria-describedby", "ddInstruccion");
+      bandeja.appendChild(item);
+    });
+  }
+  let colocado = {}; // { id: categoríaColocada }
+
+  function buscarFuente(id) { return fuentes.find(f => f.id === id); }
+
+  function mostrarFeedback(texto, correcto) {
+    feedback.hidden = false;
+    feedback.textContent = texto;
+    feedback.className = "dd-feedback " + (correcto ? "dd-feedback--ok" : "dd-feedback--err");
+    Anunciador.decir(texto);
+  }
+
+  /* — Colocar una ficha en una categoría — */
+  function colocar(id, categoria) {
+    const f = buscarFuente(id);
+    if (!f || colocado[id]) return;
+    const item = document.getElementById(id);
+    const correcto = f.categoria === categoria;
+
+    colocado[id] = categoria;
+    colocadas++;
+    item.classList.remove("dd-item--seleccionado");
+    item.classList.add(correcto ? "dd-item--correcto" : "dd-item--incorrecto");
+    item.setAttribute("aria-label",
+      `${f.nombre} colocada en ${categoria === "renovable" ? "Renovables" : "No renovables"}. ` +
+      (correcto ? "Correcto." : "Incorrecto. Pulsa Enter para devolverla a la bandeja y reintentar."));
+    listas[categoria].appendChild(item);
+    seleccionado = null;
+
+    if (correcto) {
+      mostrarFeedback(`✅ ¡Correcto! ${f.nombre.replace(/^\S+\s/, "")} es una fuente ${categoria === "renovable" ? "renovable: se regenera de forma natural" : "no renovable: sus reservas son limitadas"}.`, true);
+    } else {
+      // Feedback formativo: explica el error y permite reintentar
+      mostrarFeedback(`❌ Revisa: ${f.nombre.replace(/^\S+\s/, "")} en realidad es ${f.categoria === "renovable" ? "renovable 🌱" : "no renovable 🛢️"}. Pulsa la ficha para devolverla a la bandeja e intentarlo de nuevo.`, false);
+    }
+
+    // Comprobar fin de la actividad (solo cuando todo está bien colocado)
+    const todasCorrectas = fuentes.every(x => colocado[x.id] === x.categoria);
+    if (todasCorrectas) {
+      Store.set({ ddCompletado: true });
+      Progreso.registrar();
+      mostrarFeedback(`🎉 ¡Actividad completada! Has clasificado correctamente las ${fuentes.length} fuentes de energía.`, true);
+    }
+  }
+
+  /* — Devolver ficha incorrecta a la bandeja (permite reintentar) — */
+  function devolver(id) {
+    if (colocado[id]) {
+      const f = buscarFuente(id);
+      if (colocado[id] === f.categoria) return; // las correctas se quedan
+      delete colocado[id];
+      colocadas--;
+      const item = document.getElementById(id);
+      item.classList.remove("dd-item--correcto", "dd-item--incorrecto");
+      item.removeAttribute("aria-label");
+      bandeja.appendChild(item);
+      mostrarFeedback(`↩️ ${f.nombre.replace(/^\S+\s/, "")} ha vuelto a la bandeja. ¡Inténtalo de nuevo!`, false);
+    }
+  }
+
+  /* — Eventos de ratón/táctil (HTML5 Drag and Drop) — */
+  bandeja.addEventListener("dragstart", (ev) => {
+    const item = ev.target.closest(".dd-item");
+    if (!item) return;
+    ev.dataTransfer.setData("text/plain", item.dataset.id);
+    ev.dataTransfer.effectAllowed = "move";
+    item.classList.add("dd-item--arrastrando");
+  });
+  bandeja.addEventListener("dragend", (ev) => {
+    const item = ev.target.closest(".dd-item");
+    if (item) item.classList.remove("dd-item--arrastrando");
+    Object.values(zonas).forEach(z => z.classList.remove("dd-zona--activa"));
+  });
+
+  Object.entries(zonas).forEach(([cat, zona]) => {
+    zona.addEventListener("dragover", (ev) => {
+      ev.preventDefault();
+      ev.dataTransfer.dropEffect = "move";
+      zona.classList.add("dd-zona--activa");
+    });
+    zona.addEventListener("dragleave", () => zona.classList.remove("dd-zona--activa"));
+    zona.addEventListener("drop", (ev) => {
+      ev.preventDefault();
+      zona.classList.remove("dd-zona--activa");
+      const id = ev.dataTransfer.getData("text/plain");
+      if (id) colocar(id, cat);
+    });
+  });
+
+  /* — Interacción por clic/teclado (accesible) — */
+  document.addEventListener("click", (ev) => {
+    const item = ev.target.closest(".dd-item");
+    const accionZona = ev.target.closest("[data-accion-zona]");
+
+    if (item) {
+      // Ficha ya colocada e incorrecta → devolverla a la bandeja
+      if (colocado[item.dataset.id]) { devolver(item.dataset.id); return; }
+      // Selección/deselección para colocar por teclado
+      document.querySelectorAll(".dd-item--seleccionado")
+        .forEach(x => { if (x !== item) { x.classList.remove("dd-item--seleccionado"); x.setAttribute("aria-pressed", "false"); } });
+      const yaSel = seleccionado === item.dataset.id;
+      seleccionado = yaSel ? null : item.dataset.id;
+      item.classList.toggle("dd-item--seleccionado", !yaSel);
+      item.setAttribute("aria-pressed", String(!yaSel));
+      if (!yaSel) Anunciador.decir(`${item.textContent} seleccionada. Ahora pulsa una categoría para colocarla.`);
+      return;
+    }
+
+    if (accionZona && seleccionado) {
+      colocar(seleccionado, accionZona.dataset.accionZona);
+    } else if (accionZona && !seleccionado) {
+      Anunciador.decir("Primero selecciona una fuente de la bandeja.");
+    }
+  });
+
+  document.getElementById("btnReiniciarDD").addEventListener("click", () => {
+    render();
+    Anunciador.decir("Actividad reiniciada. Todas las fuentes están de nuevo en la bandeja.");
+  });
+
+  render();
+})();
+
+/* ──────────────────────────────────────────────────────────────────────────
+   MÓDULO 8 · Flashcards (recuperación activa / active recall)
+   ────────────────────────────────────────────────────────────────────────── */
+const Flashcards = (() => {
+  const cartas = [
+    { icono: "🏃", titulo: "Energía cinética",
+      definicion: "Energía que poseen los cuerpos en movimiento. Aumenta con la masa y, sobre todo, con la velocidad." },
+    { icono: "💨", titulo: "Energía eólica",
+      definicion: "Energía renovable obtenida del viento. Los aerogeneradores la transforman en electricidad." },
+    { icono: "☀️", titulo: "Energía solar",
+      definicion: "Energía renovable que llega desde el Sol. Los paneles fotovoltaicos la convierten en electricidad." },
+    { icono: "🔌", titulo: "Energía eléctrica",
+      definicion: "Flujo de cargas eléctricas por un conductor. Muy versátil: se transforma en luz, calor o movimiento." },
+    { icono: "🔦", titulo: "Energía lumínica",
+      definicion: "Energía que viaja en ondas y percibimos como luz. Su principal fuente natural es el Sol." },
+    { icono: "⚖️", titulo: "Principio de conservación",
+      definicion: "La energía no se crea ni se destruye: solo se transforma. La cantidad total permanece constante." }
+  ];
+
+  const tarjeta = document.getElementById("fcTarjeta");
+  const elIcono = document.getElementById("fcIcono");
+  const elTitulo = document.getElementById("fcTitulo");
+  const elDef = document.getElementById("fcDefinicion");
+  const frontal = document.getElementById("fcFrontal");
+  const trasera = document.getElementById("fcTrasera");
+  const contador = document.getElementById("fcContador");
+  const visitas = document.getElementById("fcVisitas");
+  const btnPrev = document.getElementById("fcAnterior");
+  const btnNext = document.getElementById("fcSiguiente");
+
+  let indice = 0;
+  let girada = false;
+
+  function pintar() {
+    const c = cartas[indice];
+    girada = false;
+    tarjeta.classList.remove("fc-tarjeta--girada");
+    elIcono.textContent = c.icono;
+    elTitulo.textContent = c.titulo;
+    elDef.textContent = c.definicion;
+    frontal.setAttribute("aria-hidden", "false");
+    trasera.setAttribute("aria-hidden", "true");
+    tarjeta.setAttribute("aria-label",
+      `Flashcard ${indice + 1} de ${cartas.length}: ${c.titulo}. Pulsa para girar y ver la respuesta.`);
+    contador.textContent = `${indice + 1} / ${cartas.length}`;
+    actualizarVisitas();
+  }
+
+  function actualizarVisitas() {
+    const vistas = Store.get().flashVistas;
+    const n = Object.keys(vistas).length;
+    visitas.textContent = n >= cartas.length
+      ? "✅ Has repasado todas las flashcards."
+      : `Repasadas: ${n} de ${cartas.length}`;
+  }
+
+  function girar() {
+    girada = !girada;
+    tarjeta.classList.toggle("fc-tarjeta--girada", girada);
+    frontal.setAttribute("aria-hidden", String(girada));
+    trasera.setAttribute("aria-hidden", String(!girada));
+    const c = cartas[indice];
+    if (girada) {
+      // Registrar la flashcard como vista al girarla (esfuerzo de recuerdo)
+      Store.actualizar("flashVistas", { [indice]: true });
+      Progreso.registrar();
+      Anunciador.decir(`Respuesta: ${c.definicion}`);
+    } else {
+      Anunciador.decir(`Pregunta: ${c.titulo}`);
+    }
+    actualizarVisitas();
+  }
+
+  function mover(paso) {
+    indice = (indice + paso + cartas.length) % cartas.length;
+    pintar();
+    Anunciador.decir(`Flashcard ${indice + 1}: ${cartas[indice].titulo}`);
+  }
+
+  tarjeta.addEventListener("click", girar);
+  btnPrev.addEventListener("click", () => mover(-1));
+  btnNext.addEventListener("click", () => mover(1));
+
+  pintar();
+})();
+
+/* ──────────────────────────────────────────────────────────────────────────
+   MÓDULO 9 · Quiz con feedback formativo inmediato
+   ────────────────────────────────────────────────────────────────────────── */
+const Quiz = (() => {
+  const preguntas = [
+    { p: "¿Qué tipo de energía posee un objeto en movimiento?",
+      opciones: ["Lumínica", "Cinética", "Eléctrica", "Potencial química"],
+      correcta: 1,
+      explicacion: "La energía cinética es la energía del movimiento: depende de la masa y de la velocidad del cuerpo." },
+    { p: "Completa el principio de conservación: «La energía no se crea ni se destruye, solo se…»",
+      opciones: ["…consume", "…acumula", "…transforma", "…pierde"],
+      correcta: 2,
+      explicacion: "La energía cambia de un tipo a otro (por ejemplo, cinética → eléctrica), pero la cantidad total permanece constante." },
+    { p: "¿Cuál de estas es una fuente de energía RENOVABLE?",
+      opciones: ["Carbón", "Petróleo", "Gas natural", "Eólica"],
+      correcta: 3,
+      explicacion: "El viento se regenera de forma natural e inagotable a escala humana: por eso la eólica es renovable." },
+    { p: "¿Qué forma de energía viaja en ondas y nos permite ver los objetos?",
+      opciones: ["Lumínica", "Cinética", "Eléctrica", "Térmica"],
+      correcta: 0,
+      explicacion: "La energía lumínica viaja en ondas electromagnéticas; al llegar a nuestros ojos, produce la visión." },
+    { p: "En un aerogenerador, la energía cinética del viento se transforma principalmente en…",
+      opciones: ["…energía lumínica", "…energía eléctrica", "…energía química", "…energía nuclear"],
+      correcta: 1,
+      explicacion: "Las palas giran (cinética mecánica) y el generador convierte ese movimiento en corriente eléctrica." },
+    { p: "¿Qué aparato transforma energía eléctrica en energía lumínica con mayor eficiencia?",
+      opciones: ["Bombilla incandescente", "Estufa eléctrica", "Bombilla LED", "Motor eléctrico"],
+      correcta: 2,
+      explicacion: "El LED convierte hasta el 80-90% de la electricidad en luz; la incandescente desperdicia la mayor parte en calor." },
+    { p: "¿Cuál de estas fuentes NO es renovable?",
+      opciones: ["Solar", "Hidráulica", "Biomasa", "Petróleo"],
+      correcta: 3,
+      explicacion: "El petróleo tardó millones de años en formarse: una vez agotado, no se regenera a escala humana." },
+    { p: "¿Cuál es la unidad de medida de la energía en el Sistema Internacional?",
+      opciones: ["Vatio (W)", "Julio (J)", "Newton (N)", "Amperio (A)"],
+      correcta: 1,
+      explicacion: "La energía se mide en julios (J). El vatio mide potencia (energía por unidad de tiempo)." }
+  ];
+
+  const cuerpo = document.getElementById("quizCuerpo");
+  const relleno = document.getElementById("quizRelleno");
+  const textoProg = document.getElementById("quizContador");
+  const progresoWrap = document.getElementById("quizProgreso");
+
+  let actual = 0;
+  let aciertos = 0;
+  let respondida = false;
+
+  function pintarProgreso() {
+    relleno.style.width = (actual / preguntas.length * 100) + "%";
+    textoProg.textContent = `Pregunta ${Math.min(actual + 1, preguntas.length)} de ${preguntas.length}`;
+  }
+
+  function renderPregunta() {
+    respondida = false;
+    pintarProgreso();
+    const q = preguntas[actual];
+    const letras = ["A", "B", "C", "D"];
+
+    cuerpo.innerHTML = `
+      <fieldset class="quiz-pregunta" style="border:0">
+        <legend style="padding:0"><h3>${actual + 1}. ${q.p}</h3></legend>
+        <div class="quiz-opciones" role="list">
+          ${q.opciones.map((op, i) => `
+            <button class="quiz-opcion" type="button" role="listitem" data-indice="${i}">
+              <span class="quiz-opcion__letra" aria-hidden="true">${letras[i]}</span>
+              <span>${op}</span>
+            </button>`).join("")}
+        </div>
+      </fieldset>
+      <div class="quiz-feedback" id="quizFeedback" hidden></div>
+      <div class="quiz-pie">
+        <button class="btn btn--primario" type="button" id="btnSiguiente" disabled>
+          ${actual === preguntas.length - 1 ? "Ver resultado 🏁" : "Siguiente →"}
+        </button>
+      </div>`;
+
+    cuerpo.querySelectorAll(".quiz-opcion").forEach(btn =>
+      btn.addEventListener("click", () => responder(btn)));
+    document.getElementById("btnSiguiente").addEventListener("click", siguiente);
+    Anunciador.decir(`Pregunta ${actual + 1} de ${preguntas.length}: ${q.p}`);
+  }
+
+  function responder(btn) {
+    if (respondida) return; // evita doble respuesta
+    respondida = true;
+    const q = preguntas[actual];
+    const elegida = Number(btn.dataset.indice);
+    const esCorrecta = elegida === q.correcta;
+    if (esCorrecta) aciertos++;
+
+    const botones = cuerpo.querySelectorAll(".quiz-opcion");
+    botones.forEach(b => {
+      b.disabled = true;
+      const i = Number(b.dataset.indice);
+      if (i === q.correcta) b.classList.add("quiz-opcion--correcta");
+      else if (i === elegida) b.classList.add("quiz-opcion--incorrecta");
+    });
+
+    // Feedback formativo: no solo acierto/error, sino la explicación (el porqué)
+    const fb = document.getElementById("quizFeedback");
+    fb.hidden = false;
+    fb.className = "quiz-feedback " + (esCorrecta ? "quiz-feedback--ok" : "quiz-feedback--err");
+    fb.innerHTML = `<strong>${esCorrecta ? "✅ ¡Correcto!" : "❌ No exactamente…"}</strong>
+      ${esCorrecta ? "Buen trabajo. " : `La respuesta correcta era «${q.opciones[q.correcta]}». `}
+      ${q.explicacion}`;
+
+    document.getElementById("btnSiguiente").disabled = false;
+    document.getElementById("btnSiguiente").focus();
+    Anunciador.decir((esCorrecta ? "Respuesta correcta. " : "Respuesta incorrecta. ") + q.explicacion);
+  }
+
+  function siguiente() {
+    actual++;
+    if (actual < preguntas.length) {
+      renderPregunta();
+    } else {
+      renderResultado();
+    }
+  }
+
+  function renderResultado() {
+    progresoWrap.hidden = true;
+    relleno.style.width = "100%";
+
+    // Guardar la mejor puntuación (andamiaje motivacional)
+    const prev = Store.get().quizMejor;
+    if (prev === null || aciertos > prev) Store.set({ quizMejor: aciertos });
+    Progreso.registrar();
+
+    const pct = Math.round(aciertos / preguntas.length * 100);
+    let mensaje;
+    if (pct === 100) mensaje = "¡Perfecto! Dominas el viaje de la energía. ⚡🏆";
+    else if (pct >= 75) mensaje = "¡Muy bien! Repasa las flashcards para afinar los detalles que fallaste.";
+    else if (pct >= 50) mensaje = "Vas por buen camino. Vuelve a las cápsulas de microlearning y reintenta: el error es parte del aprendizaje.";
+    else mensaje = "No te desanimes: explora de nuevo el mapa mental y las cápsulas, y vuelve a intentarlo. ¡Tú puedes! 💪";
+
+    const mejor = Store.get().quizMejor;
+    cuerpo.innerHTML = `
+      <div class="quiz-resultado">
+        <p class="quiz-resultado__puntaje" aria-hidden="true">${aciertos}/${preguntas.length}</p>
+        <p class="sr-only">Has acertado ${aciertos} de ${preguntas.length} preguntas.</p>
+        <p class="quiz-mejor">🏅 Mejor puntuación: ${mejor}/${preguntas.length}</p>
+        <p class="quiz-resultado__mensaje">${mensaje}</p>
+        <button class="btn btn--primario" type="button" id="btnReintentar">🔄 Reintentar quiz</button>
+      </div>`;
+    document.getElementById("btnReintentar").addEventListener("click", reiniciar);
+    document.getElementById("btnReintentar").focus();
+    Anunciador.decir(`Quiz finalizado. Has acertado ${aciertos} de ${preguntas.length}. ${mensaje}`);
+  }
+
+  function reiniciar() {
+    actual = 0; aciertos = 0;
+    progresoWrap.hidden = false;
+    renderPregunta();
+    Anunciador.decir("Quiz reiniciado.");
+  }
+
+  renderPregunta();
+})();
+
+/* ──────────────────────────────────────────────────────────────────────────
+   MÓDULO 10 · Navegación: resaltado de sección activa (scroll spy simple)
+   ────────────────────────────────────────────────────────────────────────── */
+const Nav = (() => {
+  const enlaces = document.querySelectorAll("#navLista a");
+  const secciones = [...enlaces].map(a => document.querySelector(a.getAttribute("href")));
+
+  const observador = new IntersectionObserver((entradas) => {
+    entradas.forEach(entrada => {
+      if (entrada.isIntersecting) {
+        enlaces.forEach(a => {
+          const activo = a.getAttribute("href") === "#" + entrada.target.id;
+          activo ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current");
+        });
+      }
+    });
+  }, { rootMargin: "-30% 0px -60% 0px" });
+
+  secciones.forEach(s => s && observador.observe(s));
+})();
+
+/* ──────────────────────────────────────────────────────────────────────────
+   MÓDULO 11 · Reinicio global del progreso (con confirmación)
+   ────────────────────────────────────────────────────────────────────────── */
+document.getElementById("btnResetProgreso").addEventListener("click", () => {
+  if (confirm("¿Seguro que quieres borrar todo tu progreso? Esta acción no se puede deshacer.")) {
+    Store.resetear();
+    Tema.pintar();
+    Progreso.pintar();
+    Microlearning.render();
+    // Recargar para reiniciar quiz, flashcards y drag&drop limpiamente
+    location.reload();
+  }
+});
+
+/* — Pintado inicial del progreso guardado — */
+Progreso.pintar();
+</script>
+</body>
+</html>

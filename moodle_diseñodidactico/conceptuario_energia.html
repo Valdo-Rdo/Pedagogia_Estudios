@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conceptuario Interactivo · Red Eléctrica Renovable</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/space-grotesk@5.0.0/index.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.0/index.min.css">
+<style>
+  :root{
+    --bg:#0a1628;
+    --bg2:#0f1f3d;
+    --accent:#ffd166;
+    --green:#06d6a0;
+    --blue:#4cc9f0;
+    --pink:#f72585;
+  }
+  *{font-family:'Inter',sans-serif}
+  h1,h2,h3,.display{font-family:'Space Grotesk',sans-serif;letter-spacing:-0.02em}
+  body{
+    background:var(--bg);
+    color:#e6edf7;
+    overflow-x:hidden;
+  }
+  /* Fondo animado */
+  .grid-bg{
+    background-image:
+      linear-gradient(rgba(76,201,240,0.06) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(76,201,240,0.06) 1px,transparent 1px);
+    background-size:50px 50px;
+    mask-image:radial-gradient(ellipse at center,black 40%,transparent 80%);
+  }
+  .glow-orb{
+    position:absolute;
+    border-radius:50%;
+    filter:blur(80px);
+    opacity:.35;
+    pointer-events:none;
+    animation:float 14s ease-in-out infinite;
+  }
+  @keyframes float{
+    0%,100%{transform:translate(0,0) scale(1)}
+    50%{transform:translate(40px,-30px) scale(1.15)}
+  }
+  /* Tarjeta concepto */
+  .concept-card{
+    position:relative;
+    background:linear-gradient(145deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01));
+    border:1px solid rgba(255,255,255,0.08);
+    backdrop-filter:blur(12px);
+    border-radius:24px;
+    transition:all .5s cubic-bezier(.2,.8,.2,1);
+    overflow:hidden;
+    cursor:pointer;
+  }
+  .concept-card::before{
+    content:'';
+    position:absolute;inset:0;
+    background:radial-gradient(600px circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,0.08),transparent 40%);
+    opacity:0;transition:opacity .4s;
+    pointer-events:none;
+  }
+  .concept-card:hover::before{opacity:1}
+  .concept-card:hover{
+    transform:translateY(-6px);
+    border-color:rgba(255,255,255,0.18);
+    box-shadow:0 20px 60px -20px var(--card-glow,rgba(76,201,240,.4));
+  }
+  .concept-card.active{
+    border-color:var(--accent);
+    box-shadow:0 0 0 2px rgba(255,209,102,.25),0 20px 60px -20px var(--card-glow);
+  }
+  /* Icono animado */
+  .icon-wrap{
+    width:88px;height:88px;
+    border-radius:22px;
+    display:flex;align-items:center;justify-content:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .icon-wrap svg{width:56px;height:56px}
+  /* Animaciones SVG */
+  @keyframes spin-slow{to{transform:rotate(360deg)}}
+  @keyframes pulse-ray{0%,100%{opacity:.4;transform:scale(.95)}50%{opacity:1;transform:scale(1.05)}}
+  @keyframes wind-blow{0%,100%{transform:rotate(0)}50%{transform:rotate(180deg)}}
+  @keyframes bolt-flash{0%,100%{opacity:1}45%,55%{opacity:.3}}
+  @keyframes earth-rotate{to{transform:rotate(360deg)}}
+  @keyframes magnet-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+  @keyframes electron{to{transform:rotate(360deg)}}
+  .spin-slow{animation:spin-slow 12s linear infinite;transform-origin:center}
+  .pulse-ray{animation:pulse-ray 2.5s ease-in-out infinite;transform-origin:center}
+  .wind-blow{animation:wind-blow 3s ease-in-out infinite;transform-origin:center}
+  .bolt-flash{animation:bolt-flash 2s ease-in-out infinite}
+  .earth-rotate{animation:earth-rotate 20s linear infinite;transform-origin:center}
+  .magnet-pulse{animation:magnet-pulse 2s ease-in-out infinite;transform-origin:center}
+  .electron-orbit{animation:electron 3s linear infinite;transform-origin:center}
+
+  /* Panel detalle */
+  .detail-panel{
+    background:linear-gradient(145deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02));
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:28px;
+    backdrop-filter:blur(20px);
+  }
+  /* Flujo de energía */
+  .flow-node{
+    background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:18px;
+    padding:18px;
+    transition:all .3s;
+    position:relative;
+  }
+  .flow-node:hover{
+    background:rgba(255,255,255,0.08);
+    transform:translateY(-4px);
+  }
+  .flow-arrow{
+    color:var(--accent);
+    font-size:24px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  /* Quiz */
+  .quiz-option{
+    background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:14px;
+    padding:14px 18px;
+    transition:all .25s;
+    cursor:pointer;
+    text-align:left;
+  }
+  .quiz-option:hover{
+    background:rgba(255,255,255,0.08);
+    border-color:rgba(255,255,255,0.2);
+    transform:translateX(4px);
+  }
+  .quiz-option.correct{
+    background:rgba(6,214,160,.15);
+    border-color:var(--green);
+    color:#a7f3d0;
+  }
+  .quiz-option.wrong{
+    background:rgba(247,37,133,.15);
+    border-color:var(--pink);
+    color:#fbcfe8;
+  }
+  .quiz-option.disabled{pointer-events:none;opacity:.7}
+  /* Botones */
+  .btn-primary{
+    background:linear-gradient(135deg,#ffd166,#f77f00);
+    color:#0a1628;
+    font-weight:600;
+    padding:12px 28px;
+    border-radius:999px;
+    transition:all .3s;
+    box-shadow:0 8px 24px -8px rgba(255,209,102,.5);
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 32px -8px rgba(255,209,102,.7)}
+  /* Scroll reveal */
+  .reveal{opacity:0;transform:translateY(30px);transition:all .8s cubic-bezier(.2,.8,.2,1)}
+  .reveal.visible{opacity:1;transform:translateY(0)}
+  /* Nav */
+  .nav-link{position:relative;padding:6px 2px;transition:color .3s}
+  .nav-link::after{
+    content:'';position:absolute;bottom:-4px;left:0;right:0;
+    height:2px;background:var(--accent);
+    transform:scaleX(0);transform-origin:left;
+    transition:transform .3s;
+  }
+  .nav-link:hover::after,.nav-link.active::after{transform:scaleX(1)}
+  /* Progress bar quiz */
+  .progress-track{background:rgba(255,255,255,0.08);border-radius:999px;height:6px;overflow:hidden}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--blue));transition:width .5s}
+  /* Particles */
+  .particle{
+    position:absolute;
+    width:3px;height:3px;
+    background:var(--accent);
+    border-radius:50%;
+    opacity:.6;
+    animation:rise linear infinite;
+  }
+  @keyframes rise{
+    0%{transform:translateY(0) scale(1);opacity:0}
+    10%{opacity:.8}
+    100%{transform:translateY(-100vh) scale(.3);opacity:0}
+  }
+  /* Mobile */
+  @media(max-width:768px){
+    .flow-arrow{transform:rotate(90deg)}
+  }
+</style>
+</head>
+<body class="relative">
+
+<!-- Orbes de fondo -->
+<div class="glow-orb" style="width:400px;height:400px;background:#4cc9f0;top:-100px;left:-100px"></div>
+<div class="glow-orb" style="width:500px;height:500px;background:#f72585;top:40%;right:-150px;animation-delay:-5s"></div>
+<div class="glow-orb" style="width:350px;height:350px;background:#06d6a0;bottom:-100px;left:30%;animation-delay:-8s"></div>
+<div class="grid-bg fixed inset-0 -z-10"></div>
+
+<!-- Partículas -->
+<div id="particles" class="fixed inset-0 pointer-events-none -z-10"></div>
+
+<!-- NAV -->
+<nav class="sticky top-0 z-50 backdrop-blur-xl bg-[#0a1628]/70 border-b border-white/5">
+  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    <a href="#top" class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-pink-500 flex items-center justify-center">
+        <svg viewBox="0 0 24 24" fill="none" class="w-6 h-6 text-[#0a1628]"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" fill="currentColor"/></svg>
+      </div>
+      <div>
+        <div class="display font-bold text-lg leading-none">Conceptuario</div>
+        <div class="text-xs text-white/50">Energías Renovables</div>
+      </div>
+    </a>
+    <div class="hidden md:flex items-center gap-8 text-sm">
+      <a href="#conceptos" class="nav-link">Conceptos</a>
+      <a href="#flujo" class="nav-link">El Flujo</a>
+      <a href="#quiz" class="nav-link">Quiz</a>
+      <a href="#quiz" class="btn-primary text-sm py-2 px-5">Empezar</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="top" class="relative max-w-7xl mx-auto px-6 pt-20 pb-24">
+  <div class="grid md:grid-cols-2 gap-12 items-center">
+    <div class="reveal">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm mb-6">
+        <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+        Recurso interactivo · Secundaria
+      </div>
+      <h1 class="display text-5xl md:text-7xl font-bold leading-[1.05] mb-6">
+        Red Eléctrica<br>
+        <span class="bg-gradient-to-r from-amber-300 via-pink-400 to-cyan-300 bg-clip-text text-transparent">Renovable</span>
+      </h1>
+      <p class="text-lg text-white/70 mb-8 max-w-lg leading-relaxed">
+        Un viaje desde los fotones del sol hasta el interruptor de tu casa. Descubre cómo la naturaleza se transforma en energía que ilumina el futuro.
+      </p>
+      <div class="flex flex-wrap gap-4">
+        <a href="#conceptos" class="btn-primary">Explorar conceptos →</a>
+        <a href="#quiz" class="px-7 py-3 rounded-full border border-white/15 hover:bg-white/5 transition">Probar el quiz</a>
+      </div>
+      <div class="flex gap-8 mt-10 pt-8 border-t border-white/10">
+        <div><div class="display text-3xl font-bold text-amber-300">5</div><div class="text-xs text-white/50 uppercase tracking-wider">Conceptos</div></div>
+        <div><div class="display text-3xl font-bold text-cyan-300">1</div><div class="text-xs text-white/50 uppercase tracking-wider">Flujo energético</div></div>
+        <div><div class="display text-3xl font-bold text-pink-300">5</div><div class="text-xs text-white/50 uppercase tracking-wider">Preguntas</div></div>
+      </div>
+    </div>
+
+    <!-- Hero visual: diagrama circular -->
+    <div class="reveal relative flex items-center justify-center">
+      <div class="relative w-full max-w-md aspect-square">
+        <svg viewBox="0 0 400 400" class="w-full h-full">
+          <defs>
+            <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#ffd166"/>
+              <stop offset="50%" stop-color="#f72585"/>
+              <stop offset="100%" stop-color="#4cc9f0"/>
+            </linearGradient>
+          </defs>
+          <circle cx="200" cy="200" r="180" fill="none" stroke="url(#ringGrad)" stroke-width="1" stroke-dasharray="4 8" class="spin-slow"/>
+          <circle cx="200" cy="200" r="140" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+          <circle cx="200" cy="200" r="80" fill="rgba(255,209,102,0.08)" stroke="rgba(255,209,102,0.3)" stroke-width="1"/>
+          <!-- Centro -->
+          <circle cx="200" cy="200" r="40" fill="url(#ringGrad)" opacity="0.2"/>
+          <text x="200" y="195" text-anchor="middle" fill="#ffd166" font-size="14" font-weight="700" font-family="Space Grotesk">ENERGÍA</text>
+          <text x="200" y="215" text-anchor="middle" fill="#fff" font-size="10" opacity="0.6">transformación</text>
+          <!-- Nodos orbitales -->
+          <g id="orbitNodes"></g>
+        </svg>
+        <!-- Nodos flotantes -->
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 icon-wrap bg-gradient-to-br from-amber-400/30 to-amber-600/10 border border-amber-400/30" style="width:64px;height:64px">
+          <svg viewBox="0 0 24 24" fill="none" class="pulse-ray"><circle cx="12" cy="12" r="4" fill="#ffd166"/><g stroke="#ffd166" stroke-width="2" stroke-linecap="round"><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.9" y1="4.9" x2="7" y2="7"/><line x1="17" y1="17" x2="19.1" y2="19.1"/><line x1="4.9" y1="19.1" x2="7" y2="17"/><line x1="17" y1="7" x2="19.1" y2="4.9"/></g></svg>
+        </div>
+        <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-2 icon-wrap bg-gradient-to-br from-cyan-400/30 to-cyan-600/10 border border-cyan-400/30" style="width:64px;height:64px">
+          <svg viewBox="0 0 24 24" fill="none" class="wind-blow"><circle cx="12" cy="12" r="2" fill="#4cc9f0"/><path d="M12 10C12 6 15 4 17 6" stroke="#4cc9f0" stroke-width="2" stroke-linecap="round"/><path d="M14 12C18 12 20 15 18 17" stroke="#4cc9f0" stroke-width="2" stroke-linecap="round"/><path d="M12 14C12 18 9 20 7 18" stroke="#4cc9f0" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <div class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 icon-wrap bg-gradient-to-br from-pink-400/30 to-pink-600/10 border border-pink-400/30" style="width:64px;height:64px">
+          <svg viewBox="0 0 24 24" fill="none" class="bolt-flash"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" fill="#f72585"/></svg>
+        </div>
+        <div class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 icon-wrap bg-gradient-to-br from-green-400/30 to-green-600/10 border border-green-400/30" style="width:64px;height:64px">
+          <svg viewBox="0 0 24 24" fill="none" class="earth-rotate"><circle cx="12" cy="12" r="9" fill="none" stroke="#06d6a0" stroke-width="1.5"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" stroke="#06d6a0" stroke-width="1.5" fill="none"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONCEPTOS -->
+<section id="conceptos" class="relative max-w-7xl mx-auto px-6 py-20">
+  <div class="reveal mb-14">
+    <div class="text-sm text-amber-300 uppercase tracking-widest mb-3">01 · Fundamentos</div>
+    <h2 class="display text-4xl md:text-5xl font-bold mb-4">Los 5 pilares de la energía</h2>
+    <p class="text-white/60 max-w-2xl">Haz clic en cada concepto para descubrir cómo se conecta con los demás en el viaje de la energía renovable.</p>
+  </div>
+
+  <div class="grid lg:grid-cols-5 gap-5">
+    <!-- Cards -->
+    <div class="concept-card reveal p-6" data-concept="0" style="--card-glow:rgba(255,209,102,.4)">
+      <div class="icon-wrap bg-gradient-to-br from-amber-400/20 to-orange-500/10 border border-amber-400/30 mb-5">
+        <svg viewBox="0 0 24 24" fill="none" class="pulse-ray"><circle cx="12" cy="12" r="4" fill="#ffd166"/><g stroke="#ffd166" stroke-width="2" stroke-linecap="round"><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.9" y1="4.9" x2="7" y2="7"/><line x1="17" y1="17" x2="19.1" y2="19.1"/><line x1="4.9" y1="19.1" x2="7" y2="17"/><line x1="17" y1="7" x2="19.1" y2="4.9"/></g></svg>
+      </div>
+      <div class="text-xs text-amber-300 uppercase tracking-wider mb-2">Concepto 01</div>
+      <h3 class="display text-xl font-bold mb-2">Energía Lumínica</h3>
+      <p class="text-sm text-white/60 leading-relaxed">La chispa inicial que viaja desde el sol en forma de fotones.</p>
+    </div>
+
+    <div class="concept-card reveal p-6" data-concept="1" style="--card-glow:rgba(76,201,240,.4)">
+      <div class="icon-wrap bg-gradient-to-br from-cyan-400/20 to-blue-500/10 border border-cyan-400/30 mb-5">
+        <svg viewBox="0 0 24 24" fill="none" class="wind-blow"><circle cx="12" cy="12" r="2" fill="#4cc9f0"/><path d="M12 10C12 6 15 4 17 6" stroke="#4cc9f0" stroke-width="2" stroke-linecap="round"/><path d="M14 12C18 12 20 15 18 17" stroke="#4cc9f0" stroke-width="2" stroke-linecap="round"/><path d="M12 14C12 18 9 20 7 18" stroke="#4cc9f0" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="text-xs text-cyan-300 uppercase tracking-wider mb-2">Concepto 02</div>
+      <h3 class="display text-xl font-bold mb-2">Energía Cinética</h3>
+      <p class="text-sm text-white/60 leading-relaxed">La energía del movimiento. El viento empujando las aspas.</p>
+    </div>
+
+    <div class="concept-card reveal p-6" data-concept="2" style="--card-glow:rgba(247,37,133,.4)">
+      <div class="icon-wrap bg-gradient-to-br from-pink-400/20 to-purple-500/10 border border-pink-400/30 mb-5">
+        <svg viewBox="0 0 24 24" fill="none" class="magnet-pulse"><rect x="4" y="6" width="6" height="12" rx="1" fill="#f72585"/><rect x="14" y="6" width="6" height="12" rx="1" fill="#4cc9f0"/><text x="7" y="14" text-anchor="middle" fill="white" font-size="6" font-weight="bold">N</text><text x="17" y="14" text-anchor="middle" fill="white" font-size="6" font-weight="bold">S</text><path d="M2 3 Q12 -2 22 3" stroke="#f72585" stroke-width="1" fill="none" opacity=".5" stroke-dasharray="2 2"/></svg>
+      </div>
+      <div class="text-xs text-pink-300 uppercase tracking-wider mb-2">Concepto 03</div>
+      <h3 class="display text-xl font-bold mb-2">Inducción Electromagnética</h3>
+      <p class="text-sm text-white/60 leading-relaxed">El truco de magia: imanes girando que obligan a los electrones a moverse.</p>
+    </div>
+
+    <div class="concept-card reveal p-6" data-concept="3" style="--card-glow:rgba(255,209,102,.5)">
+      <div class="icon-wrap bg-gradient-to-br from-yellow-400/20 to-amber-500/10 border border-yellow-400/30 mb-5">
+        <svg viewBox="0 0 24 24" fill="none" class="bolt-flash"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" fill="#ffd166"/></svg>
+      </div>
+      <div class="text-xs text-yellow-300 uppercase tracking-wider mb-2">Concepto 04</div>
+      <h3 class="display text-xl font-bold mb-2">Energía Eléctrica</h3>
+      <p class="text-sm text-white/60 leading-relaxed">El flujo constante de electrones que enciende nuestras casas.</p>
+    </div>
+
+    <div class="concept-card reveal p-6" data-concept="4" style="--card-glow:rgba(6,214,160,.4)">
+      <div class="icon-wrap bg-gradient-to-br from-green-400/20 to-emerald-500/10 border border-green-400/30 mb-5">
+        <svg viewBox="0 0 24 24" fill="none" class="earth-rotate"><circle cx="12" cy="12" r="9" fill="none" stroke="#06d6a0" stroke-width="1.5"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" stroke="#06d6a0" stroke-width="1.5" fill="none"/><circle cx="12" cy="12" r="2" fill="#06d6a0"/></svg>
+      </div>
+      <div class="text-xs text-green-300 uppercase tracking-wider mb-2">Concepto 05</div>
+      <h3 class="display text-xl font-bold mb-2">Sustentabilidad</h3>
+      <p class="text-sm text-white/60 leading-relaxed">Usar hoy sin destruir el mañana. El compromiso con el futuro.</p>
+    </div>
+  </div>
+
+  <!-- Panel de detalle -->
+  <div id="detailPanel" class="detail-panel mt-10 p-8 md:p-10 hidden">
+    <div class="grid md:grid-cols-[auto_1fr] gap-8 items-start">
+      <div id="detailIcon" class="icon-wrap bg-white/5 border border-white/10" style="width:120px;height:120px"></div>
+      <div>
+        <div id="detailTag" class="text-xs uppercase tracking-widest mb-2 text-amber-300"></div>
+        <h3 id="detailTitle" class="display text-3xl md:text-4xl font-bold mb-4"></h3>
+        <p id="detailDesc" class="text-white/75 text-lg leading-relaxed mb-6"></p>
+        <div class="grid sm:grid-cols-3 gap-4">
+          <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+            <div class="text-xs text-white/50 uppercase tracking-wider mb-1">Ejemplo real</div>
+            <div id="detailExample" class="text-sm font-medium"></div>
+          </div>
+          <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+            <div class="text-xs text-white/50 uppercase tracking-wider mb-1">Se transforma en</div>
+            <div id="detailNext" class="text-sm font-medium"></div>
+          </div>
+          <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+            <div class="text-xs text-white/50 uppercase tracking-wider mb-1">Dato curioso</div>
+            <div id="detailFact" class="text-sm font-medium"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FLUJO DE ENERGÍA -->
+<section id="flujo" class="relative max-w-7xl mx-auto px-6 py-20">
+  <div class="reveal mb-14">
+    <div class="text-sm text-cyan-300 uppercase tracking-widest mb-3">02 · Transformación</div>
+    <h2 class="display text-4xl md:text-5xl font-bold mb-4">El viaje de la energía</h2>
+    <p class="text-white/60 max-w-2xl">Desde la naturaleza hasta tu enchufe. Cada paso es una transformación.</p>
+  </div>
+
+  <div class="reveal grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr_auto_1fr] gap-4 items-stretch">
+    <div class="flow-node">
+      <div class="text-3xl mb-2">☀️💨</div>
+      <div class="text-xs text-amber-300 uppercase tracking-wider mb-1">Paso 1</div>
+      <div class="display font-bold mb-1">Fuente natural</div>
+      <div class="text-xs text-white/60">Sol o viento entregan energía lumínica o cinética.</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">
+      <div class="text-3xl mb-2">⚙️</div>
+      <div class="text-xs text-cyan-300 uppercase tracking-wider mb-1">Paso 2</div>
+      <div class="display font-bold mb-1">Movimiento mecánico</div>
+      <div class="text-xs text-white/60">Aspas o paneles convierten la fuente en rotación.</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">
+      <div class="text-3xl mb-2">🧲</div>
+      <div class="text-xs text-pink-300 uppercase tracking-wider mb-1">Paso 3</div>
+      <div class="display font-bold mb-1">Inducción</div>
+      <div class="text-xs text-white/60">Imanes gigantes giran y despiertan a los electrones.</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">
+      <div class="text-3xl mb-2">⚡</div>
+      <div class="text-xs text-yellow-300 uppercase tracking-wider mb-1">Paso 4</div>
+      <div class="display font-bold mb-1">Electricidad</div>
+      <div class="text-xs text-white/60">Flujo de electrones viaja por cables hasta tu casa.</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">
+      <div class="text-3xl mb-2">🏠</div>
+      <div class="text-xs text-green-300 uppercase tracking-wider mb-1">Paso 5</div>
+      <div class="display font-bold mb-1">Uso cotidiano</div>
+      <div class="text-xs text-white/60">Enciendes una lámpara, cargas tu celular, estudias.</div>
+    </div>
+  </div>
+
+  <div class="reveal mt-10 p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-pink-500/10 to-cyan-500/10 border border-white/10">
+    <div class="flex items-start gap-4">
+      <div class="text-2xl">💡</div>
+      <div>
+        <div class="display font-bold mb-1">¿Por qué "renovable"?</div>
+        <p class="text-sm text-white/70">Porque el sol seguirá brillando y el viento seguirá soplando mañana, el próximo año y dentro de mil años. No se agotan como el petróleo o el carbón.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- QUIZ -->
+<section id="quiz" class="relative max-w-4xl mx-auto px-6 py-20">
+  <div class="reveal mb-10 text-center">
+    <div class="text-sm text-pink-300 uppercase tracking-widest mb-3">03 · Pon a prueba lo aprendido</div>
+    <h2 class="display text-4xl md:text-5xl font-bold mb-4">Quiz interactivo</h2>
+    <p class="text-white/60">5 preguntas para descubrir cuánto entendiste del viaje de la energía.</p>
+  </div>
+
+  <div class="reveal detail-panel p-6 md:p-10">
+    <div class="flex items-center justify-between mb-6">
+      <div class="text-sm text-white/60">Pregunta <span id="qNum" class="text-white font-bold">1</span> de <span id="qTotal">5</span></div>
+      <div class="text-sm text-amber-300">Puntaje: <span id="score" class="font-bold">0</span></div>
+    </div>
+    <div class="progress-track mb-8"><div id="progressBar" class="progress-fill" style="width:20%"></div></div>
+
+    <div id="questionArea">
+      <h3 id="questionText" class="display text-2xl font-bold mb-6"></h3>
+      <div id="optionsArea" class="space-y-3"></div>
+    </div>
+
+    <div id="resultArea" class="hidden text-center py-8">
+      <div id="resultEmoji" class="text-7xl mb-4"></div>
+      <h3 id="resultTitle" class="display text-3xl font-bold mb-2"></h3>
+      <p id="resultMsg" class="text-white/70 mb-6"></p>
+      <button onclick="restartQuiz()" class="btn-primary">Intentar de nuevo</button>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="relative border-t border-white/5 mt-20">
+  <div class="max-w-7xl mx-auto px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-pink-500 flex items-center justify-center">
+        <svg viewBox="0 0 24 24" fill="none" class="w-5 h-5 text-[#0a1628]"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" fill="currentColor"/></svg>
+      </div>
+      <div class="text-sm text-white/60">Conceptuario · Energías Renovables</div>
+    </div>
+    <div class="text-xs text-white/40">Recurso didáctico interactivo · Secundaria · 2026</div>
+  </div>
+</footer>
+
+<script>
+/* ============ DATOS DE CONCEPTOS ============ */
+const concepts = [
+  {
+    tag:'Concepto 01 · Energía Lumínica',
+    title:'Energía Lumínica',
+    desc:'La energía que viaja a través de fotones desde el sol. Es la chispa inicial que "despierta" a los electrones en nuestros paneles solares. Sin ella, no habría punto de partida para casi ninguna cadena energética de la Tierra.',
+    example:'Un panel solar en el techo de tu escuela',
+    next:'Energía eléctrica (efecto fotovoltaico)',
+    fact:'La luz del sol tarda 8 minutos en llegar a la Tierra.',
+    color:'#ffd166',
+    icon:`<svg viewBox="0 0 24 24" fill="none" class="pulse-ray"><circle cx="12" cy="12" r="4" fill="#ffd166"/><g stroke="#ffd166" stroke-width="2" stroke-linecap="round"><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></g></svg>`
+  },
+  {
+    tag:'Concepto 02 · Energía Cinética',
+    title:'Energía Cinética',
+    desc:'Es la energía del movimiento. En este caso, el viento moviéndose a gran velocidad que empuja con fuerza las aspas de nuestro aerogenerador. Cuanto más rápido se mueve el aire, más energía podemos capturar.',
+    example:'Un aerogenerador en un parque eólico',
+    next:'Energía mecánica de rotación',
+    fact:'Un aerogenerador grande puede alimentar hasta 1.500 hogares.',
+    color:'#4cc9f0',
+    icon:`<svg viewBox="0 0 24 24" fill="none" class="wind-blow"><circle cx="12" cy="12" r="2" fill="#4cc9f0"/><path d="M12 10C12 6 15 4 17 6" stroke="#4cc9f0" stroke-width="2" stroke-linecap="round"/><path d="M14 12C18 12 20 15 18 17" stroke="#4cc9f0" stroke-width="2" stroke-linecap="round"/><path d="M12 14C12 18 9 20 7 18" stroke="#4cc9f0" stroke-width="2" stroke-linecap="round"/></svg>`
+  },
+  {
+    tag:'Concepto 03 · Inducción Electromagnética',
+    title:'Inducción Electromagnética',
+    desc:'El "truco de magia" de la física. Ocurre cuando hacemos girar imanes gigantes dentro de cables de cobre, obligando a los electrones a moverse en masa. Fue descubierto por Michael Faraday en 1831 y cambió el mundo para siempre.',
+    example:'El generador dentro de una central eólica',
+    next:'Energía eléctrica',
+    fact:'Faraday demostró el principio con un imán y una bobina de cobre.',
+    color:'#f72585',
+    icon:`<svg viewBox="0 0 24 24" fill="none" class="magnet-pulse"><rect x="4" y="6" width="6" height="12" rx="1" fill="#f72585"/><rect x="14" y="6" width="6" height="12" rx="1" fill="#4cc9f0"/><text x="7" y="14" text-anchor="middle" fill="white" font-size="6" font-weight="bold">N</text><text x="17" y="14" text-anchor="middle" fill="white" font-size="6" font-weight="bold">S</text></svg>`
+  },
+  {
+    tag:'Concepto 04 · Energía Eléctrica',
+    title:'Energía Eléctrica',
+    desc:'El flujo constante de electrones a través de un material conductor. Es el resultado final que utilizamos para encender nuestras casas y escuelas. Viaja a casi la velocidad de la luz por cables de cobre o aluminio.',
+    example:'Encender la luz de tu habitación',
+    next:'Luz, calor, movimiento, sonido...',
+    fact:'Los electrones se mueven muy lento, pero la energía viaja rapidísimo.',
+    color:'#ffd166',
+    icon:`<svg viewBox="0 0 24 24" fill="none" class="bolt-flash"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" fill="#ffd166"/></svg>`
+  },
+  {
+    tag:'Concepto 05 · Sustentabilidad',
+    title:'Sustentabilidad',
+    desc:'Usar los recursos de la naturaleza hoy (como el sol y el viento), asegurándonos de no destruirlos ni agotarlos para las generaciones del futuro. Es el equilibrio entre satisfacer nuestras necesidades y cuidar el planeta.',
+    example:'Una comunidad que usa solo energía solar y eólica',
+    next:'Un planeta habitable por siglos',
+    fact:'Las energías renovables ya generan más del 30% de la electricidad mundial.',
+    color:'#06d6a0',
+    icon:`<svg viewBox="0 0 24 24" fill="none" class="earth-rotate"><circle cx="12" cy="12" r="9" fill="none" stroke="#06d6a0" stroke-width="1.5"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" stroke="#06d6a0" stroke-width="1.5" fill="none"/></svg>`
+  }
+];
+
+/* ============ INTERACCIÓN TARJETAS ============ */
+const cards = document.querySelectorAll('.concept-card');
+const panel = document.getElementById('detailPanel');
+
+cards.forEach(card=>{
+  card.addEventListener('mousemove',e=>{
+    const r = card.getBoundingClientRect();
+    card.style.setProperty('--mx',(e.clientX-r.left)+'px');
+    card.style.setProperty('--my',(e.clientY-r.top)+'px');
+  });
+  card.addEventListener('click',()=>{
+    const idx = parseInt(card.dataset.concept);
+    showDetail(idx);
+    cards.forEach(c=>c.classList.remove('active'));
+    card.classList.add('active');
+  });
+});
+
+function showDetail(idx){
+  const c = concepts[idx];
+  document.getElementById('detailTag').textContent = c.tag;
+  document.getElementById('detailTag').style.color = c.color;
+  document.getElementById('detailTitle').textContent = c.title;
+  document.getElementById('detailDesc').textContent = c.desc;
+  document.getElementById('detailExample').textContent = c.example;
+  document.getElementById('detailNext').textContent = c.next;
+  document.getElementById('detailFact').textContent = c.fact;
+  document.getElementById('detailIcon').innerHTML = c.icon;
+  document.getElementById('detailIcon').style.borderColor = c.color+'66';
+  document.getElementById('detailIcon').style.background = `linear-gradient(135deg,${c.color}22,${c.color}08)`;
+  panel.classList.remove('hidden');
+  panel.style.borderColor = c.color+'44';
+  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ============ QUIZ ============ */
+const questions = [
+  {
+    q:'¿Qué tipo de energía viaja desde el sol en forma de fotones?',
+    opts:['Energía cinética','Energía lumínica','Energía eléctrica','Inducción magnética'],
+    correct:1
+  },
+  {
+    q:'¿Qué es la energía cinética en el contexto de un aerogenerador?',
+    opts:['El flujo de electrones por un cable','La energía del viento moviendo las aspas','La luz que llega del sol','El calor de la Tierra'],
+    correct:1
+  },
+  {
+    q:'¿Quién descubrió el principio de la inducción electromagnética?',
+    opts:['Albert Einstein','Isaac Newton','Michael Faraday','Nikola Tesla'],
+    correct:2
+  },
+  {
+    q:'¿Qué es la sustentabilidad?',
+    opts:['Usar todos los recursos hoy sin pensar en el mañana','Usar recursos sin agotarlos para las generaciones futuras','Producir la máxima energía posible','Construir más centrales eléctricas'],
+    correct:1
+  },
+  {
+    q:'¿Cuál es el orden correcto del viaje de la energía eólica?',
+    opts:['Sol → Panel → Casa','Viento → Aspas → Inducción → Electricidad → Hogar','Electricidad → Viento → Aspas','Imán → Sol → Cable'],
+    correct:1
+  }
+];
+
+let currentQ = 0, score = 0;
+
+function renderQuestion(){
+  const q = questions[currentQ];
+  document.getElementById('qNum').textContent = currentQ+1;
+  document.getElementById('questionText').textContent = q.q;
+  document.getElementById('progressBar').style.width = ((currentQ+1)/questions.length*100)+'%';
+  const area = document.getElementById('optionsArea');
+  area.innerHTML = '';
+  q.opts.forEach((opt,i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'quiz-option w-full flex items-center gap-3';
+    btn.innerHTML = `<span class="w-7 h-7 rounded-full border border-white/20 flex items-center justify-center text-xs font-bold shrink-0">${String.fromCharCode(65+i)}</span><span>${opt}</span>`;
+    btn.onclick = ()=>selectAnswer(i,btn);
+    area.appendChild(btn);
+  });
+}
+
+function selectAnswer(i,btn){
+  const q = questions[currentQ];
+  const all = document.querySelectorAll('.quiz-option');
+  all.forEach(b=>b.classList.add('disabled'));
+  if(i===q.correct){
+    btn.classList.add('correct');
+    score++;
+    document.getElementById('score').textContent = score;
+  } else {
+    btn.classList.add('wrong');
+    all[q.correct].classList.add('correct');
+  }
+  setTimeout(()=>{
+    currentQ++;
+    if(currentQ<questions.length){
+      renderQuestion();
+    } else {
+      showResult();
+    }
+  },1200);
+}
+
+function showResult(){
+  document.getElementById('questionArea').classList.add('hidden');
+  document.getElementById('resultArea').classList.remove('hidden');
+  const pct = score/questions.length;
+  let emoji,title,msg;
+  if(pct===1){emoji='🏆';title='¡Perfecto!';msg='Dominas el viaje de la energía renovable.';}
+  else if(pct>=0.6){emoji='🌟';title='¡Muy bien!';msg='Tienes una excelente comprensión de los conceptos.';}
+  else if(pct>=0.4){emoji='💪';title='Buen intento';msg='Repasa los conceptos y vuelve a intentarlo.';}
+  else{emoji='📚';title='A seguir estudiando';msg='Revisa los 5 conceptos y vuelve con todo.';}
+  document.getElementById('resultEmoji').textContent = emoji;
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultMsg').textContent = `${msg} Obtuviste ${score} de ${questions.length} correctas.`;
+}
+
+function restartQuiz(){
+  currentQ=0;score=0;
+  document.getElementById('score').textContent = 0;
+  document.getElementById('questionArea').classList.remove('hidden');
+  document.getElementById('resultArea').classList.add('hidden');
+  renderQuestion();
+}
+
+renderQuestion();
+
+/* ============ SCROLL REVEAL ============ */
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){e.target.classList.add('visible');}
+  });
+},{threshold:0.1});
+document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+
+/* ============ PARTÍCULAS ============ */
+const pCont = document.getElementById('particles');
+for(let i=0;i<20;i++){
+  const p = document.createElement('div');
+  p.className='particle';
+  p.style.left = Math.random()*100+'%';
+  p.style.bottom = '-10px';
+  p.style.animationDuration = (8+Math.random()*10)+'s';
+  p.style.animationDelay = (Math.random()*10)+'s';
+  p.style.background = ['#ffd166','#4cc9f0','#f72585','#06d6a0'][Math.floor(Math.random()*4)];
+  pCont.appendChild(p);
+}
+
+/* ============ NAV ACTIVE ============ */
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav-link');
+window.addEventListener('scroll',()=>{
+  let cur = '';
+  sections.forEach(s=>{
+    if(window.scrollY >= s.offsetTop-200) cur = s.id;
+  });
+  navLinks.forEach(l=>{
+    l.classList.toggle('active',l.getAttribute('href')==='#'+cur);
+  });
+});
+</script>
+</body>
+</html>

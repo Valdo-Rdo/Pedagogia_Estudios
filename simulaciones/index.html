@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f5f5;
@@ -15,47 +15,103 @@
         h1 {
             color: #333;
             text-align: center;
+            margin-bottom: 30px;
         }
-        .simulacion-list {
-            list-style: none;
-            padding: 0;
+        .simulacion-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
         }
-        .simulacion-item {
+        .simulacion-card {
             background-color: white;
-            margin: 10px 0;
-            padding: 15px;
-            border-radius: 5px;
+            padding: 20px;
+            border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-        .simulacion-item a {
+        .simulacion-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .simulacion-card a {
             color: #0066cc;
             text-decoration: none;
             font-weight: bold;
+            font-size: 1.1em;
+            display: block;
         }
-        .simulacion-item a:hover {
+        .simulacion-card a:hover {
             text-decoration: underline;
         }
-        .descripcion {
-            color: #666;
-            margin-top: 5px;
+        .simulacion-icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
     <h1>📚 Lista de Simulaciones</h1>
     
-    <ul class="simulacion-list">
-        <!-- Agrega aquí tus simulaciones -->
-        <li class="simulacion-item">
-            <a href="html/nombre-simulacion.html">Nombre de la Simulación</a>
-            <p class="descripcion">Descripción breve de la simulación</p>
-        </li>
-        <!-- Copia y pega el bloque anterior para agregar más simulaciones -->
-    </ul>
+    <div class="simulacion-grid">
+        <div class="simulacion-card">
+            <div class="simulacion-icon">🌌</div>
+            <a href="simula_html/cosmos_simulador.html">Simulador del Cosmos</a>
+        </div>
+        <div class="simulacion-card">
+            <div class="simulacion-icon">⚛️</div>
+            <a href="simula_html/cuantico_simulador.html">Simulador Cuántico</a>
+        </div>
+        <div class="simulacion-card">
+            <div class="simulacion-icon">⚡</div>
+            <a href="simula_html/energia_simulador.html">Simulador de Energía</a>
+        </div>
+        <div class="simulacion-card">
+            <div class="simulacion-icon">🦠</div>
+            <a href="simula_html/epidemia_simulador.html">Simulador de Epidemia</a>
+        </div>
+        <div class="simulacion-card">
+            <div class="simulacion-icon">💊</div>
+            <a href="simula_html/farmaco_simulador.html">Simulador Farmacológico</a>
+        </div>
+        <div class="simulacion-card">
+            <div class="simulacion-icon">🔢</div>
+            <a href="simula_html/metodonprimos_simulador.html">Método de Números Primos</a>
+        </div>
+        <div class="simulacion-card">
+            <div class="simulacion-icon">🧬</div>
+            <a href="simula_html/moleculas_simulador.html">Simulador de Moléculas</a>
+        </div>
+        <div class="simulacion-card">
+            <div class="simulacion-icon">🚦</div>
+            <a href="simula_html/paradojabraess_simulador.html">Paradoja de Braess</a>
+        </div>
+        <div class="simulacion-card">
+            <div class="simulacion-icon">🎯</div>
+            <a href="simula_html/pendulodoble_simulador.html">Péndulo Doble</a>
+        </div>
+        <div class="simulacion-card">
+            <div class="simulacion-icon">🧠</div>
+            <a href="simula_html/redneuronal_simulador.html">Red Neuronal</a>
+        </div>
+        <div class="simulacion-card">
+            <div class="simulacion-icon">🌊</div>
+            <a href="simula_html/refracion_simulador.html">Simulador de Refracción</a>
+        </div>
+        <div class="simulacion-card">
+            <div class="simulacion-icon">🔗</div>
+            <a href="simula_html/sinapsis_simulador.html">Simulador de Sinapsis</a>
+        </div>
+        <div class="simulacion-card">
+            <div class="simulacion-icon">🌱</div>
+            <a href="simula_html/vida_simulador.html">Simulador de Vida</a>
+        </div>
+    </div>
 
     <p style="text-align: center; color: #999; margin-top: 40px;">
-        Para agregar una nueva simulación, coloca tu archivo HTML en la carpeta <code>html/</code> 
-        y agrega un enlace en esta lista.
+        Para agregar una nueva simulación, coloca tu archivo HTML en la carpeta <code>simula_html/</code> 
+        y agrega una tarjeta en esta cuadrícula.
     </p>
 </body>
 </html>

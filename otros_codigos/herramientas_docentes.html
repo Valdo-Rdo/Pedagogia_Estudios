@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Tabla Periódica Docente 2.1 — Ecosistema de herramientas digitales para docentes: LMS, IA educativa, gamificación y open source. Personalizable, accesible y sin dependencias.">
+<meta name="color-scheme" content="light dark">
+<title>Tabla Periódica Docente 2.1 · Ecosistema de Herramientas</title>
+
+<style>
+/* ============================================================
+   1. TOKENS DE DISEÑO (custom properties)
+   ============================================================ */
+:root{
+  /* Superficies y texto — tema claro */
+  --bg:#f3f5fa;
+  --surface:#ffffff;
+  --surface-2:#eef1f7;
+  --text:#1b2333;
+  --text-muted:#59637a;
+  --border:#d6dce8;
+  --accent:#4e79a7;
+  --accent-contrast:#ffffff;
+  --danger:#c2352e;
+  --shadow:0 2px 10px rgba(15,23,42,.10);
+  --radius:12px;
+
+  /* Colores por categoría (sobrescribibles por el usuario) */
+  --cat-gestion:#4e79a7;
+  --cat-organizacion:#59a14f;
+  --cat-creacion:#f28e2b;
+  --cat-evaluacion:#e15759;
+  --cat-gamificacion:#b07aa1;
+  --cat-programacion:#3fa7a1;
+  --cat-comunicacion:#d9b310;
+  --cat-contenido:#9c755f;
+  --cat-ia:#d37295;
+
+  /* Colores por estado */
+  --st-clasica:#16a34a;
+  --st-nueva:#d97706;
+  --st-bloqueada:#64748b;
+
+  /* Tipografía fluida */
+  --fs-title:clamp(1.35rem,1rem + 2vw,2.3rem);
+  --fs-h2:clamp(1.05rem,.9rem + .8vw,1.45rem);
+  --fs-small:clamp(.72rem,.68rem + .2vw,.82rem);
+}
+/* Tema oscuro: mismos tokens, valores adaptados (contraste AA) */
+[data-theme="dark"]{
+  --bg:#0e1320;
+  --surface:#1a2233;
+  --surface-2:#222c42;
+  --text:#e9edf7;
+  --text-muted:#a3aec6;
+  --border:#313d59;
+  --accent:#8ab4f8;
+  --accent-contrast:#10182a;
+  --danger:#f2857d;
+  --shadow:0 4px 16px rgba(0,0,0,.45);
+}
+
+/* ============================================================
+   2. BASE / RESET MÍNIMO
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,Cantarell,sans-serif;
+  font-size:clamp(.95rem,.9rem + .25vw,1.05rem);
+  line-height:1.55;
+  background:var(--bg);
+  color:var(--text);
+  transition:background-color .25s ease,color .25s ease;
+}
+body.modal-open{overflow:hidden}
+img{max-width:100%}
+h1,h2,h3{line-height:1.2;margin:0}
+p{margin:0 0 .6em}
+
+/* Utilidades de accesibilidad */
+.visually-hidden{
+  position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;
+  overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;
+}
+.skip-link{
+  position:absolute;top:-100px;left:1rem;z-index:200;
+  background:var(--accent);color:var(--accent-contrast);
+  padding:.6em 1.1em;border-radius:0 0 10px 10px;font-weight:700;
+  text-decoration:none;transition:top .2s;
+}
+.skip-link:focus{top:0}
+
+/* Foco visible consistente (AA) */
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+.wrap{width:min(1300px,100% - 1.6rem);margin-inline:auto}
+
+/* ============================================================
+   3. CABECERA / BARRA DE HERRAMIENTAS
+   ============================================================ */
+.app-header{
+  position:sticky;top:0;z-index:30;
+  background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+}
+.header-inner{display:flex;flex-wrap:wrap;gap:.8rem 1.2rem;align-items:center;justify-content:space-between;padding:.8rem 0}
+.brand h1{font-size:var(--fs-title);letter-spacing:-.02em}
+.brand h1 span{color:var(--accent)}
+.tagline{color:var(--text-muted);font-size:var(--fs-small);margin:.15em 0 0}
+.toolbar{display:flex;flex-wrap:wrap;gap:.45rem}
+
+.btn{
+  display:inline-flex;align-items:center;gap:.45em;
+  padding:.55em .95em;border:1px solid var(--border);border-radius:999px;
+  background:var(--surface);color:var(--text);
+  font:inherit;font-size:.88rem;font-weight:600;cursor:pointer;
+  transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease,background-color .15s ease;
+}
+.btn:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:var(--shadow)}
+.btn:active{transform:translateY(0)}
+.btn-accent{background:var(--accent);border-color:var(--accent);color:var(--accent-contrast)}
+.btn-accent:hover{background:color-mix(in srgb,var(--accent) 85%,var(--text));border-color:transparent}
+.btn-danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 45%,var(--border))}
+.btn-danger:hover{background:color-mix(in srgb,var(--danger) 12%,var(--surface));border-color:var(--danger)}
+.btn[disabled]{opacity:.45;cursor:not-allowed;transform:none}
+
+/* ============================================================
+   4. CONTROLES: BÚSQUEDA, ESTADÍSTICAS Y LEYENDA
+   ============================================================ */
+.controls{display:flex;flex-direction:column;gap:.9rem;margin:1.2rem 0}
+.controls-row{display:flex;flex-wrap:wrap;gap:.7rem;align-items:center}
+.search-box{position:relative;flex:1 1 240px;max-width:420px}
+.search-box .icon{position:absolute;left:.75em;top:50%;transform:translateY(-50%);pointer-events:none;opacity:.7}
+.search-box input{
+  width:100%;padding:.65em .9em .65em 2.3em;
+  border:1px solid var(--border);border-radius:999px;
+  background:var(--surface);color:var(--text);font:inherit;font-size:.92rem;
+}
+.stats{margin:0;color:var(--text-muted);font-size:var(--fs-small);font-weight:600}
+
+.legend summary{
+  cursor:pointer;font-weight:700;font-size:.92rem;
+  padding:.5em .9em;border:1px solid var(--border);border-radius:999px;
+  background:var(--surface);list-style:none;display:inline-flex;align-items:center;gap:.5em;
+}
+.legend summary::-webkit-details-marker{display:none}
+.legend[open] summary{border-radius:14px 14px 0 0}
+.legend-body{
+  border:1px solid var(--border);border-top:0;border-radius:0 0 14px 14px;
+  background:var(--surface);padding:.9rem 1rem;display:grid;gap:.7rem;
+}
+.legend-body h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)}
+.legend-list{display:flex;flex-wrap:wrap;gap:.4rem;list-style:none;margin:0 0 .6rem;padding:0}
+
+.chip{
+  display:inline-flex;align-items:center;gap:.4em;
+  padding:.25em .75em;border:1px solid var(--border);border-radius:999px;
+  background:var(--surface-2);font-size:.78rem;font-weight:600;
+}
+.chip .dot{width:.85em;height:.85em;border-radius:50%;background:var(--dot,var(--text-muted));flex:none}
+.chip.muted{color:var(--text-muted)}
+
+/* ============================================================
+   5. TABLEROS Y CELDAS (mobile-first)
+   ============================================================ */
+.board-section{margin-bottom:2rem}
+.board-head{margin-bottom:.7rem}
+.board-head h2{font-size:var(--fs-h2)}
+.board-head h2::before{content:"⬡ ";color:var(--accent)}
+.board-head p{margin:.15em 0 0;color:var(--text-muted);font-size:var(--fs-small)}
+
+.grid{display:grid;gap:clamp(4px,.55vw,8px)}
+.grid-m{grid-template-columns:repeat(6,minmax(0,1fr))}
+.grid-a,.grid-e{grid-template-columns:repeat(7,minmax(0,1fr))}
+@media (min-width:560px){
+  .grid-m{grid-template-columns:repeat(9,minmax(0,1fr))}
+  .grid-a,.grid-e{grid-template-columns:repeat(14,minmax(0,1fr))}
+}
+@media (min-width:900px){.grid-m{grid-template-columns:repeat(12,minmax(0,1fr))}}
+@media (min-width:1200px){.grid-m{grid-template-columns:repeat(18,minmax(0,1fr))}}
+
+.cell{
+  --cat:transparent;--st:transparent;
+  position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:.15em;aspect-ratio:1/1.12;padding:.4em .25em;overflow:hidden;
+  border:1px solid var(--border);border-left:4px solid var(--cat);
+  border-radius:calc(var(--radius) - 3px);
+  background:var(--surface);color:var(--text);font:inherit;cursor:pointer;
+  transition:transform .12s ease,box-shadow .12s ease;
+}
+.cell.filled{background:color-mix(in srgb,var(--cat) 15%,var(--surface));border-color:color-mix(in srgb,var(--cat) 45%,var(--border));border-left-color:var(--cat)}
+.cell.filled:hover{transform:translateY(-2px) scale(1.04);box-shadow:var(--shadow);z-index:2}
+.cell.empty{border-style:dashed;opacity:.55}
+.cell.empty:hover{opacity:.9;border-color:var(--accent)}
+.cell.st-bloqueada{filter:grayscale(.6);border-style:dashed}
+.cell.is-hidden{display:none}
+.cell:focus-visible{outline:3px solid var(--accent);outline-offset:2px;z-index:3}
+
+.cell-num{position:absolute;top:2px;left:5px;font-size:.55rem;font-weight:700;color:var(--text-muted)}
+.cell-status{position:absolute;top:1px;right:3px;font-size:.62rem;color:var(--st)}
+.cell-sym{font-weight:800;font-size:clamp(.78rem,1rem + .4vw,1.12rem);line-height:1.05;text-align:center;overflow:hidden;max-width:100%}
+.cell-name{
+  font-size:clamp(.44rem,.4rem + .18vw,.6rem);font-weight:600;color:var(--text-muted);
+  text-align:center;max-width:100%;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.cell-logo{width:68%;aspect-ratio:1;object-fit:contain;border-radius:6px}
+
+/* ============================================================
+   6. DIÁLOGOS (modales accesibles)
+   ============================================================ */
+.overlay{
+  position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:1rem;
+  background:rgba(8,11,20,.62);
+}
+.overlay[hidden]{display:none}
+.dialog{
+  width:min(680px,100%);max-height:min(88vh,820px);overflow:auto;
+  background:var(--surface);border:1px solid var(--border);border-radius:18px;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);
+  animation:pop .22s ease;
+}
+@keyframes pop{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+.dialog-head{
+  position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  padding:.9rem 1.2rem;background:var(--surface);border-bottom:1px solid var(--border);
+  border-radius:18px 18px 0 0;z-index:1;
+}
+.dialog-head h2{font-size:1.08rem}
+.dialog-body{padding:1.1rem 1.2rem 1.3rem}
+.dialog-actions{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-top:1.1rem}
+.dialog-actions .spacer{flex:1}
+.icon-btn{
+  width:2.4rem;height:2.4rem;display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid var(--border);border-radius:50%;background:var(--surface);
+  color:var(--text);font-size:1rem;cursor:pointer;transition:border-color .15s,transform .15s;
+}
+.icon-btn:hover{border-color:var(--accent);transform:translateY(-1px)}
+
+/* Vista de detalle */
+.detail-hero{display:flex;gap:.9rem;align-items:center;margin-bottom:.9rem}
+.detail-sym{
+  display:grid;place-items:center;flex:none;width:4.2rem;height:4.2rem;
+  font-size:1.5rem;font-weight:800;border-radius:14px;
+  background:color-mix(in srgb,var(--cat,#94a3b8) 18%,var(--surface));
+  border:2px solid var(--cat,#94a3b8);
+}
+.detail-logo{width:4.2rem;height:4.2rem;object-fit:contain;flex:none;border-radius:14px;border:1px solid var(--border);background:var(--surface-2)}
+.detail-hero h3{font-size:1.25rem;margin-bottom:.3rem}
+.detail-desc{margin:.4rem 0}
+.detail-adv{
+  padding:.7rem .9rem;border-radius:10px;font-size:.92rem;
+  background:color-mix(in srgb,var(--st-nueva) 10%,var(--surface));
+  border:1px solid color-mix(in srgb,var(--st-nueva) 35%,var(--border));
+}
+
+/* Formularios */
+.form-grid{display:grid;gap:.9rem}
+.row-2{display:grid;gap:.9rem}
+@media (min-width:560px){.row-2{grid-template-columns:1fr 1fr}}
+.field{display:grid;gap:.3rem}
+.field label{font-weight:700;font-size:.85rem}
+.field small{color:var(--text-muted);font-size:.75rem}
+.field input,.field select,.field textarea{
+  width:100%;padding:.6em .75em;font:inherit;font-size:.92rem;color:var(--text);
+  background:var(--surface-2);border:1px solid var(--border);border-radius:10px;
+}
+.field textarea{resize:vertical}
+.field input[aria-invalid="true"]{border-color:var(--danger)}
+.field-error{color:var(--danger);font-size:.78rem;font-weight:600;margin:0}
+.logo-row{display:flex;align-items:center;gap:.8rem;margin-top:.4rem}
+.logo-row img{width:3.4rem;height:3.4rem;object-fit:contain;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}
+
+/* Colores */
+.color-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.6rem;margin:.4rem 0 1rem}
+.color-item{
+  display:flex;align-items:center;justify-content:space-between;gap:.5em;
+  padding:.45em .7em;border:1px solid var(--border);border-radius:10px;
+  background:var(--surface-2);font-size:.82rem;font-weight:600;
+}
+.color-item input[type="color"]{width:2.4rem;height:1.9rem;padding:0;border:1px solid var(--border);border-radius:8px;background:none;cursor:pointer}
+fieldset{border:0;margin:0;padding:0}
+legend{font-weight:800;font-size:.9rem;margin-bottom:.4rem}
+
+/* ============================================================
+   7. TOAST, FOOTER, IMPRESIÓN Y MOVIMIENTO REDUCIDO
+   ============================================================ */
+.toast{
+  position:fixed;left:50%;bottom:1.2rem;z-index:100;max-width:90vw;
+  transform:translate(-50%,150%);visibility:hidden;
+  padding:.7rem 1.2rem;border-radius:999px;
+  background:var(--text);color:var(--bg);
+  font-weight:700;font-size:.88rem;box-shadow:var(--shadow);
+  transition:transform .3s ease,visibility .3s;
+}
+.toast.show{transform:translate(-50%,0);visibility:visible}
+.toast.error{background:var(--danger);color:#fff}
+
+.app-footer{border-top:1px solid var(--border);margin-top:1rem;padding:1.4rem 0 2rem;color:var(--text-muted);font-size:var(--fs-small)}
+.kbd{display:inline-block;padding:.1em .5em;border:1px solid var(--border);border-bottom-width:2px;border-radius:6px;background:var(--surface);font-family:ui-monospace,monospace;font-size:.85em}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+@media print{
+  .app-header,.controls,.app-footer,.overlay,.toast{display:none!important}
+  body{background:#fff;color:#000}
+  .cell{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Saltar al contenido principal</a>
+
+<!-- ═══════════ CABECERA ═══════════ -->
+<header class="app-header">
+  <div class="wrap header-inner">
+    <div class="brand">
+      <h1>Tabla Periódica <span>Docente 2.1</span></h1>
+      <p class="tagline">Ecosistema Digital · Open Source · IA · Herramientas Didácticas</p>
+    </div>
+    <nav class="toolbar" aria-label="Acciones principales">
+      <button type="button" class="btn" data-action="new-tool" title="Añadir herramienta en la primera casilla libre">➕ Nueva</button>
+      <button type="button" class="btn" data-action="open-colors" title="Personalizar colores de categorías y estados">🎨 Colores</button>
+      <button type="button" class="btn" data-action="export" title="Descargar el ecosistema como archivo JSON">💾 Descargar</button>
+      <button type="button" class="btn" data-action="import" title="Importar ecosistema desde archivo JSON">📂 Importar</button>
+      <button type="button" class="btn" data-action="toggle-theme" id="btn-theme" aria-pressed="false" title="Alternar modo claro/oscuro"><span id="btn-theme-icon" aria-hidden="true">🌙</span> Tema</button>
+    </nav>
+  </div>
+</header>
+
+<!-- ═══════════ CONTENIDO PRINCIPAL ═══════════ -->
+<main id="main" class="wrap">
+
+  <section class="controls" aria-label="Búsqueda, estadísticas y leyenda">
+    <div class="controls-row">
+      <div class="search-box">
+        <span class="icon" aria-hidden="true">🔍</span>
+        <label class="visually-hidden" for="search">Buscar herramienta por nombre, símbolo, categoría o descripción</label>
+        <input type="search" id="search" placeholder="Buscar herramienta…" autocomplete="off">
+      </div>
+      <p class="stats" id="stats">Cargando…</p>
+    </div>
+    <p id="search-status" class="visually-hidden" role="status" aria-live="polite"></p>
+
+    <details class="legend" id="legend">
+      <summary aria-label="Mostrar u ocultar la leyenda de categorías y estados">🧭 Leyenda de categorías y estados</summary>
+      <div class="legend-body">
+        <div>
+          <h3 id="legend-cats-title">Categorías</h3>
+          <ul class="legend-list" id="legend-cats" aria-labelledby="legend-cats-title"></ul>
+        </div>
+        <div>
+          <h3 id="legend-stats-title">Estados</h3>
+          <ul class="legend-list" id="legend-stats" aria-labelledby="legend-stats-title"></ul>
+        </div>
+        <p class="stats">Atajos: <span class="kbd">←</span><span class="kbd">↑</span><span class="kbd">→</span><span class="kbd">↓</span> navegar por la tabla · <span class="kbd">Intro</span> abrir celda · <span class="kbd">Esc</span> cerrar diálogo</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- Los tres tableros se generan por JS -->
+  <div id="boards"></div>
+</main>
+
+<footer class="app-footer">
+  <div class="wrap">
+    <p><strong>Tabla Periódica Docente 2.1</strong> — archivo único, sin dependencias externas. Tus cambios se guardan en este navegador (localStorage) y puedes exportarlos en JSON.</p>
+  </div>
+</footer>
+
+<!-- ═══════════ DIÁLOGO: DETALLE / EDITOR ═══════════ -->
+<div class="overlay" id="dlg-detail" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-detail-title" tabindex="-1">
+    <header class="dialog-head">
+      <h2 id="dlg-detail-title">Detalle de la herramienta</h2>
+      <button type="button" class="icon-btn" data-action="close-dialog" aria-label="Cerrar diálogo">✕</button>
+    </header>
+    <div class="dialog-body">
+      <!-- Panel de visualización -->
+      <div id="detail-view"></div>
+      <!-- Panel de edición -->
+      <form id="edit-form" novalidate hidden>
+        <div class="form-grid">
+          <div class="row-2">
+            <div class="field">
+              <label for="f-section">Ubicación de la casilla</label>
+              <select id="f-section"></select>
+            </div>
+            <div class="field">
+              <label for="f-symbol">Símbolo (máx. 3)</label>
+              <input id="f-symbol" maxlength="3" autocomplete="off" placeholder="Gd">
+            </div>
+          </div>
+          <div class="field">
+            <label for="f-name">Nombre <span aria-hidden="true">*</span></label>
+            <input id="f-name" required autocomplete="off" aria-describedby="err-name" placeholder="Nombre de la herramienta">
+            <p class="field-error" id="err-name" hidden>El nombre es obligatorio para guardar.</p>
+          </div>
+          <div class="row-2">
+            <div class="field">
+              <label for="f-category">Categoría <span aria-hidden="true">*</span></label>
+              <select id="f-category"></select>
+            </div>
+            <div class="field">
+              <label for="f-status">Estado</label>
+              <select id="f-status"></select>
+            </div>
+          </div>
+          <div class="field">
+            <label for="f-logo">Logo (opcional, imagen local)</label>
+            <input type="file" id="f-logo" accept="image/*">
+            <small>Si agregas logo, el símbolo y el nombre se ocultarán visualmente en la celda. La imagen se recorta y comprime automáticamente.</small>
+            <div class="logo-row" id="logo-row" hidden>
+              <img id="logo-preview" alt="Vista previa del logo seleccionado">
+              <button type="button" class="btn btn-danger" data-action="remove-logo">🗑️ Quitar logo</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="f-url">Enlace de la herramienta (URL)</label>
+            <input id="f-url" type="url" inputmode="url" autocomplete="off" placeholder="https://ejemplo.org">
+          </div>
+          <div class="field">
+            <label for="f-desc">Descripción general</label>
+            <textarea id="f-desc" rows="3" placeholder="¿Qué hace esta herramienta?"></textarea>
+          </div>
+          <div class="field">
+            <label for="f-adv">Análisis / ventaja (opcional)</label>
+            <textarea id="f-adv" rows="2" placeholder="¿Por qué es útil en el aula?"></textarea>
+          </div>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="btn btn-danger" id="btn-delete" data-action="delete-slot">🗑️ Eliminar</button>
+          <span class="spacer"></span>
+          <button type="button" class="btn" data-action="close-dialog">Cancelar</button>
+          <button type="submit" class="btn btn-accent">💾 Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ DIÁLOGO: PERSONALIZAR COLORES ═══════════ -->
+<div class="overlay" id="dlg-colors" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-colors-title" tabindex="-1">
+    <header class="dialog-head">
+      <h2 id="dlg-colors-title">🎨 Personalizar colores</h2>
+      <button type="button" class="icon-btn" data-action="close-dialog" aria-label="Cerrar diálogo">✕</button>
+    </header>
+    <div class="dialog-body">
+      <div id="color-fields"></div>
+      <div class="dialog-actions">
+        <button type="button" class="btn" data-action="reset-colors">↩️ Restaurar predeterminados</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-accent" data-action="apply-colors">✅ Aplicar y cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Entrada oculta para importar JSON -->
+<input type="file" id="import-file" accept=".json,application/json" class="visually-hidden" tabindex="-1" aria-hidden="true">
+
+<!-- Región de avisos -->
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<noscript>
+  <p style="padding:1rem;text-align:center;font-weight:700">Esta aplicación necesita JavaScript para funcionar. Actívalo en tu navegador.</p>
+</noscript>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   TABLA PERIÓDICA DOCENTE 2.1 — Lógica de aplicación (vanilla JS)
+   Arquitectura: configuración → utilidades → estado → renderizado
+                 → diálogos → acciones → eventos → arranque.
+   ══════════════════════════════════════════════════════════════════ */
+(() => {
+'use strict';
+
+/* ───────────────────────── 1. CONFIGURACIÓN ───────────────────────── */
+
+const NS = 'tpd2.'; // prefijo de claves en localStorage
+
+/** Secciones de la tabla y número de casillas de cada una. */
+const SECTIONS = [
+  { id: 'm', title: 'Tabla Principal',          subtitle: 'Herramientas digitales consolidadas del aula', count: 72 },
+  { id: 'a', title: 'IA Educativa',             subtitle: 'Inteligencia artificial aplicada a la educación', count: 14 },
+  { id: 'e', title: 'Emergentes · Open Source', subtitle: 'Software libre y tecnologías emergentes',      count: 14 }
+];
+const TOTAL = SECTIONS.reduce((n, s) => n + s.count, 0); // 100 casillas
+
+/** Categorías (fuente única de verdad para selects, leyenda y celdas). */
+const CATS = {
+  gestion:      { label: 'Gestión (LMS)' },
+  organizacion: { label: 'Organización' },
+  creacion:     { label: 'Creación de Contenido' },
+  evaluacion:   { label: 'Evaluación' },
+  gamificacion: { label: 'Gamificación' },
+  programacion: { label: 'Programación' },
+  comunicacion: { label: 'Comunicación' },
+  contenido:    { label: 'Contenido' },
+  ia:           { label: 'IA Educativa' }
+};
+
+/** Estados de cada herramienta. */
+const STATS = {
+  clasica:   { label: 'Clásica Activa',      icon: '✓' },
+  nueva:     { label: 'Nueva / Open Source', icon: '⭐' },
+  bloqueada: { label: 'Descontinuada',       icon: '🚫' }
+};
+
+/** Colores predeterminados (coinciden con los tokens CSS de :root). */
+const DEF_COLORS = {
+  cats: {
+    gestion: '#4e79a7', organizacion: '#59a14f', creacion: '#f28e2b',
+    evaluacion: '#e15759', gamificacion: '#b07aa1', programacion: '#3fa7a1',
+    comunicacion: '#d9b310', contenido: '#9c755f', ia: '#d37295'
+  },
+  stats: { clasica: '#16a34a', nueva: '#d97706', bloqueada: '#64748b' }
+};
+
+/** Datos semilla: [sección, índice, símbolo, nombre, categoría, estado, url, descripción, ventaja]. */
+const SEED_DATA = [
+  ['m',0,'GCL','Google Classroom','gestion','clasica','https://classroom.google.com','LMS gratuito de Google para tareas, comunicación y organización de clases.','Se integra con Drive, Docs y Meet; curva de aprendizaje mínima.'],
+  ['m',1,'Mdl','Moodle','gestion','clasica','https://moodle.org','El LMS open source más usado en educación.','Altamente personalizable y sin límite de usuarios.'],
+  ['m',2,'Cnv','Canvas LMS','gestion','clasica','https://www.canvaslms.com/es','LMS robusto orientado a instituciones.','Interfaz moderna y analíticas de aprendizaje.'],
+  ['m',3,'Edm','Edmodo','gestion','bloqueada','https://www.edmodo.com','Red social educativa cerrada en 2022.','—'],
+  ['m',4,'Bbd','Blackboard','gestion','clasica','https://www.blackboard.com','LMS institucional de gama alta.','Muy potente en universidades grandes.'],
+  ['m',5,'Chm','Chamilo','gestion','nueva','https://chamilo.org','LMS open source ligero y sencillo.','Fácil de instalar y con comunidad activa.'],
+  ['m',6,'Trl','Trello','organizacion','clasica','https://trello.com','Tableros kanban para organizar proyectos.','Visual e ideal para trabajo en equipo.'],
+  ['m',7,'Ntn','Notion','organizacion','nueva','https://www.notion.so','Espacio todo-en-uno: notas, bases de datos y wikis.','Plantillas educativas gratuitas.'],
+  ['m',8,'Asn','Asana','organizacion','clasica','https://asana.com','Gestión de tareas y proyectos.','Plan gratuito para educación.'],
+  ['m',9,'GCl','Google Calendar','organizacion','clasica','https://calendar.google.com','Calendario compartible con recordatorios.','Planificación docente colaborativa.'],
+  ['m',10,'Pdl','Padlet','organizacion','clasica','https://padlet.com','Muros digitales colaborativos.','Muy fácil para lluvia de ideas.'],
+  ['m',11,'Wkl','Wakelet','organizacion','nueva','https://wakelet.com','Colecciones y curación de contenido.','Gratuito y sin registro para el alumnado.'],
+  ['m',12,'Cva','Canva','creacion','nueva','https://www.canva.com','Diseño gráfico, carteles e infografías.','Canva for Education gratis para docentes.'],
+  ['m',13,'Gnl','Genially','creacion','nueva','https://www.genial.ly','Presentaciones e imágenes interactivas.','Gamificación y escape rooms listos para usar.'],
+  ['m',14,'Ppt','PowerPoint','creacion','clasica','https://www.microsoft.com/microsoft-365/powerpoint','Presentaciones clásicas.','Universal y disponible sin conexión.'],
+  ['m',15,'Prz','Prezi','creacion','clasica','https://prezi.com','Presentaciones dinámicas con zoom.','Gran impacto visual.'],
+  ['m',16,'CpC','CapCut','creacion','nueva','https://www.capcut.com','Edición de vídeo sencilla y rápida.','Gratis; ideal para vídeos educativos cortos.'],
+  ['m',17,'OBS','OBS Studio','creacion','nueva','https://obsproject.com','Grabación y streaming open source.','Estándar para grabar clases.'],
+  ['m',18,'Aud','Audacity','creacion','nueva','https://www.audacityteam.org','Editor de audio open source.','Perfecto para podcasts escolares.'],
+  ['m',19,'Gmp','GIMP','creacion','nueva','https://www.gimp.org','Retoque fotográfico open source.','Alternativa gratuita a Photoshop.'],
+  ['m',20,'Kht','Kahoot!','gamificacion','clasica','https://kahoot.com','Cuestionarios gamificados en vivo.','Alta motivación y participación.'],
+  ['m',21,'Qzz','Quizizz','gamificacion','clasica','https://quizizz.com','Quizzes con memes y ritmo propio.','Informes detallados por pregunta.'],
+  ['m',22,'Wwl','Wordwall','gamificacion','nueva','https://wordwall.net','Actividades interactivas con plantillas.','Crea juegos en minutos.'],
+  ['m',23,'Epl','Educaplay','gamificacion','clasica','https://www.educaplay.com','Sopas de letras, ruletas y mapas interactivos.','Gratuito y en español.'],
+  ['m',24,'CDj','ClassDojo','gamificacion','clasica','https://www.classdojo.com','Gestión del aula con refuerzo positivo.','Conecta con las familias.'],
+  ['m',25,'Dlg','Duolingo','gamificacion','clasica','https://www.duolingo.com','Aprendizaje de idiomas gamificado.','Duolingo for Schools sin coste.'],
+  ['m',26,'Scr','Scratch','programacion','nueva','https://scratch.mit.edu','Programación visual por bloques.','Estándar en pensamiento computacional.'],
+  ['m',27,'Cod','Code.org','programacion','clasica','https://code.org','Cursos de computación K-12.','Gratuito y con planes de estudio completos.'],
+  ['m',28,'Mbt','micro:bit','programacion','nueva','https://microbit.org','Placa programable educativa.','Simulador online gratuito.'],
+  ['m',29,'Ard','Arduino','programacion','nueva','https://www.arduino.cc','Electrónica y prototipado.','Ideal para robótica y STEM.'],
+  ['m',30,'Py','Python','programacion','nueva','https://www.python.org','Lenguaje de programación versátil.','Sintaxis clara para principiantes.'],
+  ['m',31,'Blk','Blockly','programacion','nueva','https://blockly.games','Programación por bloques open source.','Juegos guiados por niveles.'],
+  ['m',32,'Gd','Godot','programacion','nueva','https://godotengine.org','Motor de videojuegos 2D y 3D open source.','Ideal para enseñar lógica y proyectos interactivos.'],
+  ['m',33,'Zm','Zoom','comunicacion','clasica','https://zoom.us','Videollamadas masivas.','Salas grupales (breakout rooms).'],
+  ['m',34,'Tms','Microsoft Teams','comunicacion','clasica','https://www.microsoft.com/microsoft-teams','Colaboración y clases en vivo.','Integración con Office 365 Education.'],
+  ['m',35,'Gmt','Google Meet','comunicacion','clasica','https://meet.google.com','Videollamadas ligeras.','Se integra con Classroom.'],
+  ['m',36,'Dsc','Discord','comunicacion','clasica','https://discord.com','Servidores con canales de voz y texto.','Lenguaje cercano al alumnado.'],
+  ['m',37,'Slk','Slack','comunicacion','clasica','https://slack.com','Mensajería por canales.','Descuentos para educación.'],
+  ['m',38,'Rmd','Remind','comunicacion','bloqueada','https://www.remind.com','Mensajería familia-escuela (funciones retiradas).','—'],
+  ['m',39,'Ctg','ClassTag','comunicacion','clasica','https://classtag.com','Comunicación con familias.','Mensajes traducidos automáticamente.'],
+  ['m',40,'Yt','YouTube','contenido','clasica','https://www.youtube.com','La mayor videoteca educativa.','Canales en todos los idiomas.'],
+  ['m',41,'Wkp','Wikipedia','contenido','clasica','https://www.wikipedia.org','Enciclopedia colaborativa.','Enseña alfabetización informacional.'],
+  ['m',42,'TED','TED-Ed','contenido','clasica','https://ed.ted.com','Lecciones animadas cortas.','Con preguntas listas para usar.'],
+  ['m',43,'Khn','Khan Academy','contenido','clasica','https://www.khanacademy.org','Cursos gratuitos con mastery learning.','Khan for Educators con apoyo de IA.'],
+  ['m',44,'PhT','PhET','contenido','nueva','https://phet.colorado.edu','Simulaciones de ciencias y matemáticas.','Gratuito; aprendizaje por exploración.'],
+  ['m',45,'GGb','GeoGebra','contenido','nueva','https://www.geogebra.org','Matemáticas dinámicas.','Gratuito y con visualización potente.'],
+  ['m',46,'Dsm','Desmos','contenido','clasica','https://www.desmos.com','Calculadora gráfica y actividades.','Actividades de aula interactivas.'],
+  ['m',47,'Lbr','LibreOffice','contenido','nueva','https://www.libreoffice.org','Suite ofimática open source.','Gratuita y compatible con Office.'],
+  ['m',48,'H5P','H5P','creacion','nueva','https://h5p.org','Contenido interactivo HTML5.','Vídeos interactivos, quizzes y más.'],
+  ['m',49,'Edp','Edpuzzle','evaluacion','clasica','https://edpuzzle.com','Vídeos con preguntas incrustadas.','Evalúa la comprensión en tiempo real.'],
+  ['m',50,'Nrp','Nearpod','evaluacion','clasica','https://nearpod.com','Lecciones interactivas sincrónicas.','Encuestas y pizarras colaborativas.'],
+  ['m',51,'Soc','Socrative','evaluacion','clasica','https://socrative.com','Evaluación formativa en vivo.','Space Race gamificado.'],
+  ['m',52,'Qzl','Quizlet','evaluacion','clasica','https://quizlet.com','Tarjetas de memoria y juegos de estudio.','Millones de sets ya creados.'],
+  ['m',53,'Frm','Google Forms','evaluacion','clasica','https://docs.google.com/forms','Formularios y exámenes autocorregibles.','Gratis e integrado con Sheets.'],
+  ['m',54,'Fmt','Formative','evaluacion','clasica','https://goformative.com','Evaluación con feedback en vivo.','Respuestas del alumnado en tiempo real.'],
+  ['m',55,'Plk','Plickers','evaluacion','clasica','https://www.plickers.com','Evalúa con tarjetas de papel.','No requiere dispositivos del alumnado.'],
+  ['m',56,'Flp','Flip','evaluacion','bloqueada','https://info.flip.com','Vídeo-discusión (cerrado por Microsoft en 2024).','—'],
+  ['m',57,'Ssw','Seesaw','evaluacion','clasica','https://web.seesaw.me','Portfolio digital del alumnado.','Ideal para primaria.'],
+  ['m',58,'PrD','Pear Deck','evaluacion','clasica','https://www.peardeck.com','Presentaciones interactivas.','Se integra con Slides y PowerPoint.'],
+  ['m',59,'Ccr','Classcraft','gamificacion','bloqueada','https://www.classcraft.com','RPG de gestión del aula (descontinuado en 2024).','—'],
+  ['m',60,'McE','Minecraft Education','gamificacion','clasica','https://education.minecraft.net','Mundo abierto educativo.','Aprendizaje basado en proyectos.'],
+  ['m',61,'Bcr','Book Creator','creacion','nueva','https://bookcreator.com','Libros digitales multimedia.','Muy fácil para el alumnado.'],
+  ['m',62,'Cbr','Cerebriti','gamificacion','clasica','https://www.cerebriti.com','Juegos educativos creados por usuarios.','Los alumnos crean sus propios juegos.'],
+  ['m',63,'CoS','CoSpaces Edu','creacion','nueva','https://cospaces.io/edu','Realidad virtual y aumentada en el aula.','Crea mundos 3D sin programar.'],
+  ['m',64,'GnD','GoNoodle','gamificacion','clasica','https://www.gonoodle.com','Pausas activas con vídeo.','Energía y atención en primaria.'],
+  ['a',0,'GPT','ChatGPT','ia','nueva','https://chatgpt.com','Asistente conversacional de OpenAI.','Versión Edu pensada para docentes.'],
+  ['a',1,'Gem','Gemini','ia','nueva','https://gemini.google.com','IA de Google integrada en Workspace.','Se conecta con Classroom y Drive.'],
+  ['a',2,'Cla','Claude','ia','nueva','https://claude.ai','IA de Anthropic.','Destaca en textos largos y razonamiento.'],
+  ['a',3,'Cpl','Microsoft Copilot','ia','nueva','https://copilot.microsoft.com','IA integrada en Windows y Office.','Genera presentaciones y documentos.'],
+  ['a',4,'Ppx','Perplexity','ia','nueva','https://www.perplexity.ai','Buscador con IA y citas.','Fuentes verificables para investigar.'],
+  ['a',5,'MgS','MagicSchool AI','ia','nueva','https://www.magicschool.ai','Suite de IA para docentes.','Rúbricas, adaptaciones y planes de clase.'],
+  ['a',6,'Dft','Diffit','ia','nueva','https://web.diffit.me','Adapta textos a distintos niveles de lectura.','Diferenciación automática.'],
+  ['a',7,'Crp','Curipod','ia','nueva','https://curipod.com','Lecciones interactivas generadas con IA.','Participación de todo el grupo.'],
+  ['a',8,'ScA','SchoolAI','ia','nueva','https://schoolai.com','Espacios seguros de IA para alumnos.','Tutoría controlada por el docente.'],
+  ['a',9,'NLM','NotebookLM','ia','nueva','https://notebooklm.google.com','IA que trabaja con tus documentos.','Resúmenes y podcasts automáticos.'],
+  ['e',0,'OOf','ONLYOFFICE','contenido','nueva','https://www.onlyoffice.com','Suite ofimática open source.','Colaboración en tiempo real.'],
+  ['e',1,'Cpd','CryptPad','organizacion','nueva','https://cryptpad.org','Suite colaborativa cifrada.','Privacidad por diseño.'],
+  ['e',2,'Exc','Excalidraw','creacion','nueva','https://excalidraw.com','Pizarra virtual estilo boceto.','Sin registro y colaborativa al instante.'],
+  ['e',3,'Jts','Jitsi Meet','comunicacion','nueva','https://jitsi.org','Videollamadas open source sin registro.','Reuniones con un solo clic.'],
+  ['e',4,'Ank','Anki','evaluacion','nueva','https://apps.ankiweb.net','Tarjetas con repetición espaciada.','Open source; memoria a largo plazo.'],
+  ['e',5,'BBB','BigBlueButton','comunicacion','nueva','https://bigbluebutton.org','Aulas virtuales open source.','Pizarra, encuestas y grabación.'],
+  ['e',6,'OpB','OpenBoard','creacion','nueva','https://openboard.ch','Pizarra digital interactiva.','Open source y funciona offline.'],
+  ['e',7,'Shc','Shotcut','creacion','nueva','https://shotcut.org','Editor de vídeo open source.','Gratuito y multiplataforma.'],
+  ['e',8,'Bld','Blender','creacion','nueva','https://www.blender.org','Modelado y animación 3D open source.','Estándar profesional gratuito.'],
+  ['e',9,'Xpp','Xournal++','organizacion','nueva','https://xournalpp.github.io','Notas manuscritas y anotación de PDF.','Ideal con tableta gráfica.'],
+  ['e',10,'Kwx','Kiwix','contenido','nueva','https://kiwix.org','Wikipedia y recursos offline open source.','Contenido educativo sin conexión a internet.']
+];
+
+/* ───────────────────────── 2. UTILIDADES ───────────────────────── */
+
+const $  = (sel, ctx = document) => ctx.querySelector(sel);
+const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
+
+/** Escapa texto para interpolaciones HTML seguras (anti-XSS). */
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
+  (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+
+/** Valida y normaliza una URL: solo se aceptan http/https. */
+function safeUrl(raw) {
+  if (!raw) return '';
+  try {
+    const u = new URL(raw);
+    return /^https?:$/.test(u.protocol) ? u.href : '';
+  } catch { return ''; }
+}
+
+const isValidHex = (v) => typeof v === 'string' && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v);
+
+/** Capa segura sobre localStorage: nunca lanza excepciones. */
+const Store = {
+  get(key, fallback) {
+    try {
+      const raw = localStorage.getItem(NS + key);
+      return raw === null ? fallback : JSON.parse(raw);
+    } catch (err) {
+      console.warn('[TPD] No se pudo leer', key, err);
+      return fallback;
+    }
+  },
+  set(key, value) {
+    try {
+      localStorage.setItem(NS + key, JSON.stringify(value));
+      return true;
+    } catch (err) {
+      console.error('[TPD] No se pudo guardar', key, err);
+      toast('⚠️ No se pudo guardar (almacenamiento lleno o bloqueado)', 'error');
+      return false;
+    }
+  }
+};
+
+let toastTimer = 0;
+/** Aviso emergente accesible (sustituye al cartel fijo "Cambios guardados"). */
+function toast(msg, type = 'ok') {
+  const el = $('#toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.toggle('error', type === 'error');
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+/**
+ * Recorta una imagen a cuadrado y la reduce a `size` px (evita saturar
+ * localStorage con dataURLs gigantes). Devuelve dataURL WebP o PNG.
+ */
+function downscaleImage(file, size = 96) {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.type.startsWith('image/')) {
+      reject(new Error('El archivo no es una imagen válida'));
+      return;
+    }
+    const objUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        const side = Math.min(img.width, img.height); // recorte central cuadrado
+        ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
+        let out = canvas.toDataURL('image/webp', 0.85);
+        if (!out.startsWith('data:image/webp')) out = canvas.toDataURL('image/png');
+        resolve(out);
+      } catch (err) { reject(err); }
+      finally { URL.revokeObjectURL(objUrl); }
+    };
+    img.onerror = () => { URL.revokeObjectURL(objUrl); reject(new Error('No se pudo leer la imagen')); };
+    img.src = objUrl;
+  });
+}
+
+/** Número global de casilla (1..100) a partir de sección e índice. */
+function globalNumber(section, index) {
+  let offset = 0;
+  for (const s of SECTIONS) {
+    if (s.id === section) return offset + index + 1;
+    offset += s.count;
+  }
+  return index + 1;
+}
+
+/* ───────────────────────── 3. ESTADO ───────────────────────── */
+
+let slots = [];          // array plano de 100 casillas
+let colors = null;       // { cats:{}, stats:{} }
+let editTarget = null;   // { section, index } de la casilla en edición
+let pendingLogo;         // undefined = sin cambios · null = borrar · string = nuevo
+const cellRefs = { m: [], a: [], e: [] }; // referencias DOM por sección
+const openStack = [];    // pila de diálogos abiertos { id, opener }
+
+const emptySlot = (section, index) => ({
+  section, index, symbol: '', name: '', category: '', status: '',
+  url: '', description: '', advantage: '', logo: null
+});
+
+const freshSlots = () => {
+  const arr = [];
+  for (const s of SECTIONS) for (let i = 0; i < s.count; i++) arr.push(emptySlot(s.id, i));
+  return arr;
+};
+
+const slotAt = (section, index) =>
+  slots.find((s) => s.section === section && s.index === index) || null;
+
+/** Construye el ecosistema inicial con los datos semilla. */
+function buildSeed() {
+  const arr = freshSlots();
+  for (const [sec, idx, symbol, name, cat, st, url, desc, adv] of SEED_DATA) {
+    const slot = arr.find((s) => s.section === sec && s.index === idx);
+    if (slot) Object.assign(slot, {
+      symbol, name, category: cat, status: st,
+      url: safeUrl(url), description: desc, advantage: adv
+    });
+  }
+  return arr;
+}
+
+/** Normaliza una casilla recibida (localStorage o import) al esquema interno. */
+function sanitizeSlot(raw, base) {
+  if (!raw || typeof raw !== 'object') return;
+  base.symbol      = String(raw.symbol ?? '').slice(0, 3);
+  base.name        = String(raw.name ?? '').slice(0, 60);
+  base.category    = CATS[raw.category] ? raw.category : '';
+  base.status      = STATS[raw.status] ? raw.status : '';
+  base.url         = safeUrl(String(raw.url ?? ''));
+  base.description = String(raw.description ?? '').slice(0, 600);
+  base.advantage   = String(raw.advantage ?? '').slice(0, 600);
+  base.logo        = (typeof raw.logo === 'string' && raw.logo.startsWith('data:image/'))
+    ? raw.logo.slice(0, 200000) : null;
+}
+
+/** Carga estado persistido; si falta o está corrupto, usa la semilla. */
+function loadState() {
+  const saved = Store.get('slots');
+  if (Array.isArray(saved) && saved.length === TOTAL) {
+    slots = freshSlots();
+    for (const raw of saved) {
+      const base = slotAt(raw && raw.section, raw && raw.index);
+      if (base) sanitizeSlot(raw, base);
+    }
+  } else {
+    slots = buildSeed();
+  }
+  const savedColors = Store.get('colors');
+  colors = { cats: { ...DEF_COLORS.cats }, stats: { ...DEF_COLORS.stats } };
+  if (savedColors && typeof savedColors === 'object') mergeColors(savedColors);
+}
+
+function mergeColors(source) {
+  for (const k in DEF_COLORS.cats)  if (isValidHex(source.cats  && source.cats[k]))  colors.cats[k]  = source.cats[k];
+  for (const k in DEF_COLORS.stats) if (isValidHex(source.stats && source.stats[k])) colors.stats[k] = source.stats[k];
+}
+
+function persist() {
+  Store.set('slots', slots);
+  Store.set('colors', colors);
+}
+
+/* ───────────────────────── 4. RENDERIZADO ───────────────────────── */
+
+const root = document.documentElement;
+
+/** Aplica los colores del estado como custom properties en :root. */
+function applyColors() {
+  for (const k in colors.cats)  root.style.setProperty('--cat-' + k, colors.cats[k]);
+  for (const k in colors.stats) root.style.setProperty('--st-' + k, colors.stats[k]);
+}
+
+/** Crea los tres tableros y sus 100 celdas (una sola vez). */
+function buildBoards() {
+  const container = $('#boards');
+  container.innerHTML = SECTIONS.map((sec) => `
+    <section class="board-section" aria-labelledby="h-${sec.id}">
+      <header class="board-head">
+        <h2 id="h-${sec.id}">${esc(sec.title)}</h2>
+        <p>${esc(sec.subtitle)}</p>
+      </header>
+      <div class="grid grid-${sec.id}" id="grid-${sec.id}" role="group"
+           aria-label="${esc(sec.title)}: casillas de herramientas"></div>
+    </section>`).join('');
+
+  for (const sec of SECTIONS) {
+    const grid = $('#grid-' + sec.id);
+    cellRefs[sec.id] = [];
+    for (let i = 0; i < sec.count; i++) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cell';
+      btn.dataset.section = sec.id;
+      btn.dataset.index = String(i);
+      btn.tabIndex = -1; // roving tabindex
+      grid.appendChild(btn);
+      cellRefs[sec.id].push(btn);
+      renderCell(slotAt(sec.id, i));
+    }
+    const first = grid.querySelector('.cell');
+    if (first) first.tabIndex = 0;
+    attachGridNav(grid);
+  }
+}
+
+/** Pinta el contenido y las etiquetas ARIA de una celda. */
+function renderCell(slot) {
+  if (!slot) return;
+  const btn = cellRefs[slot.section][slot.index];
+  if (!btn) return;
+  const filled = !!slot.name;
+  const num = globalNumber(slot.section, slot.index);
+
+  btn.classList.toggle('filled', filled);
+  btn.classList.toggle('empty', !filled);
+  btn.classList.toggle('st-bloqueada', filled && slot.status === 'bloqueada');
+  // var() dentro del estilo enlazado: los cambios de color se propagan solos.
+  btn.style.setProperty('--cat', filled && slot.category ? `var(--cat-${slot.category})` : 'transparent');
+  btn.style.setProperty('--st',  filled && slot.status   ? `var(--st-${slot.status})`   : 'transparent');
+
+  let html = `<span class="cell-num" aria-hidden="true">${num}</span>`;
+  if (filled && slot.status && slot.status !== 'clasica') {
+    html += `<span class="cell-status" aria-hidden="true">${STATS[slot.status].icon}</span>`;
+  }
+  if (filled && slot.logo) {
+    html += `<img class="cell-logo" src="${slot.logo}" alt="" aria-hidden="true">`;
+  } else if (filled) {
+    html += `<span class="cell-sym">${esc(slot.symbol)}</span>
+             <span class="cell-name">${esc(slot.name)}</span>`;
+  }
+  btn.innerHTML = html;
+
+  btn.setAttribute('aria-label', filled
+    ? `Casilla ${num}: ${slot.name}. Categoría: ${CATS[slot.category]?.label || 'sin categoría'}. Estado: ${STATS[slot.status]?.label || 'sin estado'}. Pulsa Intro para ver los detalles.`
+    : `Casilla ${num} vacía. Pulsa Intro para añadir una herramienta.`);
+  btn.title = filled ? `${slot.name} · ${CATS[slot.category]?.label || ''}` : `Casilla ${num} vacía — añadir`;
+}
+
+const renderAll = () => slots.forEach(renderCell);
+
+/** Leyenda construida desde CATS/STATS (sin duplicar markup). */
+function buildLegend() {
+  $('#legend-cats').innerHTML = Object.entries(CATS).map(([k, v]) =>
+    `<li class="chip"><span class="dot" style="--dot:var(--cat-${k})"></span>${esc(v.label)}</li>`).join('');
+  $('#legend-stats').innerHTML = Object.entries(STATS).map(([k, v]) =>
+    `<li class="chip"><span class="dot" style="--dot:var(--st-${k})"></span>${v.icon} ${esc(v.label)}</li>`).join('');
+}
+
+/** Contadores globales del ecosistema. */
+function updateStats() {
+  const filled = slots.filter((s) => s.name).length;
+  const nuevas = slots.filter((s) => s.name && s.status === 'nueva').length;
+  const caidas = slots.filter((s) => s.name && s.status === 'bloqueada').length;
+  $('#stats').textContent = `🧪 ${filled} herramientas · ⭐ ${nuevas} nuevas · 🚫 ${caidas} descontinuadas`;
+}
+
+/* ───────────────────────── 5. DIÁLOGOS ACCESIBLES ───────────────────────── */
+
+const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+
+function openDialog(id, opener) {
+  const overlay = document.getElementById(id);
+  if (!overlay || overlay.hidden === false) return;
+  overlay.hidden = false;
+  document.body.classList.add('modal-open');
+  openStack.push({ id, opener: opener || document.activeElement });
+  const dialog = $('.dialog', overlay);
+  (dialog || overlay).focus();
+}
+
+function closeDialog(id) {
+  const pos = openStack.findIndex((d) => d.id === id);
+  if (pos === -1) return;
+  const [entry] = openStack.splice(pos, 1);
+  const overlay = document.getElementById(id);
+  if (overlay) overlay.hidden = true;
+  if (!openStack.length) document.body.classList.remove('modal-open');
+  if (entry.opener && entry.opener.isConnected) entry.opener.focus();
+}
+
+/** Escape cierra el diálogo superior · Tab queda atrapado en él. */
+document.addEventListener('keydown', (e) => {
+  if (!openStack.length) return;
+  const top = openStack[openStack.length - 1];
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    closeDialog(top.id);
+    return;
+  }
+  if (e.key === 'Tab') {
+    const overlay = document.getElementById(top.id);
+    const items = $$(FOCUSABLE, overlay).filter((el) => el.getClientRects().length);
+    if (!items.length) { e.preventDefault(); return; }
+    const first = items[0], last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+});
+
+/** Muestra el panel de vista o de edición dentro del diálogo de detalle. */
+function showDetailPanel(mode) {
+  $('#detail-view').hidden = mode !== 'view';
+  $('#edit-form').hidden   = mode !== 'edit';
+  $('#dlg-detail-title').textContent =
+    mode === 'view' ? 'Detalle de la herramienta' : 'Propiedades de la herramienta';
+  if (mode === 'edit') $('#f-name').focus();
+}
+
+/* ───────────────────────── 6. DETALLE Y EDICIÓN ───────────────────────── */
+
+function openDetail(section, index, trigger) {
+  const slot = slotAt(section, index);
+  if (!slot) return;
+  if (!slot.name) { openEditorForSlot(section, index, true); openDialog('dlg-detail', trigger); return; }
+
+  const catColor = slot.category ? `var(--cat-${slot.category})` : 'var(--text-muted)';
+  const catLabel = CATS[slot.category]?.label || 'Sin categoría';
+  const stInfo   = STATS[slot.status] || { label: 'Sin estado', icon: '·' };
+  const url      = safeUrl(slot.url);
+
+  $('#detail-view').innerHTML = `
+    <div class="detail-hero" style="--cat:${catColor}">
+      ${slot.logo
+        ? `<img class="detail-logo" src="${slot.logo}" alt="">`
+        : `<span class="detail-sym" aria-hidden="true">${esc(slot.symbol)}</span>`}
+      <div>
+        <h3>${esc(slot.name)}</h3>
+        <p style="display:flex;flex-wrap:wrap;gap:.4rem;margin:0">
+          <span class="chip"><span class="dot" style="--dot:${catColor}"></span>${esc(catLabel)}</span>
+          <span class="chip">${stInfo.icon} ${esc(stInfo.label)}</span>
+          <span class="chip muted">Casilla ${globalNumber(section, index)}</span>
+        </p>
+      </div>
+    </div>
+    <p class="detail-desc">${slot.description ? esc(slot.description) : '<em>Sin descripción.</em>'}</p>
+    ${slot.advantage ? `<p class="detail-adv">💡 <strong>Ventaja:</strong> ${esc(slot.advantage)}</p>` : ''}
+    ${url ? `<p><a class="btn btn-accent" href="${esc(url)}" target="_blank" rel="noopener noreferrer">🔗 Visitar herramienta<span class="visually-hidden"> (se abre en una pestaña nueva)</span></a></p>` : ''}
+    <div class="dialog-actions">
+      <button type="button" class="btn" data-action="to-edit">✏️ Editar</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn" data-action="close-dialog">Cerrar</button>
+    </div>`;
+
+  showDetailPanel('view');
+  openDialog('dlg-detail', trigger);
+}
+
+/** Rellena el formulario con los datos de una casilla. */
+function openEditorForSlot(section, index, isCreate = false) {
+  const slot = slotAt(section, index);
+  if (!slot) return;
+  editTarget = { section, index };
+  pendingLogo = undefined;
+
+  $('#f-section').value  = section;
+  $('#f-symbol').value   = slot.symbol;
+  $('#f-name').value     = slot.name;
+  $('#f-category').value = slot.category;
+  $('#f-status').value   = slot.status || 'clasica';
+  $('#f-url').value      = slot.url;
+  $('#f-desc').value     = slot.description;
+  $('#f-adv').value      = slot.advantage;
+  $('#f-logo').value     = '';
+  $('#err-name').hidden  = true;
+  $('#f-name').removeAttribute('aria-invalid');
+
+  const hasLogo = !!slot.logo;
+  $('#logo-row').hidden = !hasLogo;
+  if (hasLogo) $('#logo-preview').src = slot.logo;
+
+  $('#btn-delete').disabled = isCreate || !slot.name;
+  showDetailPanel('edit');
+}
+
+/** Botón "➕ Nueva": busca la primera casilla libre. */
+function createNewTool(trigger) {
+  const free = slots.find((s) => !s.name);
+  if (!free) { toast('⚠️ No quedan casillas libres en el ecosistema', 'error'); return; }
+  openEditorForSlot(free.section, free.index, true);
+  openDialog('dlg-detail', trigger);
+}
+
+/** Guarda los cambios del formulario (con validación y mudanza de sección). */
+function saveEdit() {
+  const name = $('#f-name').value.trim();
+  const category = $('#f-category').value;
+  const errName = $('#err-name');
+
+  if (!name) {
+    errName.hidden = false;
+    $('#f-name').setAttribute('aria-invalid', 'true');
+    $('#f-name').focus();
+    return;
+  }
+  errName.hidden = true;
+  $('#f-name').removeAttribute('aria-invalid');
+
+  if (!CATS[category]) { toast('⚠️ Selecciona una categoría', 'error'); $('#f-category').focus(); return; }
+
+  // Símbolo: si se omite, se deriva de las iniciales del nombre.
+  let symbol = $('#f-symbol').value.trim().toUpperCase().slice(0, 3);
+  if (!symbol) {
+    symbol = (name.split(/\s+/).filter((w) => /[\w.]/.test(w)).slice(0, 3).map((w) => w[0]).join('')
+      || name.slice(0, 3)).toUpperCase();
+  }
+
+  const data = {
+    symbol, name, category,
+    status: STATS[$('#f-status').value] ? $('#f-status').value : 'clasica',
+    url: safeUrl($('#f-url').value.trim()),
+    description: $('#f-desc').value.trim().slice(0, 600),
+    advantage: $('#f-adv').value.trim().slice(0, 600)
+  };
+
+  const current = slotAt(editTarget.section, editTarget.index);
+  const targetSection = $('#f-section').value;
+  let dest = current;
+
+  if (targetSection !== editTarget.section) {
+    const free = slots.find((s) => s.section === targetSection && !s.name);
+    if (!free) { toast('⚠️ No hay casillas libres en la sección elegida', 'error'); return; }
+    dest = free;
+    if (current && current !== dest) { Object.assign(current, emptySlot(current.section, current.index)); renderCell(current); }
+  }
+
+  Object.assign(dest, data);
+  if (pendingLogo !== undefined) { dest.logo = pendingLogo; pendingLogo = undefined; }
+  editTarget = { section: dest.section, index: dest.index };
+
+  renderCell(dest);
+  updateStats();
+  applySearchFilter();
+  persist();
+  closeDialog('dlg-detail');
+  toast('✅ Cambios guardados');
+}
+
+/** Elimina la herramienta de la casilla en edición (con confirmación). */
+function deleteSlot() {
+  const slot = slotAt(editTarget.section, editTarget.index);
+  if (!slot || !slot.name) { closeDialog('dlg-detail'); return; }
+  if (!window.confirm(`¿Eliminar «${slot.name}» de la casilla ${globalNumber(slot.section, slot.index)}?`)) return;
+  Object.assign(slot, emptySlot(slot.section, slot.index));
+  renderCell(slot);
+  updateStats();
+  applySearchFilter();
+  persist();
+  closeDialog('dlg-detail');
+  toast('🗑️ Herramienta eliminada');
+}
+
+/* ───────────────────────── 7. COLORES PERSONALIZADOS ───────────────────────── */
+
+function buildColorDialog() {
+  const group = (title, entries, g) => `
+    <fieldset>
+      <legend>${title}</legend>
+      <div class="color-grid">
+        ${entries.map(([k, label]) => `
+          <label class="color-item">
+            <span>${esc(label)}</span>
+            <input type="color" data-group="${g}" data-key="${k}"
+                   value="${colors[g][k] || '#000000'}"
+                   aria-label="Color de ${esc(label)}">
+          </label>`).join('')}
+      </div>
+    </fieldset>`;
+
+  $('#color-fields').innerHTML =
+    group('Colores de categorías', Object.entries(CATS).map(([k, v]) => [k, v.label]), 'cats') +
+    group('Colores de estados', Object.entries(STATS).map(([k, v]) => [k, `${v.icon} ${v.label}`]), 'stats');
+}
+
+/* ───────────────────────── 8. TEMA CLARO / OSCURO ───────────────────────── */
+
+function setTheme(theme) {
+  root.dataset.theme = theme;
+  Store.set('theme', theme);
+  const btn = $('#btn-theme');
+  btn.setAttribute('aria-pressed', String(theme === 'dark'));
+  $('#btn-theme-icon').textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+
+function initTheme() {
+  const saved = Store.get('theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  setTheme(saved === 'light' || saved === 'dark' ? saved : (prefersDark ? 'dark' : 'light'));
+}
+
+/* ───────────────────────── 9. EXPORTAR / IMPORTAR ───────────────────────── */
+
+function exportJson() {
+  try {
+    const payload = {
+      app: 'Tabla Periódica Docente',
+      version: '2.1',
+      exportedAt: new Date().toISOString(),
+      colors, slots
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'ecosistema-docente.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast('💾 Ecosistema descargado');
+  } catch (err) {
+    console.error(err);
+    toast('⚠️ Error al exportar', 'error');
+  }
+}
+
+function importJson(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(String(reader.result));
+      if (!data || !Array.isArray(data.slots)) throw new Error('estructura no reconocida');
+      if (!window.confirm('¿Reemplazar el ecosistema actual por el archivo importado?')) return;
+
+      slots = freshSlots();
+      for (const raw of data.slots) {
+        const base = slotAt(raw && raw.section, raw && raw.index);
+        if (base) sanitizeSlot(raw, base);
+      }
+      if (data.colors && typeof data.colors === 'object') {
+        mergeColors(data.colors);
+        applyColors();
+        buildColorDialog();
+      }
+      persist();
+      renderAll();
+      updateStats();
+      applySearchFilter();
+      toast('📂 Ecosistema importado correctamente');
+    } catch (err) {
+      console.error(err);
+      toast('⚠️ Archivo no válido: ' + err.message, 'error');
+    } finally {
+      $('#import-file').value = '';
+    }
+  };
+  reader.onerror = () => toast('⚠️ No se pudo leer el archivo', 'error');
+  reader.readAsText(file);
+}
+
+/* ───────────────────────── 10. BÚSQUEDA EN TIEMPO REAL ───────────────────────── */
+
+function applySearchFilter() {
+  const q = ($('#search').value || '').trim().toLowerCase();
+  let shown = 0;
+  for (const s of slots) {
+    const btn = cellRefs[s.section][s.index];
+    if (!btn) continue;
+    let hide;
+    if (!q) hide = false;
+    else if (!s.name) hide = true;
+    else {
+      const hay = `${s.name} ${s.symbol} ${s.description} ${CATS[s.category]?.label || ''}`.toLowerCase();
+      hide = !hay.includes(q);
+      if (!hide) shown++;
+    }
+    btn.classList.toggle('is-hidden', hide);
+  }
+  $('#search-status').textContent = q
+    ? `${shown} herramienta${shown === 1 ? '' : 's'} encontrada${shown === 1 ? '' : 's'} para «${q}».`
+    : '';
+}
+
+/* ───────────────────────── 11. NAVEGACIÓN POR TECLADO EN LA REJILLA ───────────────────────── */
+
+/** Flechas/Home/End mueven el foco entre celdas visibles (roving tabindex). */
+function attachGridNav(grid) {
+  const visibleCells = () => $$('.cell:not(.is-hidden)', grid);
+  const setRoving = (target) => {
+    for (const c of $$('.cell', grid)) c.tabIndex = -1;
+    target.tabIndex = 0;
+  };
+  grid.addEventListener('focusin', (e) => {
+    if (e.target.classList.contains('cell')) setRoving(e.target);
+  });
+  grid.addEventListener('keydown', (e) => {
+    const cells = visibleCells();
+    const i = cells.indexOf(document.activeElement);
+    if (i === -1) return;
+    const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').length || 1;
+    let target = -1;
+    switch (e.key) {
+      case 'ArrowRight': target = i + 1; break;
+      case 'ArrowLeft':  target = i - 1; break;
+      case 'ArrowDown':  target = i + cols; break;
+      case 'ArrowUp':    target = i - cols; break;
+      case 'Home':       target = 0; break;
+      case 'End':        target = cells.length - 1; break;
+      default: return;
+    }
+    if (target >= 0 && target < cells.length) {
+      e.preventDefault();
+      setRoving(cells[target]);
+      cells[target].focus();
+    }
+  });
+}
+
+/* ───────────────────────── 12. EVENTOS (delegación) ───────────────────────── */
+
+function bindEvents() {
+  // Un único manejador de clic para celdas, acciones y fondo de diálogos.
+  document.addEventListener('click', (e) => {
+    try {
+      const cell = e.target.closest('.cell');
+      if (cell) {
+        openDetail(cell.dataset.section, Number(cell.dataset.index), cell);
+        return;
+      }
+      const el = e.target.closest('[data-action]');
+      if (!el) {
+        if (e.target.classList && e.target.classList.contains('overlay')) closeDialog(e.target.id);
+        return;
+      }
+      switch (el.dataset.action) {
+        case 'new-tool':     createNewTool(el); break;
+        case 'open-colors':  openDialog('dlg-colors', el); break;
+        case 'export':       exportJson(); break;
+        case 'import':       $('#import-file').click(); break;
+        case 'toggle-theme': setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark'); break;
+        case 'close-dialog': closeDialog(el.dataset.dialog || el.closest('.overlay').id); break;
+        case 'to-edit':      if (editTarget) openEditorForSlot(editTarget.section, editTarget.index); break;
+        case 'delete-slot':  deleteSlot(); break;
+        case 'apply-colors': persist(); closeDialog('dlg-colors'); toast('🎨 Colores aplicados'); break;
+        case 'reset-colors':
+          colors = { cats: { ...DEF_COLORS.cats }, stats: { ...DEF_COLORS.stats } };
+          applyColors(); buildColorDialog();
+          toast('↩️ Colores restaurados (pulsa «Aplicar» para guardarlos)');
+          break;
+        case 'remove-logo':
+          pendingLogo = null;
+          $('#logo-row').hidden = true;
+          $('#f-logo').value = '';
+          break;
+      }
+    } catch (err) {
+      console.error('[TPD] Error en clic:', err);
+      toast('⚠️ Ocurrió un error inesperado', 'error');
+    }
+  });
+
+  // Edición en vivo de colores (sin esperar a «Aplicar»).
+  $('#color-fields').addEventListener('input', (e) => {
+    const input = e.target.closest('input[type="color"]');
+    if (!input) return;
+    const { group, key } = input.dataset;
+    if (colors[group] && key in colors[group]) {
+      colors[group][key] = input.value;
+      applyColors();
+    }
+  });
+
+  // Guardado del formulario.
+  $('#edit-form').addEventListener('submit', (e) => { e.preventDefault(); saveEdit(); });
+
+  // Logo: validación + redimensión antes de guardar.
+  $('#f-logo').addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    try {
+      pendingLogo = await downscaleImage(file, 96);
+      $('#logo-preview').src = pendingLogo;
+      $('#logo-row').hidden = false;
+      toast('🖼️ Logo listo (se guardará al pulsar «Guardar»)');
+    } catch (err) {
+      toast('⚠️ ' + (err.message || 'Error al procesar la imagen'), 'error');
+      e.target.value = '';
+    }
+  });
+
+  // Búsqueda en tiempo real.
+  $('#search').addEventListener('input', applySearchFilter);
+
+  // Importación de ecosistema.
+  $('#import-file').addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) importJson(file);
+  });
+
+  // Atajo global "/" para enfocar el buscador.
+  document.addEventListener('keydown', (e) => {
+    if (e.key === '/' && !openStack.length &&
+        !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+      e.preventDefault();
+      $('#search').focus();
+    }
+  });
+}
+
+/** Rellena los selects del formulario desde la configuración (DRY). */
+function buildFormSelects() {
+  $('#f-section').innerHTML  = SECTIONS.map((s) => `<option value="${s.id}">${esc(s.title)}</option>`).join('');
+  $('#f-category').innerHTML = '<option value="">— Selecciona —</option>' +
+    Object.entries(CATS).map(([k, v]) => `<option value="${k}">${esc(v.label)}</option>`).join('');
+  $('#f-status').innerHTML = Object.entries(STATS)
+    .map(([k, v]) => `<option value="${k}">${v.icon} ${esc(v.label)}</option>`).join('');
+}
+
+/* ───────────────────────── 13. ARRANQUE ───────────────────────── */
+
+function init() {
+  try {
+    loadState();
+    initTheme();
+    applyColors();
+    buildBoards();
+    buildLegend();
+    buildFormSelects();
+    buildColorDialog();
+    updateStats();
+    bindEvents();
+    // Autoguardado preventivo del estado inicial (semilla o datos leídos).
+    if (!Store.get('slots')) persist();
+  } catch (err) {
+    console.error('[TPD] Error de inicialización:', err);
+    toast('⚠️ Error al inicializar la aplicación', 'error');
+  }
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();
+
+})();
+</script>
+</body>
+</html>

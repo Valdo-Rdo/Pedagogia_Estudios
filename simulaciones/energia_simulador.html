@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador de Energía Renovable · Laboratorio Secundaria</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  .container { display: flex; height: 100vh; position: relative; }
+
+  /* ============== DRAWER ============== */
+  .drawer {
+    position: fixed; right: -450px; top: 0;
+    width: 430px; height: 100vh;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: -2px 0 20px rgba(0, 0, 0, 0.3);
+    transition: right 0.3s ease;
+    z-index: 1000; overflow-y: auto; padding: 20px;
+  }
+  .drawer.open { right: 0; }
+
+  .drawer-toggle {
+    position: fixed; right: 20px; top: 20px;
+    width: 50px; height: 50px;
+    background: rgba(255, 255, 255, 0.95); border: none; border-radius: 50%;
+    cursor: pointer; z-index: 1001;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; transition: all 0.3s ease;
+  }
+  .drawer-toggle:hover { transform: scale(1.1); background: #fff; }
+  .drawer-toggle.shifted { right: 440px; }
+
+  .drawer-header { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #667eea; }
+  .drawer-header h2 { color: #667eea; font-size: 22px; margin-bottom: 6px; }
+  .drawer-header p { color: #666; font-size: 13px; }
+
+  .control-section {
+    margin-bottom: 15px; border-radius: 12px; overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); background: #fff;
+    border: 1px solid #e8eaf6;
+  }
+  .section-header {
+    padding: 14px 18px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white; cursor: pointer; display: flex;
+    justify-content: space-between; align-items: center;
+    user-select: none; font-weight: 600;
+  }
+  .section-header:hover { filter: brightness(1.1); }
+  .section-header h3 { font-size: 15px; display: flex; align-items: center; gap: 10px; }
+  .section-chevron { transition: transform 0.3s ease; font-size: 14px; }
+  .control-section.collapsed .section-chevron { transform: rotate(-90deg); }
+  .section-content {
+    padding: 18px; background: #f8f9fa;
+    max-height: 1500px; transition: max-height 0.3s ease, padding 0.3s ease;
+    overflow: hidden;
+  }
+  .control-section.collapsed .section-content { max-height: 0; padding-top: 0; padding-bottom: 0; }
+
+  .control-group { margin-bottom: 14px; }
+  .control-label {
+    display: flex; justify-content: space-between; margin-bottom: 8px;
+    color: #555; font-weight: 500; font-size: 13px;
+  }
+  .control-value { color: #667eea; font-weight: bold; font-family: 'Courier New', monospace; }
+
+  input[type="range"] {
+    width: 100%; height: 8px; border-radius: 5px;
+    background: #ddd; outline: none; -webkit-appearance: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 20px; height: 20px;
+    border-radius: 50%; background: #667eea; cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #667eea; cursor: pointer; border: none;
+  }
+
+  .info-box {
+    background: #e3f2fd; border-left: 4px solid #2196f3;
+    padding: 10px 12px; margin-top: 10px; border-radius: 4px;
+    font-size: 12px; color: #1976d2; line-height: 1.5;
+  }
+  .info-box.warn { background: #fff3e0; border-left-color: #ff9800; color: #e65100; }
+  .info-box.success { background: #e8f5e9; border-left-color: #4caf50; color: #2e7d32; }
+
+  .formula {
+    font-family: 'Courier New', monospace;
+    background: #f5f5f5; padding: 8px 12px;
+    border-radius: 4px; margin: 5px 0; font-size: 12px;
+    text-align: center; border-left: 3px solid #667eea;
+    word-break: break-all;
+  }
+  .formula-desc { font-size: 11px; color: #777; margin-top: 4px; line-height: 1.4; }
+
+  .toggle-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-top: 1px dashed #e0e0e0;
+  }
+  .toggle-row:first-of-type { border-top: none; }
+  .toggle-row .label { font-size: 13px; color: #555; }
+  .toggle {
+    position: relative; width: 36px; height: 20px;
+    background: #ccc; border-radius: 10px; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px; background: white;
+    border-radius: 50%; transition: all 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle.on { background: #667eea; }
+  .toggle.on::after { left: 18px; }
+
+  .btn {
+    width: 100%; padding: 12px;
+    background: linear-gradient(135deg, #ef5350, #e53935);
+    color: white; border: none; border-radius: 8px;
+    cursor: pointer; font-weight: bold; font-size: 14px;
+    transition: transform 0.2s;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn.primary { background: linear-gradient(135deg, #667eea, #764ba2); }
+
+  .btn-row { display: flex; gap: 8px; }
+  .btn-row .btn { flex: 1; }
+
+  /* ============== CANVAS ============== */
+  .canvas-area { flex: 1; padding: 20px; }
+
+  .simulation-canvas {
+    width: 100%; height: 100%; position: relative; overflow: hidden;
+    background: linear-gradient(to bottom, #87CEEB 0%, #B0E0E6 50%, #90EE90 50%, #7CB342 100%);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    transition: background 1.2s ease;
+  }
+  .simulation-canvas.night {
+    background: linear-gradient(to bottom, #0d1b3e 0%, #1a237e 50%, #1b3a1f 50%, #0f2412 100%);
+  }
+
+  .cloud {
+    position: absolute; background: white;
+    border-radius: 50px; opacity: 0.85;
+    animation: cloudMove 30s linear infinite;
+  }
+  .cloud::before, .cloud::after { content: ''; position: absolute; background: white; border-radius: 50%; }
+  .cloud1 { top: 15%; left: -100px; width: 100px; height: 30px; }
+  .cloud1::before { width: 50px; height: 50px; top: -20px; left: 15px; }
+  .cloud1::after { width: 40px; height: 40px; top: -15px; left: 50px; }
+  .cloud2 { top: 25%; left: -150px; width: 120px; height: 35px; animation-duration: 40s; animation-delay: -15s; }
+  .cloud2::before { width: 60px; height: 60px; top: -25px; left: 20px; }
+  .cloud2::after { width: 45px; height: 45px; top: -18px; left: 60px; }
+  @keyframes cloudMove { from { transform: translateX(0); } to { transform: translateX(calc(100vw + 200px)); } }
+
+  .night .cloud { opacity: 0.2; }
+
+  /* ============== WIND TURBINE ============== */
+  .wind-section { position: absolute; left: 8%; bottom: 20%; width: 200px; height: 350px; }
+  .turbine-tower {
+    position: absolute; bottom: 0; left: 50%;
+    transform: translateX(-50%); width: 14px; height: 220px;
+    background: linear-gradient(to right, #bdc3c7, #ecf0f1, #bdc3c7); border-radius: 3px;
+  }
+  .turbine-nacelle {
+    position: absolute; bottom: 215px; left: 50%;
+    transform: translateX(-50%); width: 45px; height: 20px;
+    background: linear-gradient(to bottom, #ecf0f1, #bdc3c7); border-radius: 5px; z-index: 3;
+  }
+  .rotor { position: absolute; bottom: 225px; left: 50%; width: 0; height: 0; z-index: 2; }
+  .rotor-spin {
+    position: absolute; width: 0; height: 0;
+    animation: spin 3s linear infinite; animation-play-state: paused;
+  }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  .blade {
+    position: absolute; width: 18px; height: 110px;
+    background: linear-gradient(to right, #ecf0f1, #fff, #ecf0f1);
+    border-radius: 50% 50% 30% 30% / 60% 60% 20% 20%;
+    left: -9px; top: -110px; transform-origin: 50% 100%;
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+  }
+  .blade::after {
+    content: ''; position: absolute; top: 10%; left: 50%;
+    transform: translateX(-50%); width: 2px; height: 80%;
+    background: rgba(0, 0, 0, 0.1);
+  }
+  .blade:nth-child(1) { transform: rotate(0deg); }
+  .blade:nth-child(2) { transform: rotate(120deg); }
+  .blade:nth-child(3) { transform: rotate(240deg); }
+  .hub {
+    position: absolute; width: 20px; height: 20px;
+    background: radial-gradient(circle, #7f8c8d, #34495e);
+    border-radius: 50%; left: -10px; top: -10px; z-index: 4;
+    border: 2px solid #2c3e50;
+  }
+
+  /* ============== HOUSES ============== */
+  .house { position: absolute; bottom: 18%; width: 130px; height: 130px; transition: filter 0.8s ease; }
+  .house-wind { left: 22%; }
+  .house-solar { right: 22%; }
+  .house-body {
+    position: absolute; bottom: 0; width: 100%; height: 80px;
+    border: 2px solid #8b4513; border-radius: 4px;
+    transition: box-shadow 1s ease, background 1s ease;
+  }
+  .house-wind .house-body { background: linear-gradient(to bottom, #f5deb3, #deb887); }
+  .house-solar .house-body { background: linear-gradient(to bottom, #e8d5b7, #c9a876); }
+  .house.powered .house-body {
+    box-shadow: 0 0 25px rgba(255, 235, 59, 0.6), 0 0 50px rgba(255, 193, 7, 0.3),
+                inset 0 0 20px rgba(255, 235, 59, 0.2);
+  }
+  .house-roof {
+    position: absolute; bottom: 78px; left: -10px; width: 0; height: 0;
+    border-left: 75px solid transparent; border-right: 75px solid transparent;
+    transition: filter 1s ease;
+  }
+  .house-wind .house-roof { border-bottom: 45px solid #a0522d; }
+  .house-solar .house-roof { border-bottom: 45px solid #6d4c41; }
+  .house.powered .house-roof { filter: brightness(1.15); }
+
+  .chimney {
+    position: absolute; bottom: 105px; right: 20px; width: 14px; height: 28px;
+    background: linear-gradient(to right, #6d4c41, #8b4513, #6d4c41); border-radius: 2px 2px 0 0; z-index: 2;
+  }
+  .house-wind .chimney { right: 25px; }
+  .house-solar .chimney { right: 20px; }
+
+  .smoke-container {
+    position: absolute; bottom: 130px; width: 30px; height: 60px;
+    pointer-events: none; opacity: 0; transition: opacity 1s ease;
+  }
+  .house-wind .smoke-container { right: 20px; }
+  .house-solar .smoke-container { right: 15px; }
+  .house.powered .smoke-container { opacity: 1; }
+
+  .smoke {
+    position: absolute; bottom: 0; left: 50%;
+    width: 12px; height: 12px;
+    background: rgba(200, 200, 200, 0.7); border-radius: 50%; opacity: 0;
+  }
+  .house.powered .smoke { animation: smokeRise 3s ease-out infinite; }
+  .smoke:nth-child(1) { animation-delay: 0s; }
+  .smoke:nth-child(2) { animation-delay: 1s; }
+  .smoke:nth-child(3) { animation-delay: 2s; }
+  @keyframes smokeRise {
+    0% { transform: translate(-50%, 0) scale(0.5); opacity: 0; }
+    20% { opacity: 0.7; }
+    100% { transform: translate(-150%, -80px) scale(2); opacity: 0; }
+  }
+
+  .house-window {
+    position: absolute; width: 30px; height: 30px;
+    background: rgba(135, 206, 235, 0.5);
+    border: 2px solid #8b4513; border-radius: 3px;
+    transition: all 1.2s ease; overflow: hidden;
+  }
+  .house-window::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at center,
+      rgba(255, 235, 59, 0.95) 0%, rgba(255, 193, 7, 0.7) 50%, rgba(255, 152, 0, 0.4) 100%);
+    opacity: 0; transition: opacity 1.2s ease;
+  }
+  .house-window::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      linear-gradient(to right, transparent 48%, #8b4513 48%, #8b4513 52%, transparent 52%),
+      linear-gradient(to bottom, transparent 48%, #8b4513 48%, #8b4513 52%, transparent 52%);
+    z-index: 2;
+  }
+  .house-window.lit::before { opacity: 1; animation: windowFlicker 4s ease-in-out infinite; }
+  .house-window.lit {
+    border-color: #5d4037;
+    box-shadow: 0 0 15px rgba(255, 235, 59, 0.9), 0 0 30px rgba(255, 193, 7, 0.6), 0 0 50px rgba(255, 152, 0, 0.3);
+  }
+  @keyframes windowFlicker { 0%, 100% { opacity: 1; } 50% { opacity: 0.85; } }
+  .house-window.w1 { bottom: 35px; left: 15px; }
+  .house-window.w2 { bottom: 35px; right: 15px; }
+
+  .house-door {
+    position: absolute; bottom: 0; left: 50%;
+    transform: translateX(-50%); width: 26px; height: 40px;
+    background: #5d4037; border-radius: 3px 3px 0 0; border: 2px solid #3e2723;
+  }
+  .house-door::after {
+    content: ''; position: absolute; right: 4px; top: 50%;
+    width: 3px; height: 3px; background: #ffd700; border-radius: 50%;
+    transition: all 0.5s;
+  }
+  .house.powered .house-door::after { background: #ffeb3b; box-shadow: 0 0 8px #ffeb3b; }
+
+  .light-beam {
+    position: absolute; bottom: 35px; width: 30px; height: 0;
+    pointer-events: none; opacity: 0;
+    transition: opacity 1s ease, height 1s ease;
+  }
+  .light-beam.lb1 { left: 15px; }
+  .light-beam.lb2 { right: 15px; }
+  .house.powered .light-beam {
+    opacity: 1; height: 40px;
+    background: linear-gradient(to bottom, rgba(255, 235, 59, 0.4) 0%, rgba(255, 235, 59, 0) 100%);
+    clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
+    animation: beamPulse 3s ease-in-out infinite;
+  }
+  @keyframes beamPulse { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+
+  .house-label {
+    position: absolute; bottom: -28px; left: 50%; transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.95); padding: 4px 12px;
+    border-radius: 12px; font-size: 11px; font-weight: bold;
+    color: #667eea; white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); transition: all 0.5s;
+  }
+  .house.powered .house-label {
+    background: linear-gradient(135deg, #fff9c4, #fff59d);
+    color: #e65100; box-shadow: 0 0 15px rgba(255, 235, 59, 0.5);
+  }
+
+  .power-indicator {
+    position: absolute; top: -10px; left: 50%;
+    transform: translateX(-50%) scale(0);
+    width: 24px; height: 24px;
+    background: radial-gradient(circle, #ffeb3b, #ff9800); border-radius: 50%;
+    box-shadow: 0 0 15px #ffeb3b;
+    transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; z-index: 5;
+  }
+  .house.powered .power-indicator {
+    transform: translateX(-50%) scale(1);
+    animation: indicatorPulse 2s ease-in-out infinite;
+  }
+  @keyframes indicatorPulse {
+    0%, 100% { box-shadow: 0 0 15px #ffeb3b, 0 0 30px rgba(255, 235, 59, 0.5); transform: translateX(-50%) scale(1); }
+    50% { box-shadow: 0 0 25px #ffeb3b, 0 0 50px rgba(255, 235, 59, 0.8); transform: translateX(-50%) scale(1.15); }
+  }
+
+  .house-glow {
+    position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
+    width: 160px; height: 30px;
+    background: radial-gradient(ellipse, rgba(255, 235, 59, 0.4) 0%, transparent 70%);
+    opacity: 0; transition: opacity 1s ease; pointer-events: none;
+  }
+  .house.powered .house-glow { opacity: 1; animation: groundGlow 3s ease-in-out infinite; }
+  @keyframes groundGlow {
+    0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(1); }
+    50% { opacity: 1; transform: translateX(-50%) scale(1.1); }
+  }
+
+  /* ============== SOLAR PANEL ============== */
+  .solar-section { position: absolute; right: 8%; bottom: 20%; width: 220px; height: 300px; }
+  .solar-panel-group {
+    position: absolute; bottom: 50px; left: 50%;
+    transform: translateX(-50%); perspective: 500px;
+    transition: transform 0.4s ease;
+  }
+  .solar-panel {
+    width: 160px; height: 100px;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    border: 3px solid #2c3e50; border-radius: 4px;
+    transform: rotateX(55deg); transform-origin: bottom center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); position: relative;
+    transition: filter 0.4s ease;
+  }
+  .solar-panel::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 23px, #1a2a4a 23px, #1a2a4a 25px),
+      repeating-linear-gradient(90deg, transparent, transparent 38px, #1a2a4a 38px, #1a2a4a 40px);
+  }
+  .solar-panel.charging { filter: brightness(1.3) drop-shadow(0 0 12px rgba(255, 215, 0, 0.6)); }
+  .solar-panel-support {
+    position: absolute; bottom: 0; left: 50%;
+    transform: translateX(-50%); width: 8px; height: 50px;
+    background: linear-gradient(to right, #7f8c8d, #95a5a6, #7f8c8d);
+  }
+
+  /* ============== SUN ============== */
+  .sun {
+    position: absolute; top: 60px; right: 20%;
+    width: 70px; height: 70px;
+    background: radial-gradient(circle, #fff59d 0%, #ffd700 50%, #ff8c00 100%);
+    border-radius: 50%;
+    box-shadow: 0 0 40px #ffd700, 0 0 80px rgba(255, 140, 0, 0.5);
+    opacity: 0.3; transition: opacity 0.5s ease, box-shadow 0.5s ease, top 0.6s ease;
+  }
+  .sun.active { opacity: 1; }
+  .night .sun { opacity: 0; }
+
+  .photon {
+    position: absolute; width: 6px; height: 6px;
+    background: #ffd700; border-radius: 50%;
+    box-shadow: 0 0 8px #ffd700, 0 0 15px #ff8c00;
+    opacity: 0; pointer-events: none;
+  }
+
+  /* ============== CABLE / ENERGY PARTICLES ============== */
+  .cable-container {
+    position: absolute; bottom: 15%; left: 25%; right: 25%;
+    height: 4px; z-index: 5;
+  }
+  .cable-line {
+    position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    background: #34495e; border-radius: 2px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  .energy-particle {
+    position: absolute; width: 10px; height: 10px;
+    background: radial-gradient(circle, #ffeb3b, #ff9800); border-radius: 50%;
+    box-shadow: 0 0 10px #ffeb3b, 0 0 20px #ff9800;
+    top: -3px; opacity: 0;
+  }
+
+  /* ============== FLOATING PANELS (collapsible) ============== */
+  .floating-panel {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(8px);
+    border-radius: 14px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.18);
+    z-index: 10;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  .floating-panel.collapsed { height: 38px; }
+  .floating-panel.collapsed .panel-body { display: none; }
+
+  .panel-header {
+    padding: 8px 14px; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white; font-size: 12px; font-weight: 600;
+    user-select: none;
+  }
+  .panel-header .chev { transition: transform 0.3s; }
+  .floating-panel.collapsed .panel-header .chev { transform: rotate(-90deg); }
+
+  .panel-body { padding: 10px 14px; }
+
+  /* Stats panel (top center) */
+  .stats-panel {
+    top: 16px; left: 50%; transform: translateX(-50%);
+    padding: 0; min-width: 380px;
+  }
+  .stats-row { display: flex; gap: 22px; padding: 4px 0; }
+  .stat-item { text-align: center; min-width: 70px; }
+  .stat-label { font-size: 10px; color: #666; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-value { font-size: 22px; font-weight: bold; color: #667eea; line-height: 1; font-family: 'Courier New', monospace; }
+  .stat-unit { font-size: 11px; color: #999; margin-top: 2px; }
+  .stat-value.wind-color { color: #0288d1; }
+  .stat-value.solar-color { color: #f57c00; }
+  .stat-value.total-color { color: #2e7d32; }
+
+  /* Power breakdown bar */
+  .breakdown-bar {
+    margin-top: 6px; height: 8px;
+    background: #eee; border-radius: 4px; overflow: hidden;
+    display: flex;
+  }
+  .breakdown-bar .seg-wind { background: linear-gradient(90deg, #4fc3f7, #0288d1); transition: width 0.3s; }
+  .breakdown-bar .seg-solar { background: linear-gradient(90deg, #ffb74d, #f57c00); transition: width 0.3s; }
+
+  /* Edu info (bottom) */
+  .edu-info {
+    bottom: 16px; left: 50%; transform: translateX(-50%);
+    max-width: 640px; padding: 0;
+  }
+  .edu-info .panel-body { font-size: 13px; color: #555; text-align: center; line-height: 1.5; }
+  .edu-info strong { color: #667eea; }
+
+  /* Live formula panel (bottom-left) */
+  .formula-panel {
+    bottom: 16px; left: 16px;
+    max-width: 320px; padding: 0;
+  }
+  .formula-panel .panel-body { font-size: 12px; color: #333; line-height: 1.6; }
+  .formula-panel .f-line { padding: 4px 0; }
+  .formula-panel .f-line.wind { border-left: 3px solid #0288d1; padding-left: 8px; margin: 4px 0; background: #e1f5fe; }
+  .formula-panel .f-line.solar { border-left: 3px solid #f57c00; padding-left: 8px; margin: 4px 0; background: #fff3e0; }
+  .formula-panel .mono { font-family: 'Courier New', monospace; font-size: 11px; word-break: break-all; }
+
+  /* Energy meter (top-left) */
+  .energy-meter {
+    top: 16px; left: 16px; padding: 0; min-width: 220px;
+  }
+  .energy-meter .panel-body { font-size: 12px; }
+  .energy-meter .em-value {
+    font-size: 20px; font-weight: bold; color: #2e7d32;
+    font-family: 'Courier New', monospace;
+  }
+  .energy-meter .em-bar {
+    height: 6px; background: #eee; border-radius: 3px; overflow: hidden; margin-top: 6px;
+  }
+  .energy-meter .em-bar-fill {
+    height: 100%; background: linear-gradient(90deg, #66bb6a, #2e7d32);
+    transition: width 0.3s;
+  }
+
+  /* ============== OVERLAY ============== */
+  .overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.4); z-index: 999;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  }
+  .overlay.active { opacity: 1; pointer-events: all; }
+
+  /* ============== GROUND ============== */
+  .ground-detail { position: absolute; bottom: 0; left: 0; right: 0; height: 50%; pointer-events: none; }
+  .grass {
+    position: absolute; bottom: 0; width: 100%; height: 100%;
+    background: linear-gradient(to bottom, #90EE90 0%, #7CB342 100%);
+    transition: background 1.2s;
+  }
+  .grass::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 3px; background: #689f38;
+  }
+  .night .grass { background: linear-gradient(to bottom, #2d4a1f 0%, #1b3a1f 100%); }
+
+  .path {
+    position: absolute; bottom: 10%; left: 20%; right: 20%; height: 15px;
+    background: #d7ccc8; border-radius: 8px; opacity: 0.7;
+    transition: background 1.2s;
+  }
+  .night .path { background: #5d4037; opacity: 0.5; }
+
+  .tree { position: absolute; bottom: 20%; width: 30px; height: 60px; }
+  .tree-trunk { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 8px; height: 25px; background: #6d4c41; border-radius: 2px; }
+  .tree-top { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 30px; height: 40px; background: radial-gradient(circle, #4caf50, #2e7d32); border-radius: 50%; transition: background 1.2s; }
+  .night .tree-top { background: radial-gradient(circle, #1b5e20, #0d2818); }
+
+  /* Wind lines */
+  .wind-lines {
+    position: absolute; left: 2%; top: 40%; width: 6%; height: 30%;
+    pointer-events: none;
+  }
+  .wind-line {
+    position: absolute; height: 3px;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.8), transparent);
+    border-radius: 2px; opacity: 0; transition: opacity 0.3s;
+  }
+  .wind-line.active { opacity: 1; animation: windFlow 1.5s linear infinite; }
+  @keyframes windFlow {
+    0% { transform: translateX(-20px); opacity: 0; }
+    30% { opacity: 1; }
+    70% { opacity: 1; }
+    100% { transform: translateX(80px); opacity: 0; }
+  }
+
+  /* Stars at night */
+  .stars {
+    position: absolute; top: 0; left: 0; right: 0; height: 50%;
+    opacity: 0; transition: opacity 1.5s; pointer-events: none;
+  }
+  .night .stars { opacity: 1; }
+  .star {
+    position: absolute; width: 2px; height: 2px; background: white;
+    border-radius: 50%; box-shadow: 0 0 4px white;
+    animation: twinkle 3s ease-in-out infinite;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.4); }
+  }
+
+  @media (max-width: 768px) {
+    .drawer { width: 90%; right: -90%; }
+    .drawer-toggle.shifted { right: calc(90% + 5px); }
+    .stats-panel { min-width: 320px; }
+    .stats-row { gap: 14px; }
+    .energy-meter { min-width: 180px; }
+    .formula-panel { max-width: 260px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <button class="drawer-toggle" id="drawerToggle" title="Abrir panel de control">⚙️</button>
+  <div class="overlay" id="overlay"></div>
+
+  <!-- ============== DRAWER (controls) ============== -->
+  <div class="drawer" id="drawer">
+    <div class="drawer-header">
+      <h2>🎛️ Laboratorio de Energía Renovable</h2>
+      <p>Ajusta los parámetros físicos y observa cómo cambia la generación eléctrica.</p>
+    </div>
+
+    <!-- WIND -->
+    <div class="control-section" id="windSection">
+      <div class="section-header" onclick="toggleSection('windSection')">
+        <h3>🌬️ Energía Eólica</h3>
+        <span class="section-chevron">▼</span>
+      </div>
+      <div class="section-content">
+        <div class="control-group">
+          <div class="control-label">
+            <span>Velocidad del viento <em>(km/h)</em></span>
+            <span class="control-value" id="windValue">0 km/h</span>
+          </div>
+          <input type="range" id="windSpeed" min="0" max="100" value="0">
+        </div>
+        <div class="control-group">
+          <div class="control-label">
+            <span>Radio del rotor <em>(m)</em></span>
+            <span class="control-value" id="bladeRValue">2.0 m</span>
+          </div>
+          <input type="range" id="bladeRadius" min="0.5" max="5" step="0.1" value="2.0">
+        </div>
+        <div class="control-group">
+          <div class="control-label">
+            <span>Densidad del aire ρ <em>(kg/m³)</em></span>
+            <span class="control-value" id="airDensityValue">1.225 kg/m³</span>
+          </div>
+          <input type="range" id="airDensity" min="0.5" max="1.5" step="0.05" value="1.225">
+        </div>
+        <div class="info-box">
+          💡 Los aerogeneradores modernos generan electricidad con vientos de 10-15 km/h. La potencia crece con el <strong>cubo</strong> de la velocidad (v³), por lo que duplicar el viento octuplica la potencia.
+        </div>
+      </div>
+    </div>
+
+    <!-- SOLAR -->
+    <div class="control-section" id="solarSection">
+      <div class="section-header" onclick="toggleSection('solarSection')">
+        <h3>☀️ Energía Solar</h3>
+        <span class="section-chevron">▼</span>
+      </div>
+      <div class="section-content">
+        <div class="control-group">
+          <div class="control-label">
+            <span>Intensidad solar I <em>(%)</em></span>
+            <span class="control-value" id="solarValue">0%</span>
+          </div>
+          <input type="range" id="solarIntensity" min="0" max="100" value="0">
+        </div>
+        <div class="control-group">
+          <div class="control-label">
+            <span>Área del panel A <em>(m²)</em></span>
+            <span class="control-value" id="panelAreaValue">1.5 m²</span>
+          </div>
+          <input type="range" id="panelArea" min="0.5" max="5" step="0.1" value="1.5">
+        </div>
+        <div class="control-group">
+          <div class="control-label">
+            <span>Eficiencia η <em>(%)</em></span>
+            <span class="control-value" id="panelEffValue">18%</span>
+          </div>
+          <input type="range" id="panelEff" min="5" max="35" step="1" value="18">
+        </div>
+        <div class="control-group">
+          <div class="control-label">
+            <span>Inclinación del panel <em>(°)</em></span>
+            <span class="control-value" id="panelTiltValue">35°</span>
+          </div>
+          <input type="range" id="panelTilt" min="0" max="90" step="1" value="35">
+        </div>
+        <div class="info-box">
+          💡 La radiación solar ideal es ~1000 W/m² al mediodía. La potencia depende del coseno del ángulo entre los rayos y la normal al panel (Ley de Lambert).
+        </div>
+      </div>
+    </div>
+
+    <!-- ENVIRONMENT -->
+    <div class="control-section" id="envSection">
+      <div class="section-header" onclick="toggleSection('envSection')">
+        <h3>🌍 Entorno</h3>
+        <span class="section-chevron">▼</span>
+      </div>
+      <div class="section-content">
+        <div class="toggle-row">
+          <span class="label">🌙 Modo noche (la intensidad solar cae a 0)</span>
+          <div class="toggle" id="toggleNight"></div>
+        </div>
+        <div class="info-box">
+          💡 De noche no hay radiación solar directa, pero el viento puede seguir soplando. Por eso las granjas eólicas complementan a las solares.
+        </div>
+      </div>
+    </div>
+
+    <!-- VISUAL TOGGLES -->
+    <div class="control-section" id="visSection">
+      <div class="section-header" onclick="toggleSection('visSection')">
+        <h3>👁️ Visualización</h3>
+        <span class="section-chevron">▼</span>
+      </div>
+      <div class="section-content">
+        <div class="toggle-row">
+          <span class="label">Mostrar panel de estadísticas</span>
+          <div class="toggle on" id="toggleStats"></div>
+        </div>
+        <div class="toggle-row">
+          <span class="label">Mostrar mensajes educativos</span>
+          <div class="toggle on" id="toggleEdu"></div>
+        </div>
+        <div class="toggle-row">
+          <span class="label">Mostrar fórmulas en vivo</span>
+          <div class="toggle on" id="toggleFormula"></div>
+        </div>
+        <div class="toggle-row">
+          <span class="label">Mostrar energía acumulada</span>
+          <div class="toggle on" id="toggleEnergy"></div>
+        </div>
+        <div class="toggle-row">
+          <span class="label">Mostrar partículas de energía</span>
+          <div class="toggle on" id="toggleParticles"></div>
+        </div>
+        <div class="toggle-row">
+          <span class="label">Mostrar fotones (luz)</span>
+          <div class="toggle on" id="togglePhotons"></div>
+        </div>
+        <div class="toggle-row">
+          <span class="label">Mostrar líneas de viento</span>
+          <div class="toggle on" id="toggleWindLines"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORMULAS -->
+    <div class="control-section" id="formulaSection">
+      <div class="section-header" onclick="toggleSection('formulaSection')">
+        <h3>📐 Fórmulas y Teoría</h3>
+        <span class="section-chevron">▼</span>
+      </div>
+      <div class="section-content">
+        <div style="font-size: 13px; color: #555;">
+          <p style="margin-bottom: 6px;"><strong>💨 Energía Eólica:</strong></p>
+          <div class="formula">P = ½ · ρ · A · v³ · Cp</div>
+          <p class="formula-desc">ρ = densidad del aire · A = área barrida por las palas (π·R²) · v = velocidad del viento · Cp = coeficiente de potencia (límite de Betz = 0.59)</p>
+
+          <p style="margin-top: 15px; margin-bottom: 6px;"><strong>☀️ Energía Solar:</strong></p>
+          <div class="formula">P = I₀ · (I/100) · A · η · cos(θ)</div>
+          <p class="formula-desc">I₀ = 1000 W/m² (radiación estándar) · I = intensidad relativa (%) · A = área del panel · η = eficiencia · θ = ángulo de inclinación</p>
+
+          <p style="margin-top: 15px; margin-bottom: 6px;"><strong>⚡ Energía acumulada:</strong></p>
+          <div class="formula">E(t) = ∫ P(t) dt  ≈  Σ Pᵢ · Δt</div>
+          <p class="formula-desc">La energía es el área bajo la curva de potencia a lo largo del tiempo. Se mide en Wh (vatios-hora).</p>
+
+          <p style="margin-top: 15px; margin-bottom: 6px;"><strong>🏠 Umbral de encendido:</strong></p>
+          <div class="formula">Casa encendida ↔ P ≥ P_mín</div>
+          <p class="formula-desc">Cada casa necesita una potencia mínima para iluminarse. Si la generación baja del umbral, se apaga.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SYSTEM -->
+    <div class="control-section" id="resetSection">
+      <div class="section-header" onclick="toggleSection('resetSection')">
+        <h3>🔄 Sistema</h3>
+        <span class="section-chevron">▼</span>
+      </div>
+      <div class="section-content">
+        <div class="btn-row">
+          <button onclick="resetSimulation()" class="btn">🔄 Reiniciar</button>
+          <button onclick="autoDemo()" class="btn primary">▶ Demo auto</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============== SCENE ============== -->
+  <div class="canvas-area">
+    <div class="simulation-canvas" id="scene">
+
+      <!-- Stars (visible at night) -->
+      <div class="stars" id="stars"></div>
+
+      <div class="cloud cloud1"></div>
+      <div class="cloud cloud2"></div>
+
+      <!-- Stats panel -->
+      <div class="floating-panel stats-panel" id="statsPanel">
+        <div class="panel-header" onclick="togglePanel('statsPanel')">
+          <span>📊 Telemetría</span>
+          <span class="chev">▼</span>
+        </div>
+        <div class="panel-body">
+          <div class="stats-row">
+            <div class="stat-item">
+              <div class="stat-label">RPM</div>
+              <div class="stat-value wind-color" id="rpmValue">0</div>
+              <div class="stat-unit">vueltas/min</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">P Eólica</div>
+              <div class="stat-value wind-color" id="windPowerValue">0</div>
+              <div class="stat-unit">W</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">P Solar</div>
+              <div class="stat-value solar-color" id="solarPowerValue">0</div>
+              <div class="stat-unit">W</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">P Total</div>
+              <div class="stat-value total-color" id="totalPower">0</div>
+              <div class="stat-unit">W</div>
+            </div>
+          </div>
+          <div class="breakdown-bar">
+            <div class="seg-wind" id="segWind" style="width: 0%"></div>
+            <div class="seg-solar" id="segSolar" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Energy meter -->
+      <div class="floating-panel energy-meter" id="energyPanel">
+        <div class="panel-header" onclick="togglePanel('energyPanel')">
+          <span>⚡ Energía acumulada</span>
+          <span class="chev">▼</span>
+        </div>
+        <div class="panel-body">
+          <div class="em-value" id="energyValue">0.000 Wh</div>
+          <div class="em-bar"><div class="em-bar-fill" id="energyBar" style="width: 0%"></div></div>
+          <div style="font-size: 10px; color: #777; margin-top: 4px;">Capacidad: 5000 Wh (5 kWh)</div>
+        </div>
+      </div>
+
+      <!-- Live formula panel -->
+      <div class="floating-panel formula-panel" id="formulaPanel">
+        <div class="panel-header" onclick="togglePanel('formulaPanel')">
+          <span>🔢 Cálculo en vivo</span>
+          <span class="chev">▼</span>
+        </div>
+        <div class="panel-body">
+          <div class="f-line wind">
+            <div style="font-weight: 600; color: #0288d1; font-size: 11px;">EÓLICA</div>
+            <div class="mono" id="formulaWind">P = ½·ρ·π·R²·v³·Cp</div>
+            <div class="mono" id="formulaWindNum" style="color: #0288d1; font-weight: bold;">= 0 W</div>
+          </div>
+          <div class="f-line solar">
+            <div style="font-weight: 600; color: #f57c00; font-size: 11px;">SOLAR</div>
+            <div class="mono" id="formulaSolar">P = I₀·(I/100)·A·η·cos(θ)</div>
+            <div class="mono" id="formulaSolarNum" style="color: #f57c00; font-weight: bold;">= 0 W</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Educational info -->
+      <div class="floating-panel edu-info" id="eduPanel">
+        <div class="panel-header" onclick="togglePanel('eduPanel')">
+          <span>💡 Información</span>
+          <span class="chev">▼</span>
+        </div>
+        <div class="panel-body">
+          <div id="eduInfo">
+            <strong>¡Bienvenido!</strong> Abre el panel ⚙️ (arriba a la derecha) para ajustar los controles y ver cómo funcionan las energías renovables.
+          </div>
+        </div>
+      </div>
+
+      <div class="sun" id="sun"></div>
+
+      <div class="wind-lines" id="windLines">
+        <div class="wind-line" style="top: 10%; width: 30px;"></div>
+        <div class="wind-line" style="top: 30%; width: 45px; animation-delay: 0.3s;"></div>
+        <div class="wind-line" style="top: 50%; width: 35px; animation-delay: 0.6s;"></div>
+        <div class="wind-line" style="top: 70%; width: 40px; animation-delay: 0.9s;"></div>
+        <div class="wind-line" style="top: 90%; width: 30px; animation-delay: 1.2s;"></div>
+      </div>
+
+      <div class="wind-section">
+        <div class="turbine-tower"></div>
+        <div class="turbine-nacelle"></div>
+        <div class="rotor">
+          <div class="rotor-spin" id="rotorSpin">
+            <div class="blade"></div>
+            <div class="blade"></div>
+            <div class="blade"></div>
+            <div class="hub"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CASA EÓLICA -->
+      <div class="house house-wind" id="houseWind">
+        <div class="power-indicator">⚡</div>
+        <div class="chimney"></div>
+        <div class="smoke-container">
+          <div class="smoke"></div>
+          <div class="smoke"></div>
+          <div class="smoke"></div>
+        </div>
+        <div class="house-roof"></div>
+        <div class="house-body">
+          <div class="house-window w1" id="windWindow1"></div>
+          <div class="house-window w2" id="windWindow2"></div>
+          <div class="house-door"></div>
+          <div class="light-beam lb1"></div>
+          <div class="light-beam lb2"></div>
+        </div>
+        <div class="house-glow"></div>
+        <div class="house-label">🏠 Casa Eólica</div>
+      </div>
+
+      <div class="solar-section">
+        <div class="solar-panel-group" id="solarPanelGroup">
+          <div class="solar-panel" id="solarPanel"></div>
+        </div>
+        <div class="solar-panel-support"></div>
+      </div>
+
+      <!-- CASA SOLAR -->
+      <div class="house house-solar" id="houseSolar">
+        <div class="power-indicator">⚡</div>
+        <div class="chimney"></div>
+        <div class="smoke-container">
+          <div class="smoke"></div>
+          <div class="smoke"></div>
+          <div class="smoke"></div>
+        </div>
+        <div class="house-roof"></div>
+        <div class="house-body">
+          <div class="house-window w1" id="solarWindow1"></div>
+          <div class="house-window w2" id="solarWindow2"></div>
+          <div class="house-door"></div>
+          <div class="light-beam lb1"></div>
+          <div class="light-beam lb2"></div>
+        </div>
+        <div class="house-glow"></div>
+        <div class="house-label">🏠 Casa Solar</div>
+      </div>
+
+      <div class="cable-container">
+        <div class="cable-line"></div>
+        <div class="energy-particle" id="particle1"></div>
+        <div class="energy-particle" id="particle2"></div>
+        <div class="energy-particle" id="particle3"></div>
+      </div>
+
+      <div class="ground-detail"><div class="grass"></div></div>
+      <div class="path"></div>
+
+      <div class="tree" style="left: 45%; bottom: 20%;">
+        <div class="tree-top"></div>
+        <div class="tree-trunk"></div>
+      </div>
+      <div class="tree" style="left: 50%; bottom: 22%; transform: scale(0.8);">
+        <div class="tree-top"></div>
+        <div class="tree-trunk"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ============================================================
+   Estado global
+   ============================================================ */
+const state = {
+  // Wind
+  windSpeed: 0,         // km/h
+  bladeRadius: 2.0,     // m
+  airDensity: 1.225,    // kg/m³
+  // Solar
+  solarIntensity: 0,    // %
+  panelArea: 1.5,       // m²
+  panelEff: 18,         // %
+  panelTilt: 35,        // grados
+  // Environment
+  night: false,
+  // Visual toggles
+  showStats: true,
+  showEdu: true,
+  showFormula: true,
+  showEnergy: true,
+  showParticles: true,
+  showPhotons: true,
+  showWindLines: true,
+  // Cumulative
+  energyAccum: 0,       // Wh
+  energyMax: 5000,      // Wh capacidad del medidor
+  // Time tracking
+  lastTick: performance.now(),
+};
+
+/* Constantes físicas */
+const I0 = 1000;             // W/m² radiación solar estándar
+const Cp = 0.40;             // Coeficiente de potencia (límite Betz = 0.593)
+const KM_H_TO_M_S = 1 / 3.6; // conversión km/h → m/s
+const WIND_HOUSE_THRESHOLD_W1 = 80;  // W
+const WIND_HOUSE_THRESHOLD_W2 = 200; // W
+const SOLAR_HOUSE_THRESHOLD_W1 = 60; // W
+const SOLAR_HOUSE_THRESHOLD_W2 = 180;// W
+
+/* ============================================================
+   DOM refs
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const drawer = $('drawer');
+const drawerToggle = $('drawerToggle');
+const overlay = $('overlay');
+
+const windSlider = $('windSpeed');
+const bladeRadiusSlider = $('bladeRadius');
+const airDensitySlider = $('airDensity');
+const solarSlider = $('solarIntensity');
+const panelAreaSlider = $('panelArea');
+const panelEffSlider = $('panelEff');
+const panelTiltSlider = $('panelTilt');
+
+const windValueDisplay = $('windValue');
+const bladeRValueDisplay = $('bladeRValue');
+const airDensityValueDisplay = $('airDensityValue');
+const solarValueDisplay = $('solarValue');
+const panelAreaValueDisplay = $('panelAreaValue');
+const panelEffValueDisplay = $('panelEffValue');
+const panelTiltValueDisplay = $('panelTiltValue');
+
+const rpmDisplay = $('rpmValue');
+const windPowerDisplay = $('windPowerValue');
+const solarPowerDisplay = $('solarPowerValue');
+const totalPowerDisplay = $('totalPower');
+const energyValueDisplay = $('energyValue');
+const energyBarDisplay = $('energyBar');
+const eduInfo = $('eduInfo');
+
+const rotorSpin = $('rotorSpin');
+const sun = $('sun');
+const solarPanel = $('solarPanel');
+const solarPanelGroup = $('solarPanelGroup');
+const scene = $('scene');
+
+const windWindow1 = $('windWindow1');
+const windWindow2 = $('windWindow2');
+const solarWindow1 = $('solarWindow1');
+const solarWindow2 = $('solarWindow2');
+const houseWind = $('houseWind');
+const houseSolar = $('houseSolar');
+
+const windLines = document.querySelectorAll('.wind-line');
+const particles = document.querySelectorAll('.energy-particle');
+
+/* ============================================================
+   Drawer + collapsibles
+   ============================================================ */
+function toggleDrawer() {
+  drawer.classList.toggle('open');
+  overlay.classList.toggle('active');
+  drawerToggle.classList.toggle('shifted');
+}
+drawerToggle.addEventListener('click', toggleDrawer);
+overlay.addEventListener('click', toggleDrawer);
+
+function toggleSection(sectionId) {
+  $(sectionId).classList.toggle('collapsed');
+}
+
+function togglePanel(panelId) {
+  $(panelId).classList.toggle('collapsed');
+}
+
+/* Toggles UI */
+function bindToggle(id, prop, onChange) {
+  const el = $(id);
+  el.addEventListener('click', () => {
+    state[prop] = !state[prop];
+    el.classList.toggle('on', state[prop]);
+    if (onChange) onChange(state[prop]);
+  });
+}
+bindToggle('toggleNight', 'night', on => {
+  scene.classList.toggle('night', on);
+  updateSimulation();
+});
+bindToggle('toggleStats', 'showStats', on => $('statsPanel').style.display = on ? '' : 'none');
+bindToggle('toggleEdu', 'showEdu', on => $('eduPanel').style.display = on ? '' : 'none');
+bindToggle('toggleFormula', 'showFormula', on => $('formulaPanel').style.display = on ? '' : 'none');
+bindToggle('toggleEnergy', 'showEnergy', on => $('energyPanel').style.display = on ? '' : 'none');
+bindToggle('toggleParticles', 'showParticles');
+bindToggle('togglePhotons', 'showPhotons', on => {
+  if (!on) { photons.forEach(p => p.element.remove()); photons.length = 0; }
+});
+bindToggle('toggleWindLines', 'showWindLines', on => {
+  windLines.forEach(l => l.style.display = on ? '' : 'none');
+});
+
+/* ============================================================
+   Sliders
+   ============================================================ */
+windSlider.addEventListener('input', e => {
+  state.windSpeed = parseFloat(e.target.value);
+  windValueDisplay.textContent = `${state.windSpeed} km/h`;
+  updateSimulation();
+});
+bladeRadiusSlider.addEventListener('input', e => {
+  state.bladeRadius = parseFloat(e.target.value);
+  bladeRValueDisplay.textContent = `${state.bladeRadius.toFixed(1)} m`;
+  // visual: scale blades
+  const scale = state.bladeRadius / 2.0;
+  rotorSpin.style.transform = `scale(${scale})`;
+  updateSimulation();
+});
+airDensitySlider.addEventListener('input', e => {
+  state.airDensity = parseFloat(e.target.value);
+  airDensityValueDisplay.textContent = `${state.airDensity.toFixed(3)} kg/m³`;
+  updateSimulation();
+});
+solarSlider.addEventListener('input', e => {
+  state.solarIntensity = parseFloat(e.target.value);
+  solarValueDisplay.textContent = `${state.solarIntensity}%`;
+  updateSimulation();
+});
+panelAreaSlider.addEventListener('input', e => {
+  state.panelArea = parseFloat(e.target.value);
+  panelAreaValueDisplay.textContent = `${state.panelArea.toFixed(1)} m²`;
+  // visual: scale solar panel
+  const scale = Math.sqrt(state.panelArea / 1.5);
+  solarPanel.style.transform = `rotateX(55deg) scale(${scale})`;
+  updateSimulation();
+});
+panelEffSlider.addEventListener('input', e => {
+  state.panelEff = parseFloat(e.target.value);
+  panelEffValueDisplay.textContent = `${state.panelEff}%`;
+  updateSimulation();
+});
+panelTiltSlider.addEventListener('input', e => {
+  state.panelTilt = parseFloat(e.target.value);
+  panelTiltValueDisplay.textContent = `${state.panelTilt}°`;
+  // visual: tilt the panel group
+  const tiltVisual = Math.max(10, state.panelTilt);
+  solarPanel.style.transform = `rotateX(${tiltVisual}deg) scale(${Math.sqrt(state.panelArea/1.5)})`;
+  updateSimulation();
+});
+
+/* ============================================================
+   Cálculos físicos
+   ============================================================ */
+function calculateWindPower() {
+  // P = ½·ρ·A·v³·Cp  (A = π·R², v en m/s)
+  const v_ms = state.windSpeed * KM_H_TO_M_S;
+  const A = Math.PI * state.bladeRadius * state.bladeRadius;
+  const P = 0.5 * state.airDensity * A * Math.pow(v_ms, 3) * Cp;
+  return Math.max(0, P);
+}
+function calculateSolarPower() {
+  // De noche: 0
+  if (state.night) return 0;
+  // P = I₀·(I/100)·A·η·cos(θ)
+  const I = I0 * (state.solarIntensity / 100);
+  const A = state.panelArea;
+  const eta = state.panelEff / 100;
+  const theta = state.panelTilt * Math.PI / 180;
+  // cos(θ) puede ser negativo si panel mira "abajo"; clamp a 0
+  const cosFactor = Math.max(0, Math.cos(theta));
+  const P = I * A * eta * cosFactor;
+  return Math.max(0, P);
+}
+function calculateTotalPower() {
+  return calculateWindPower() + calculateSolarPower();
+}
+
+/* ============================================================
+   Animación de fotones
+   ============================================================ */
+let photonAnimationId = null;
+let photons = [];
+
+function createPhoton() {
+  const photon = document.createElement('div');
+  photon.className = 'photon';
+  scene.appendChild(photon);
+  const startX = scene.offsetWidth * 0.8;
+  const startY = 95;
+  const endX = scene.offsetWidth * 0.75 + (Math.random() - 0.5) * 100;
+  const endY = scene.offsetHeight * 0.55;
+  photon.style.left = startX + 'px';
+  photon.style.top = startY + 'px';
+  return {
+    element: photon, startX, startY, endX, endY,
+    progress: 0, speed: 0.015 + Math.random() * 0.01
+  };
+}
+
+function animatePhotons() {
+  if (!state.showPhotons || state.solarIntensity <= 0 || state.night) {
+    photons.forEach(p => p.element.remove());
+    photons = [];
+    photonAnimationId = null;
+    return;
+  }
+  if (Math.random() < state.solarIntensity / 100 && photons.length < 15) {
+    photons.push(createPhoton());
+  }
+  for (let i = photons.length - 1; i >= 0; i--) {
+    const photon = photons[i];
+    photon.progress += photon.speed;
+    if (photon.progress >= 1) {
+      photon.element.remove();
+      photons.splice(i, 1);
+      continue;
+    }
+    const x = photon.startX + (photon.endX - photon.startX) * photon.progress;
+    const y = photon.startY + (photon.endY - photon.startY) * photon.progress;
+    photon.element.style.left = x + 'px';
+    photon.element.style.top = y + 'px';
+    photon.element.style.opacity = photon.progress < 0.1 ? photon.progress * 10 :
+                                   photon.progress > 0.9 ? (1 - photon.progress) * 10 : 1;
+  }
+  photonAnimationId = requestAnimationFrame(animatePhotons);
+}
+
+/* ============================================================
+   Particles flowing through cable
+   ============================================================ */
+let particleAnimationId = null;
+let particleProgress = [0, 0.33, 0.66];
+
+function animateParticles() {
+  const total = calculateTotalPower();
+  if (!state.showParticles || total <= 0) {
+    particles.forEach(p => p.style.opacity = '0');
+    particleAnimationId = null;
+    return;
+  }
+  const speed = 0.005 + (total / 800) * 0.02;
+  const cable = document.querySelector('.cable-container');
+  const cableWidth = cable.offsetWidth;
+  particles.forEach((particle, i) => {
+    particleProgress[i] += speed;
+    if (particleProgress[i] > 1) particleProgress[i] = 0;
+    particle.style.left = (particleProgress[i] * cableWidth) + 'px';
+    particle.style.opacity = '1';
+  });
+  particleAnimationId = requestAnimationFrame(animateParticles);
+}
+
+/* ============================================================
+   Reflow para reiniciar animación de ventanas
+   ============================================================ */
+function triggerWindowAnimation(windowEl) {
+  windowEl.style.animation = 'none';
+  void windowEl.offsetWidth;
+  windowEl.style.animation = '';
+}
+
+/* ============================================================
+   Update principal
+   ============================================================ */
+function updateSimulation() {
+  const windPower = calculateWindPower();
+  const solarPower = calculateSolarPower();
+  const totalPower = windPower + solarPower;
+
+  // RPM: a 100 km/h, ~50 RPM (típico aerogenerador)
+  const rpm = Math.min(state.windSpeed * 0.5, 50);
+
+  // Display stats
+  rpmDisplay.textContent = Math.round(rpm);
+  windPowerDisplay.textContent = Math.round(windPower);
+  solarPowerDisplay.textContent = Math.round(solarPower);
+  totalPowerDisplay.textContent = Math.round(totalPower);
+
+  // Breakdown bar
+  const total = Math.max(1, totalPower);
+  $('segWind').style.width = (windPower / total * 100) + '%';
+  $('segSolar').style.width = (solarPower / total * 100) + '%';
+
+  // Fórmulas en vivo
+  const v_ms = state.windSpeed * KM_H_TO_M_S;
+  $('formulaWind').textContent = `P = ½·${state.airDensity.toFixed(2)}·π·${state.bladeRadius.toFixed(1)}²·${v_ms.toFixed(1)}³·${Cp}`;
+  $('formulaWindNum').textContent = `= ${windPower.toFixed(1)} W`;
+  const cosT = Math.max(0, Math.cos(state.panelTilt * Math.PI / 180));
+  $('formulaSolar').textContent = `P = ${I0}·${(state.solarIntensity/100).toFixed(2)}·${state.panelArea.toFixed(1)}·${(state.panelEff/100).toFixed(2)}·cos(${state.panelTilt}°)`;
+  $('formulaSolarNum').textContent = `= ${solarPower.toFixed(1)} W`;
+
+  // Aerogenerador (giro)
+  if (state.windSpeed > 0) {
+    const rotDur = Math.max(0.3, 4 - (state.windSpeed / 25));
+    rotorSpin.style.animationDuration = `${rotDur}s`;
+    rotorSpin.style.animationPlayState = 'running';
+  } else {
+    rotorSpin.style.animationPlayState = 'paused';
+  }
+
+  // Wind lines
+  if (state.showWindLines) {
+    windLines.forEach(line => {
+      if (state.windSpeed > 5) {
+        line.classList.add('active');
+        line.style.animationDuration = `${Math.max(0.5, 2 - state.windSpeed / 50)}s`;
+      } else {
+        line.classList.remove('active');
+      }
+    });
+  }
+
+  // Sol
+  const solarActive = state.solarIntensity > 0 && !state.night;
+  if (solarActive) {
+    sun.classList.add('active');
+    sun.style.boxShadow = `0 0 ${40 + state.solarIntensity}px #ffd700, 0 0 ${80 + state.solarIntensity * 2}px rgba(255, 140, 0, ${state.solarIntensity / 200})`;
+    sun.style.top = `${60 - state.solarIntensity * 0.4}px`;
+  } else {
+    sun.classList.remove('active');
+  }
+  if (solarActive && !photonAnimationId && state.showPhotons) {
+    animatePhotons();
+  }
+  // Solar panel visual feedback
+  solarPanel.classList.toggle('charging', solarPower > 5);
+
+  // ===== BUG FIX: windPowered >= 80 → windPower >= 80 =====
+  // Casa eólica — ventanas secuenciales
+  if (windPower >= WIND_HOUSE_THRESHOLD_W1 && !windWindow1.classList.contains('lit')) {
+    triggerWindowAnimation(windWindow1);
+  }
+  if (windPower >= WIND_HOUSE_THRESHOLD_W2 && !windWindow2.classList.contains('lit')) {
+    triggerWindowAnimation(windWindow2);
+  }
+  windWindow1.classList.toggle('lit', windPower >= WIND_HOUSE_THRESHOLD_W1);
+  windWindow2.classList.toggle('lit', windPower >= WIND_HOUSE_THRESHOLD_W2);
+  houseWind.classList.toggle('powered', windPower >= WIND_HOUSE_THRESHOLD_W1);
+
+  // Casa solar — ventanas secuenciales
+  if (solarPower >= SOLAR_HOUSE_THRESHOLD_W1 && !solarWindow1.classList.contains('lit')) {
+    triggerWindowAnimation(solarWindow1);
+  }
+  if (solarPower >= SOLAR_HOUSE_THRESHOLD_W2 && !solarWindow2.classList.contains('lit')) {
+    triggerWindowAnimation(solarWindow2);
+  }
+  solarWindow1.classList.toggle('lit', solarPower >= SOLAR_HOUSE_THRESHOLD_W1);
+  solarWindow2.classList.toggle('lit', solarPower >= SOLAR_HOUSE_THRESHOLD_W2);
+  houseSolar.classList.toggle('powered', solarPower >= SOLAR_HOUSE_THRESHOLD_W1);
+
+  // Particles en cable
+  if (totalPower > 0 && !particleAnimationId && state.showParticles) {
+    animateParticles();
+  }
+
+  // Edu info
+  updateEducationalInfo(totalPower, windPower, solarPower);
+}
+
+function updateEducationalInfo(total, wind, solar) {
+  let message = '';
+  if (total === 0) {
+    message = '<strong>¡Comienza!</strong> Ajusta los controles para generar energía renovable.';
+  } else if (total < 200) {
+    message = `<strong>Generando ${Math.round(total)} W</strong> — Suficiente para encender algunas luces LED.`;
+  } else if (total < 400) {
+    message = `<strong>Generando ${Math.round(total)} W</strong> — ¡Excelente! Puedes alimentar varios dispositivos.`;
+  } else {
+    message = `<strong>Generando ${Math.round(total)} W</strong> — ¡Increíble! Energía limpia y renovable a alta potencia.`;
+  }
+  if (state.windSpeed > 70 && state.solarIntensity > 70 && !state.night) {
+    message += ' 🌟 <strong>¡Combinas ambas fuentes al máximo!</strong>';
+  } else if (state.windSpeed > 70) {
+    message += ' 💨 El viento es tu fuente principal.';
+  } else if (state.solarIntensity > 70 && !state.night) {
+    message += ' ☀️ La radiación solar domina la generación.';
+  } else if (state.night && total > 0) {
+    message += ' 🌙 De noche solo el viento genera energía.';
+  }
+  eduInfo.innerHTML = message;
+}
+
+/* ============================================================
+   Bucle de tiempo real: integra energía acumulada
+   ============================================================ */
+function tick() {
+  const now = performance.now();
+  const dtHours = (now - state.lastTick) / 3600000; // ms → horas (tiempo real)
+  // Aceleración pedagógica: 1 segundo real ≈ 30 segundos simulados
+  // → factor 30x para que se acumule visible pero no instantáneamente
+  const accelFactor = 30;
+  const P = calculateTotalPower();
+  state.energyAccum += P * dtHours * accelFactor;
+  state.lastTick = now;
+
+  // Mostrar
+  if (state.energyAccum < 1) {
+    energyValueDisplay.textContent = state.energyAccum.toFixed(3) + ' Wh';
+  } else if (state.energyAccum < 100) {
+    energyValueDisplay.textContent = state.energyAccum.toFixed(2) + ' Wh';
+  } else {
+    energyValueDisplay.textContent = state.energyAccum.toFixed(0) + ' Wh';
+  }
+  const pct = Math.min(100, (state.energyAccum / state.energyMax) * 100);
+  energyBarDisplay.style.width = pct + '%';
+
+  // Si se llenó, mostrar toast
+  if (state.energyAccum >= state.energyMax && !state.fullToastShown) {
+    state.fullToastShown = true;
+    showToast('🎉 ¡Batería llena! Has acumulado 5 kWh de energía limpia.');
+  }
+  if (state.energyAccum < state.energyMax) state.fullToastShown = false;
+
+  requestAnimationFrame(tick);
+}
+
+/* ============================================================
+   Toast (notificación flotante)
+   ============================================================ */
+function showToast(msg) {
+  let t = $('customToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'customToast';
+    t.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(46,125,50,0.95);color:white;padding:12px 22px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:2000;font-size:14px;font-weight:600;opacity:0;transition:opacity 0.3s, transform 0.3s;pointer-events:none;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(-10px)'; }, 3000);
+}
+
+/* ============================================================
+   Estrellas (modo noche)
+   ============================================================ */
+function createStars() {
+  const stars = $('stars');
+  stars.innerHTML = '';
+  for (let i = 0; i < 60; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.left = Math.random() * 100 + '%';
+    s.style.top = Math.random() * 100 + '%';
+    s.style.animationDelay = (Math.random() * 3) + 's';
+    s.style.width = (1 + Math.random() * 2) + 'px';
+    s.style.height = s.style.width;
+    stars.appendChild(s);
+  }
+}
+
+/* ============================================================
+   Reset y demo
+   ============================================================ */
+function resetSimulation() {
+  windSlider.value = 0;
+  solarSlider.value = 0;
+  bladeRadiusSlider.value = 2.0;
+  airDensitySlider.value = 1.225;
+  panelAreaSlider.value = 1.5;
+  panelEffSlider.value = 18;
+  panelTiltSlider.value = 35;
+  state.windSpeed = 0;
+  state.solarIntensity = 0;
+  state.bladeRadius = 2.0;
+  state.airDensity = 1.225;
+  state.panelArea = 1.5;
+  state.panelEff = 18;
+  state.panelTilt = 35;
+  state.energyAccum = 0;
+  windValueDisplay.textContent = '0 km/h';
+  solarValueDisplay.textContent = '0%';
+  bladeRValueDisplay.textContent = '2.0 m';
+  airDensityValueDisplay.textContent = '1.225 kg/m³';
+  panelAreaValueDisplay.textContent = '1.5 m²';
+  panelEffValueDisplay.textContent = '18%';
+  panelTiltValueDisplay.textContent = '35°';
+  rotorSpin.style.transform = '';
+  solarPanel.style.transform = 'rotateX(55deg) scale(1)';
+  updateSimulation();
+  showToast('🔄 Simulación reiniciada');
+}
+
+let demoRunning = false;
+function autoDemo() {
+  if (demoRunning) {
+    demoRunning = false;
+    showToast('⏸ Demo detenido');
+    return;
+  }
+  demoRunning = true;
+  showToast('▶ Demo automático: variando parámetros...');
+  let t = 0;
+  const step = () => {
+    if (!demoRunning) return;
+    t += 0.02;
+    const wind = 50 + 45 * Math.sin(t * 0.7);
+    const solar = state.night ? 0 : 50 + 45 * Math.sin(t * 0.5 + 1);
+    windSlider.value = Math.round(wind);
+    solarSlider.value = Math.round(solar);
+    state.windSpeed = wind;
+    state.solarIntensity = solar;
+    windValueDisplay.textContent = `${Math.round(wind)} km/h`;
+    solarValueDisplay.textContent = `${Math.round(solar)}%`;
+    updateSimulation();
+    setTimeout(step, 80);
+  };
+  step();
+}
+
+/* ============================================================
+   Init
+   ============================================================ */
+createStars();
+updateSimulation();
+tick();
+// Open drawer on first load so students see the controls
+setTimeout(() => {
+  if (!drawer.classList.contains('open')) toggleDrawer();
+}, 400);
+</script>
+</body>
+</html>

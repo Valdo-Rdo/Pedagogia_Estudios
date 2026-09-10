@@ -1,0 +1,1706 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuroEvolución · Simulador Universitario v2.0</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.8/index.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.6/index.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg-0: #060912;
+  --bg-1: #0a0e17;
+  --bg-2: #111827;
+  --bg-3: #1a2235;
+  --bg-4: #1e293b;
+  --border: #2d3a4f;
+  --border-soft: rgba(45,58,79,0.5);
+  --text-1: #f1f5f9;
+  --text-2: #cbd5e1;
+  --text-3: #94a3b8;
+  --text-4: #64748b;
+  --accent: #3b82f6;
+  --accent-soft: rgba(59,130,246,0.15);
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --purple: #8b5cf6;
+  --pink: #ec4899;
+  --cyan: #06b6d4;
+  --drawer-w: 400px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--bg-0);
+  color:var(--text-1);
+  -webkit-font-smoothing:antialiased;
+}
+canvas#sim{position:fixed;inset:0;z-index:1;display:block}
+
+/* ===== TOP BAR ===== */
+.topbar{
+  position:fixed;top:0;left:0;right:0;height:52px;z-index:50;
+  background:rgba(10,14,23,0.82);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 18px;gap:16px;
+}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-ico{
+  width:30px;height:30px;border-radius:8px;
+  background:linear-gradient(135deg,var(--accent),var(--purple));
+  display:grid;place-items:center;font-size:15px;
+  box-shadow:0 0 18px rgba(139,92,246,0.35);
+}
+.brand-txt{display:flex;flex-direction:column;line-height:1.1}
+.brand-name{font-size:14px;font-weight:700;letter-spacing:0.3px}
+.brand-sub{font-size:10px;color:var(--text-4);letter-spacing:0.5px;text-transform:uppercase}
+
+.topstats{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.pill{
+  display:flex;align-items:center;gap:6px;
+  padding:5px 10px;border-radius:7px;
+  background:var(--bg-3);border:1px solid var(--border);
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+}
+.pill .dot{width:6px;height:6px;border-radius:50%}
+.pill .k{color:var(--text-4);font-weight:500}
+.pill .v{color:var(--text-1);font-weight:700}
+
+.topactions{display:flex;gap:6px}
+.ibtn{
+  width:36px;height:36px;border-radius:8px;border:1px solid var(--border);
+  background:var(--bg-3);color:var(--text-3);cursor:pointer;
+  display:grid;place-items:center;font-size:15px;transition:all .15s;
+}
+.ibtn:hover{background:var(--bg-4);color:var(--text-1);border-color:var(--accent)}
+.ibtn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* ===== HUD OVERLAYS ===== */
+.hud{
+  position:fixed;z-index:40;
+  background:rgba(10,14,23,0.78);backdrop-filter:blur(12px);
+  border:1px solid var(--border);border-radius:10px;
+  padding:10px 14px;font-family:'JetBrains Mono',monospace;font-size:11px;
+}
+.hud-tl{top:68px;left:16px}
+.hud-bl{bottom:16px;left:16px}
+.hud-br{bottom:16px;right:16px}
+.hud-row{display:flex;justify-content:space-between;gap:14px;padding:2px 0}
+.hud-row .k{color:var(--text-4)}
+.hud-row .v{color:var(--text-1);font-weight:700}
+.hud-title{color:var(--text-4);font-size:9px;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:700}
+.hud .accent{color:var(--accent)}
+.hud .success{color:var(--success)}
+.hud .warning{color:var(--warning)}
+.hud .danger{color:var(--danger)}
+
+.legend{display:flex;gap:14px;align-items:center}
+.leg-item{display:flex;align-items:center;gap:6px;color:var(--text-3);font-size:11px}
+.leg-sw{width:9px;height:9px;border-radius:50%;box-shadow:0 0 6px currentColor}
+
+.genbar{
+  position:fixed;bottom:0;left:0;right:0;height:3px;z-index:45;
+  background:rgba(59,130,246,0.1);
+}
+.genbar-fill{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,var(--accent),var(--purple));
+  box-shadow:0 0 8px var(--accent);
+  transition:width .1s linear;
+}
+
+/* ===== DRAWER ===== */
+.overlay{
+  position:fixed;inset:0;z-index:100;
+  background:rgba(0,0,0,0.5);backdrop-filter:blur(2px);
+  opacity:0;pointer-events:none;transition:opacity .3s;
+}
+.overlay.open{opacity:1;pointer-events:all}
+
+.drawer{
+  position:fixed;top:0;right:0;width:var(--drawer-w);height:100vh;z-index:200;
+  background:var(--bg-1);border-left:1px solid var(--border);
+  transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;
+}
+.drawer.open{transform:translateX(0)}
+
+.dhead{
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.dtitle{font-size:13px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase}
+.dclose{
+  width:28px;height:28px;border-radius:6px;border:none;
+  background:var(--bg-3);color:var(--text-3);cursor:pointer;
+  display:grid;place-items:center;font-size:14px;transition:all .15s;
+}
+.dclose:hover{background:var(--danger);color:#fff}
+
+.tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;padding:0 10px}
+.tbtn{
+  flex:1;padding:10px 6px;border:none;background:none;
+  color:var(--text-4);font-size:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:0.6px;cursor:pointer;
+  border-bottom:2px solid transparent;transition:all .15s;
+  font-family:inherit;
+}
+.tbtn:hover{color:var(--text-3)}
+.tbtn.on{color:var(--accent);border-bottom-color:var(--accent)}
+
+.dbody{flex:1;overflow-y:auto;padding:16px 18px}
+.dbody::-webkit-scrollbar{width:6px}
+.dbody::-webkit-scrollbar-track{background:transparent}
+.dbody::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+.pane{display:none}
+.pane.on{display:block}
+
+/* ===== CONTROLS ===== */
+.sec{margin-bottom:20px}
+.stitle{
+  font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:1.2px;color:var(--text-4);margin-bottom:12px;
+  display:flex;align-items:center;gap:6px;
+}
+.stitle::before{
+  content:'';width:3px;height:12px;border-radius:2px;
+  background:linear-gradient(180deg,var(--accent),var(--purple));
+}
+
+.cg{margin-bottom:13px}
+.cl{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.cl .n{font-size:12px;color:var(--text-2);font-weight:500}
+.cl .n .tip{
+  display:inline-block;width:14px;height:14px;border-radius:50%;
+  background:var(--bg-3);color:var(--text-4);font-size:9px;
+  text-align:center;line-height:14px;margin-left:4px;cursor:help;
+  font-weight:700;
+}
+.cl .v{
+  font-size:11px;font-family:'JetBrains Mono',monospace;
+  color:var(--accent);font-weight:700;
+  background:var(--accent-soft);padding:2px 7px;border-radius:4px;
+}
+
+input[type=range]{
+  -webkit-appearance:none;width:100%;height:4px;border-radius:2px;
+  background:var(--bg-3);outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+  background:var(--accent);cursor:pointer;
+  box-shadow:0 0 10px rgba(59,130,246,0.5);
+  transition:transform .12s;
+}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
+
+select,input[type=text]{
+  width:100%;padding:8px 11px;border-radius:6px;
+  border:1px solid var(--border);background:var(--bg-3);
+  color:var(--text-1);font-size:12px;font-family:inherit;
+  outline:none;cursor:pointer;
+}
+select:focus,input:focus{border-color:var(--accent)}
+
+.trow{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 0;border-bottom:1px solid var(--border-soft);
+}
+.trow:last-child{border-bottom:none}
+.trow .n{font-size:12px;color:var(--text-2)}
+.tsw{
+  width:36px;height:19px;border-radius:10px;
+  background:var(--bg-3);border:1px solid var(--border);
+  cursor:pointer;position:relative;transition:all .2s;flex-shrink:0;
+}
+.tsw.on{background:var(--accent);border-color:var(--accent)}
+.tsw::after{
+  content:'';position:absolute;top:2px;left:2px;
+  width:13px;height:13px;border-radius:50%;background:#fff;
+  transition:transform .2s;
+}
+.tsw.on::after{transform:translateX(17px)}
+
+.brow{display:flex;gap:7px;flex-wrap:wrap}
+.btn{
+  padding:8px 13px;border-radius:7px;border:1px solid var(--border);
+  background:var(--bg-3);color:var(--text-2);font-size:11px;font-weight:600;
+  cursor:pointer;transition:all .15s;font-family:inherit;
+  display:flex;align-items:center;gap:6px;
+}
+.btn:hover{background:var(--bg-4);color:var(--text-1);border-color:var(--accent)}
+.btn.pri{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.pri:hover{background:#2563eb}
+.btn.dan{border-color:var(--danger);color:var(--danger)}
+.btn.dan:hover{background:var(--danger);color:#fff}
+.btn.suc{border-color:var(--success);color:var(--success)}
+.btn.suc:hover{background:var(--success);color:#fff}
+.btn.war{border-color:var(--warning);color:var(--warning)}
+.btn.war:hover{background:var(--warning);color:#fff}
+
+/* ===== STATS ===== */
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px}
+.scard{
+  background:var(--bg-3);border:1px solid var(--border);
+  border-radius:8px;padding:11px;position:relative;overflow:hidden;
+}
+.scard::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--accent),var(--purple));
+  opacity:0.6;
+}
+.scard .si{font-size:14px;margin-bottom:3px}
+.scard .sv{
+  font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;
+  color:var(--text-1);
+}
+.scard .sn{
+  font-size:9px;color:var(--text-4);text-transform:uppercase;
+  letter-spacing:0.5px;margin-top:2px;
+}
+.scard.wide{grid-column:1/-1}
+
+.cbox{
+  background:var(--bg-3);border:1px solid var(--border);
+  border-radius:8px;padding:12px;margin-bottom:14px;
+}
+.cbox canvas{width:100%!important;height:140px!important}
+.cbox .ct{
+  font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:1px;color:var(--text-4);margin-bottom:8px;
+}
+
+.glog{
+  max-height:180px;overflow-y:auto;
+  background:var(--bg-0);border:1px solid var(--border);
+  border-radius:6px;padding:8px;
+}
+.glog::-webkit-scrollbar{width:4px}
+.glog::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.lentry{
+  font-size:10px;font-family:'JetBrains Mono',monospace;
+  color:var(--text-4);padding:3px 0;
+  border-bottom:1px solid var(--border-soft);
+}
+.lentry:last-child{border-bottom:none}
+.lentry .g{color:var(--accent);font-weight:700}
+.lentry .f{color:var(--success)}
+
+/* ===== NETWORK VIZ ===== */
+.nnbox{
+  background:var(--bg-3);border:1px solid var(--border);
+  border-radius:8px;padding:12px;margin-bottom:14px;
+}
+.nnbox canvas{width:100%;height:240px;display:block}
+.nnleg{display:flex;gap:10px;justify-content:center;margin-top:8px;flex-wrap:wrap}
+.nnleg-i{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-4)}
+.nnleg-i .d{width:8px;height:8px;border-radius:50%}
+
+.ibox{
+  background:var(--bg-3);border:1px solid var(--border);
+  border-radius:8px;padding:13px;margin-bottom:11px;
+}
+.ibox h4{
+  font-size:11px;font-weight:700;color:var(--accent);
+  margin-bottom:7px;letter-spacing:0.3px;
+}
+.ibox p{font-size:11px;color:var(--text-3);line-height:1.65}
+.ibox code{
+  font-family:'JetBrains Mono',monospace;
+  background:var(--bg-0);padding:1px 5px;border-radius:3px;
+  font-size:10px;color:var(--cyan);
+}
+.ibox strong{color:var(--text-2)}
+.ibox .formula{
+  display:block;background:var(--bg-0);padding:8px 10px;
+  border-radius:5px;margin:6px 0;font-family:'JetBrains Mono',monospace;
+  font-size:10px;color:var(--warning);border-left:2px solid var(--warning);
+}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:900px){
+  .drawer{width:100%}
+  .topstats{display:none}
+  .hud-tl{display:none}
+}
+</style>
+</head>
+<body>
+
+<canvas id="sim"></canvas>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-ico">🧠</div>
+    <div class="brand-txt">
+      <div class="brand-name">NeuroEvolución</div>
+      <div class="brand-sub">Simulador Universitario v2.0</div>
+    </div>
+  </div>
+  <div class="topstats">
+    <div class="pill"><span class="dot" style="background:var(--success)"></span><span class="k">Pob</span><span class="v" id="tPop">0</span></div>
+    <div class="pill"><span class="dot" style="background:var(--warning)"></span><span class="k">Gen</span><span class="v" id="tGen">1</span></div>
+    <div class="pill"><span class="dot" style="background:var(--purple)"></span><span class="k">Mejor</span><span class="v" id="tBest">0.0</span></div>
+    <div class="pill"><span class="dot" style="background:var(--cyan)"></span><span class="k">Prom</span><span class="v" id="tAvg">0.0</span></div>
+    <div class="pill"><span class="dot" style="background:var(--danger)"></span><span class="k">Alcanzados</span><span class="v" id="tReached">0</span></div>
+  </div>
+  <div class="topactions">
+    <button class="ibtn" id="bPause" title="Pausar (Espacio)">⏸</button>
+    <button class="ibtn" id="bReset" title="Reiniciar (R)">↺</button>
+    <button class="ibtn" id="bDrawer" title="Panel (D)">☰</button>
+  </div>
+</div>
+
+<!-- HUD -->
+<div class="hud hud-tl" id="hudTL">
+  <div class="hud-title">Estado de Simulación</div>
+  <div class="hud-row"><span class="k">Velocidad</span><span class="v accent" id="hSpeed">1.0x</span></div>
+  <div class="hud-row"><span class="k">Tiempo Gen.</span><span class="v" id="hTime">0.0s / 15s</span></div>
+  <div class="hud-row"><span class="k">Mejor histórico</span><span class="v success" id="hBestEver">0.0</span></div>
+  <div class="hud-row"><span class="k">Mutación</span><span class="v warning" id="hMut">8%</span></div>
+  <div class="hud-row"><span class="k">Arquitectura</span><span class="v" id="hArch">4→8→2</span></div>
+</div>
+
+<div class="hud hud-bl">
+  <div class="hud-title">Rendimiento</div>
+  <div class="hud-row"><span class="k">FPS</span><span class="v success" id="hFps">60</span></div>
+  <div class="hud-row"><span class="k">Agentes vivos</span><span class="v" id="hAlive">0</span></div>
+</div>
+
+<div class="hud hud-br">
+  <div class="legend">
+    <div class="leg-item"><span class="leg-sw" style="background:var(--accent);color:var(--accent)"></span>Agente</div>
+    <div class="leg-item"><span class="leg-sw" style="background:var(--success);color:var(--success)"></span>Mejor</div>
+    <div class="leg-item"><span class="leg-sw" style="background:var(--danger);color:var(--danger)"></span>Objetivo</div>
+    <div class="leg-item"><span class="leg-sw" style="background:var(--text-4);color:var(--text-4)"></span>Obstáculo</div>
+  </div>
+</div>
+
+<div class="genbar"><div class="genbar-fill" id="genBar"></div></div>
+
+<!-- DRAWER -->
+<div class="overlay" id="ov"></div>
+<div class="drawer" id="drw">
+  <div class="dhead">
+    <span class="dtitle">Panel de Control</span>
+    <button class="dclose" id="dClose">✕</button>
+  </div>
+  <div class="tabs">
+    <button class="tbtn on" data-t="ctrl">Controles</button>
+    <button class="tbtn" data-t="stats">Estadísticas</button>
+    <button class="tbtn" data-t="net">Red Neuronal</button>
+    <button class="tbtn" data-t="edu">Teoría</button>
+  </div>
+  <div class="dbody">
+
+    <!-- CONTROLES -->
+    <div class="pane on" id="p-ctrl">
+      <div class="sec">
+        <div class="stitle">Simulación</div>
+        <div class="cg">
+          <div class="cl"><span class="n">Velocidad <span class="tip" title="Multiplicador del tiempo de simulación">?</span></span><span class="v" id="vSpd">1.0x</span></div>
+          <input type="range" id="cSpd" min="0.1" max="20" step="0.1" value="1">
+        </div>
+        <div class="cg">
+          <div class="cl"><span class="n">Pasos por frame <span class="tip" title="Sub-steps de física por frame renderizado">?</span></span><span class="v" id="vStp">1</span></div>
+          <input type="range" id="cStp" min="1" max="30" step="1" value="1">
+        </div>
+        <div class="cg">
+          <div class="cl"><span class="n">Duración generación (s)</span><span class="v" id="vDur">15s</span></div>
+          <input type="range" id="cDur" min="5" max="90" step="1" value="15">
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="stitle">Algoritmo Evolutivo</div>
+        <div class="cg">
+          <div class="cl"><span class="n">Tasa de mutación <span class="tip" title="Probabilidad de que un peso sea mutado">?</span></span><span class="v" id="vMut">8%</span></div>
+          <input type="range" id="cMut" min="0" max="50" step="1" value="8">
+        </div>
+        <div class="cg">
+          <div class="cl"><span class="n">Magnitud de mutación <span class="tip" title="Desviación estándar del ruido gaussiano">?</span></span><span class="v" id="vMag">0.30</span></div>
+          <input type="range" id="cMag" min="0.05" max="2" step="0.05" value="0.3">
+        </div>
+        <div class="cg">
+          <div class="cl"><span class="n">Tamaño de población</span><span class="v" id="vPop">200</span></div>
+          <input type="range" id="cPop" min="20" max="800" step="10" value="200">
+        </div>
+        <div class="cg">
+          <div class="cl"><span class="n">Élite (%) <span class="tip" title="Porcentaje de mejores que pasan intactos">?</span></span><span class="v" id="vEli">5%</span></div>
+          <input type="range" id="cEli" min="0" max="30" step="1" value="5">
+        </div>
+        <div class="cg">
+          <div class="cl"><span class="n">Tamaño torneo <span class="tip" title="Número de competidores en selección por torneo">?</span></span><span class="v" id="vTor">4</span></div>
+          <input type="range" id="cTor" min="2" max="15" step="1" value="4">
+        </div>
+        <div class="cg">
+          <div class="cl"><span class="n">Prob. cruce</span><span class="v" id="vCrx">70%</span></div>
+          <input type="range" id="cCrx" min="0" max="100" step="5" value="70">
+        </div>
+        <div class="cg">
+          <div class="cl"><span class="n">Arquitectura</span></div>
+          <select id="cArch">
+            <option value="4,8,2" selected>4 → 8 → 2 (recomendada)</option>
+            <option value="4,12,2">4 → 12 → 2 (más capacidad)</option>
+            <option value="4,6,2">4 → 6 → 2 (compacta)</option>
+            <option value="4,4,2">4 → 4 → 2 (mínima)</option>
+            <option value="4,10,6,2">4 → 10 → 6 → 2 (profunda)</option>
+            <option value="6,10,2">6 → 10 → 2 (más sensores)</option>
+          </select>
+        </div>
+        <div class="cg">
+          <div class="cl"><span class="n">Activación</span></div>
+          <select id="cAct">
+            <option value="tanh" selected>Tanh (recomendada)</option>
+            <option value="relu">ReLU</option>
+            <option value="sigmoid">Sigmoid</option>
+            <option value="leaky_relu">Leaky ReLU</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="stitle">Entorno</div>
+        <div class="cg">
+          <div class="cl"><span class="n">Obstáculos</span></div>
+          <select id="cObs">
+            <option value="0">Sin obstáculos</option>
+            <option value="5">Pocos (5)</option>
+            <option value="12" selected>Medio (12)</option>
+            <option value="25">Muchos (25)</option>
+            <option value="40">Extremo (40)</option>
+          </select>
+        </div>
+        <div class="cg">
+          <div class="cl"><span class="n">Comportamiento objetivo</span></div>
+          <select id="cTgt">
+            <option value="static">Estático</option>
+            <option value="slow" selected>Movimiento lento</option>
+            <option value="fast">Movimiento rápido</option>
+            <option value="erratic">Errático</option>
+          </select>
+        </div>
+        <div class="cg">
+          <div class="cl"><span class="n">Radio de alcance</span><span class="v" id="vRch">20</span></div>
+          <input type="range" id="cRch" min="10" max="60" step="1" value="20">
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="stitle">Visualización</div>
+        <div class="trow"><span class="n">Mostrar trails</span><div class="tsw on" data-k="trails"></div></div>
+        <div class="trow"><span class="n">Red neuronal del mejor</span><div class="tsw on" data-k="showNN"></div></div>
+        <div class="trow"><span class="n">Sensores del mejor</span><div class="tsw" data-k="sensors"></div></div>
+        <div class="trow"><span class="n">Solo top 20%</span><div class="tsw" data-k="topOnly"></div></div>
+        <div class="trow"><span class="n">Mapa de calor fitness</span><div class="tsw" data-k="heatmap"></div></div>
+        <div class="trow"><span class="n">Grid de fondo</span><div class="tsw on" data-k="grid"></div></div>
+      </div>
+
+      <div class="sec">
+        <div class="stitle">Acciones</div>
+        <div class="brow">
+          <button class="btn pri" id="bPause2">⏸ Pausar</button>
+          <button class="btn dan" id="bReset2">↺ Reiniciar</button>
+        </div>
+        <div class="brow" style="margin-top:7px">
+          <button class="btn suc" id="bSeed">🌱 Nueva semilla</button>
+          <button class="btn war" id="bSkip">⏩ Saltar gen.</button>
+        </div>
+        <div class="brow" style="margin-top:7px">
+          <button class="btn" id="bExport">📥 Exportar JSON</button>
+          <button class="btn" id="bBest">⭐ Preservar mejor</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ESTADÍSTICAS -->
+    <div class="pane" id="p-stats">
+      <div class="sgrid">
+        <div class="scard"><div class="si">🧪</div><div class="sv" id="sPop">0</div><div class="sn">Población</div></div>
+        <div class="scard"><div class="si">🧬</div><div class="sv" id="sGen">1</div><div class="sn">Generación</div></div>
+        <div class="scard"><div class="si">🏆</div><div class="sv" id="sBest">0.0</div><div class="sn">Mejor Fitness</div></div>
+        <div class="scard"><div class="si">📊</div><div class="sv" id="sAvg">0.0</div><div class="sn">Fitness Promedio</div></div>
+        <div class="scard"><div class="si">📉</div><div class="sv" id="sWorst">0.0</div><div class="sn">Peor Fitness</div></div>
+        <div class="scard"><div class="si">🎯</div><div class="sv" id="sRch">0</div><div class="sn">Alcanzaron objetivo</div></div>
+        <div class="scard"><div class="si">💥</div><div class="sv" id="sCol">0</div><div class="sn">Colisiones totales</div></div>
+        <div class="scard"><div class="si">⚡</div><div class="sv" id="sEn">0</div><div class="sn">Energía total</div></div>
+        <div class="scard wide"><div class="si">🏅</div><div class="sv" id="sBestEver">0.0</div><div class="sn">Mejor fitness histórico</div></div>
+      </div>
+
+      <div class="cbox">
+        <div class="ct">📈 Evolución del Fitness</div>
+        <canvas id="chFit"></canvas>
+      </div>
+      <div class="cbox">
+        <div class="ct">📊 Distribución de Fitness (última gen.)</div>
+        <canvas id="chDist"></canvas>
+      </div>
+      <div class="cbox">
+        <div class="ct">🧬 Diversidad Genética (σ de pesos)</div>
+        <canvas id="chDiv"></canvas>
+      </div>
+
+      <div class="stitle">📋 Registro de Generaciones</div>
+      <div class="glog" id="glog"></div>
+    </div>
+
+    <!-- RED NEURONAL -->
+    <div class="pane" id="p-net">
+      <div class="nnbox">
+        <div class="ct">🧬 Mejor Cerebro — Gen. <span id="nnGen">1</span></div>
+        <canvas id="nnCv" width="360" height="240"></canvas>
+        <div class="nnleg">
+          <div class="nnleg-i"><span class="d" style="background:var(--cyan)"></span>Entradas</div>
+          <div class="nnleg-i"><span class="d" style="background:var(--purple)"></span>Ocultas</div>
+          <div class="nnleg-i"><span class="d" style="background:var(--success)"></span>Salidas</div>
+          <div class="nnleg-i"><span class="d" style="background:var(--accent)"></span>Peso +</div>
+          <div class="nnleg-i"><span class="d" style="background:var(--danger)"></span>Peso −</div>
+        </div>
+      </div>
+
+      <div class="ibox">
+        <h4>🔍 Entradas de la Red</h4>
+        <p>
+          <code>i₀</code> Δx al objetivo / rango (normalizado −1..1)<br>
+          <code>i₁</code> Δy al objetivo / rango (normalizado −1..1)<br>
+          <code>i₂</code> Distancia a obstáculo más cercano (0..1)<br>
+          <code>i₃</code> Ángulo relativo al obstáculo (sin)<br>
+          <code>i₄</code> Velocidad angular actual (normalizada)<br>
+          <code>i₅</code> Sesgo constante (1.0)
+        </p>
+      </div>
+      <div class="ibox">
+        <h4>🎯 Salidas de la Red</h4>
+        <p>
+          <code>o₀</code> Velocidad rueda izquierda (−1..1)<br>
+          <code>o₁</code> Velocidad rueda derecha (−1..1)<br><br>
+          El modelo usa <strong>differential drive</strong>: la combinación de ambas velocidades determina la dirección y velocidad del agente.
+        </p>
+      </div>
+      <div class="ibox">
+        <h4>🧮 Topología Actual</h4>
+        <p id="nnTopo">Input(4) → Oculta(8) → Output(2)</p>
+        <p style="margin-top:5px">Parámetros totales: <code id="nnParams">0</code></p>
+        <p style="margin-top:5px">Función de activación: <code id="nnAct">tanh</code></p>
+      </div>
+      <div class="ibox">
+        <h4>📊 Activaciones en Tiempo Real</h4>
+        <p id="nnLive" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-3);line-height:1.8">
+          Esperando datos...
+        </p>
+      </div>
+    </div>
+
+    <!-- TEORÍA -->
+    <div class="pane" id="p-edu">
+      <div class="ibox">
+        <h4>📖 ¿Qué es la Neuroevolución?</h4>
+        <p>
+          La <strong>neuroevolución</strong> es una técnica de inteligencia artificial que utiliza algoritmos evolutivos para entrenar redes neuronales artificiales. 
+          A diferencia del backpropagation, no requiere gradientes y puede explorar espacios de soluciones más amplios.
+        </p>
+      </div>
+      <div class="ibox">
+        <h4>🧬 Algoritmo Genético Implementado</h4>
+        <p>
+          <strong>1. Inicialización:</strong> Población aleatoria de redes neuronales.<br>
+          <strong>2. Evaluación:</strong> Cada agente interactúa con el entorno y recibe un fitness.<br>
+          <strong>3. Selección:</strong> Torneo — se eligen padres compitiendo aleatoriamente.<br>
+          <strong>4. Cruce:</strong> Recombinación uniforme de pesos entre padres.<br>
+          <strong>5. Mutación:</strong> Ruido gaussiano aplicado a los pesos.<br>
+          <strong>6. Elitismo:</strong> Los mejores pasan intactos a la siguiente generación.
+        </p>
+      </div>
+      <div class="ibox">
+        <h4>🎯 Función de Fitness</h4>
+        <p>El fitness combina múltiples señales:</p>
+        <span class="formula">F = α·Δdist + β·reach + γ·survive − δ·collisions + ε·exploration</span>
+        <p style="margin-top:6px">
+          • <strong>Δdist</strong>: reducción de distancia al objetivo (gradiente)<br>
+          • <strong>reach</strong>: bonus grande por alcanzar el objetivo<br>
+          • <strong>survive</strong>: recompensa por mantenerse activo<br>
+          • <strong>collisions</strong>: penalización por chocar con obstáculos<br>
+          • <strong>exploration</strong>: bonus por movimiento (evita quedarse quieto)
+        </p>
+      </div>
+      <div class="ibox">
+        <h4>🚗 Modelo de Movimiento</h4>
+        <p>
+          Se usa un modelo <strong>differential drive</strong> (tipo robot de dos ruedas):
+        </p>
+        <span class="formula">v = (v_L + v_R) / 2<br>ω = (v_R − v_L) / L<br>x' = x + v·cos(θ)·dt<br>y' = y + v·sin(θ)·dt<br>θ' = θ + ω·dt</span>
+      </div>
+      <div class="ibox">
+        <h4>⌨️ Atajos de Teclado</h4>
+        <p>
+          <code>Espacio</code> Pausar/Reanudar<br>
+          <code>R</code> Reiniciar simulación<br>
+          <code>D</code> Abrir/cerrar panel<br>
+          <code>S</code> Saltar generación<br>
+          <code>+ / −</code> Ajustar velocidad<br>
+          <code>H</code> Ocultar/mostrar HUD
+        </p>
+      </div>
+      <div class="ibox">
+        <h4>🏫 Aplicaciones Universitarias</h4>
+        <p>
+          • <strong>Computación Evolutiva</strong>: estudiar convergencia, diversidad, elitismo<br>
+          • <strong>Redes Neuronales</strong>: entender forward pass sin backprop<br>
+          • <strong>IA Adaptativa</strong>: comportamiento emergente<br>
+          • <strong>Robótica</strong>: navegación autónoma<br>
+          • <strong>Sistemas Complejos</strong>: auto-organización
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   NEUROEVOLUTION SIMULATOR v2.0 — UNIVERSITARIO
+   ================================================================ */
+
+const C = document.getElementById('sim');
+const X = C.getContext('2d');
+
+// -------- CONFIG --------
+const CFG = {
+  speed: 1, steps: 1, duration: 15,
+  mutRate: 0.08, mutMag: 0.3,
+  pop: 200, elite: 0.05, tournament: 4, crossover: 0.7,
+  arch: [4, 8, 2], activation: 'tanh',
+  obstacles: 12, targetMode: 'slow', reachRadius: 20,
+  trails: true, showNN: true, sensors: false,
+  topOnly: false, heatmap: false, grid: true,
+  paused: false,
+};
+
+// -------- STATE --------
+let W = 0, H = 0;
+let agents = [];
+let obstacles = [];
+let target = { x: 0, y: 0, vx: 0, vy: 0, phase: 0 };
+let gen = 1, genTime = 0;
+let bestEver = null, bestEverFit = 0;
+let hist = { best: [], avg: [], worst: [], div: [] };
+let reachedCount = 0, collisionCount = 0;
+let frame = 0, fps = 60, fpsAcc = 0, fpsT = 0;
+let showHud = true;
+
+// -------- UTILS --------
+const rand = (a=1,b) => b===undefined ? Math.random()*a : a + Math.random()*(b-a);
+const randInt = (a,b) => Math.floor(rand(a,b+1));
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+const dist2 = (x1,y1,x2,y2) => { const dx=x2-x1, dy=y2-y1; return dx*dx+dy*dy; };
+const dist = (x1,y1,x2,y2) => Math.sqrt(dist2(x1,y1,x2,y2));
+const gauss = () => {
+  let u=0,v=0;
+  while(u===0)u=Math.random();
+  while(v===0)v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+};
+
+// -------- ACTIVATIONS --------
+const ACT = {
+  tanh: x => Math.tanh(x),
+  relu: x => Math.max(0, x),
+  sigmoid: x => 1/(1+Math.exp(-clamp(x,-10,10))),
+  leaky_relu: x => x > 0 ? x : 0.01*x,
+};
+
+// -------- NEURAL NETWORK --------
+class NN {
+  constructor(arch) {
+    this.arch = arch;
+    this.W = []; this.B = [];
+    for (let l = 0; l < arch.length-1; l++) {
+      const lw = [], lb = [];
+      for (let j = 0; j < arch[l+1]; j++) {
+        const row = [];
+        for (let k = 0; k < arch[l]; k++) row.push(gauss() * 0.5);
+        lw.push(row);
+        lb.push(gauss() * 0.2);
+      }
+      this.W.push(lw); this.B.push(lb);
+    }
+    this.lastAct = null; // for visualization
+  }
+  forward(inp) {
+    const fn = ACT[CFG.activation] || ACT.tanh;
+    let cur = inp;
+    const acts = [cur.slice()];
+    for (let l = 0; l < this.W.length; l++) {
+      const nxt = [];
+      for (let j = 0; j < this.W[l].length; j++) {
+        let s = this.B[l][j];
+        for (let k = 0; k < cur.length; k++) s += this.W[l][j][k] * cur[k];
+        // última capa: tanh para output acotado
+        nxt.push(l === this.W.length-1 ? Math.tanh(s) : fn(s));
+      }
+      cur = nxt;
+      acts.push(cur.slice());
+    }
+    this.lastAct = acts;
+    return cur;
+  }
+  clone() {
+    const n = new NN(this.arch);
+    n.W = this.W.map(l => l.map(r => r.slice()));
+    n.B = this.B.map(l => l.slice());
+    return n;
+  }
+  mutate(rate, mag) {
+    for (let l = 0; l < this.W.length; l++) {
+      for (let j = 0; j < this.W[l].length; j++) {
+        for (let k = 0; k < this.W[l][j].length; k++)
+          if (Math.random() < rate) this.W[l][j][k] += gauss() * mag;
+        if (Math.random() < rate) this.B[l][j] += gauss() * mag;
+      }
+    }
+  }
+  static cross(a, b) {
+    const c = a.clone();
+    for (let l = 0; l < c.W.length; l++) {
+      for (let j = 0; j < c.W[l].length; j++) {
+        for (let k = 0; k < c.W[l][j].length; k++)
+          if (Math.random() < 0.5) c.W[l][j][k] = b.W[l][j][k];
+        if (Math.random() < 0.5) c.B[l][j] = b.B[l][j];
+      }
+    }
+    return c;
+  }
+  flatWeights() {
+    const f = [];
+    for (let l = 0; l < this.W.length; l++) {
+      for (let j = 0; j < this.W[l].length; j++) f.push(...this.W[l][j]);
+      f.push(...this.B[l]);
+    }
+    return f;
+  }
+  paramCount() {
+    let c = 0;
+    for (let l = 0; l < this.W.length; l++) {
+      c += this.W[l].length * this.W[l][0].length + this.B[l].length;
+    }
+    return c;
+  }
+}
+
+// -------- AGENT --------
+class Agent {
+  constructor(brain) {
+    this.reset(brain);
+  }
+  reset(brain) {
+    // spawn en zona central
+    this.x = W/2 + (Math.random()-0.5) * 120;
+    this.y = H/2 + (Math.random()-0.5) * 120;
+    this.angle = Math.random() * Math.PI * 2;
+    this.vL = 0; this.vR = 0; // wheel velocities
+    this.brain = brain || new NN(CFG.arch);
+    this.fitness = 0;
+    this.prevDist = 0;
+    this.minDist = Infinity;
+    this.trail = [];
+    this.reached = false;
+    this.collisions = 0;
+    this.alive = true;
+    this.lastInputs = null;
+    this.lastOutputs = null;
+    this.moveAccum = 0; // for exploration bonus
+    this.lastX = this.x; this.lastY = this.y;
+    this.updatePrevDist();
+  }
+  updatePrevDist() {
+    this.prevDist = dist(this.x, this.y, target.x, target.y);
+    this.minDist = Math.min(this.minDist, this.prevDist);
+  }
+  sense() {
+    const dx = (target.x - this.x) / Math.max(W, H);
+    const dy = (target.y - this.y) / Math.max(W, H);
+    // obstáculo más cercano
+    let obsDist = 1, obsAngle = 0;
+    for (const o of obstacles) {
+      const d = dist(this.x, this.y, o.x, o.y) - o.r;
+      if (d < obsDist * Math.max(W,H)) {
+        obsDist = d / Math.max(W,H);
+        obsAngle = Math.atan2(o.y - this.y, o.x - this.x) - this.angle;
+      }
+    }
+    const angVel = (this.vR - this.vL) / 20;
+    return [
+      clamp(dx * 2, -1, 1),
+      clamp(dy * 2, -1, 1),
+      clamp(obsDist, 0, 1),
+      Math.sin(obsAngle),
+      clamp(angVel, -1, 1),
+      1.0 // bias
+    ];
+  }
+  step(dt) {
+    if (!this.alive) return;
+    // ajustar inputs según arquitectura
+    let inputs = this.sense();
+    // si la arquitectura tiene más/menos inputs, ajustar
+    const expectedIn = this.brain.arch[0];
+    while (inputs.length < expectedIn) inputs.push(0);
+    if (inputs.length > expectedIn) inputs = inputs.slice(0, expectedIn);
+
+    const out = this.brain.forward(inputs);
+    this.lastInputs = inputs;
+    this.lastOutputs = out;
+
+    // differential drive
+    const vL = clamp(out[0], -1, 1) * 120; // px/s
+    const vR = clamp(out[1] || 0, -1, 1) * 120;
+    this.vL = vL; this.vR = vR;
+
+    const v = (vL + vR) / 2;
+    const w = (vR - vL) / 14; // wheel base
+
+    this.x += Math.cos(this.angle) * v * dt;
+    this.y += Math.sin(this.angle) * v * dt;
+    this.angle += w * dt;
+
+    // límites suaves
+    const m = 30;
+    if (this.x < m) { this.x = m; this.angle = Math.PI - this.angle; }
+    if (this.x > W - m) { this.x = W - m; this.angle = Math.PI - this.angle; }
+    if (this.y < m + 52) { this.y = m + 52; this.angle = -this.angle; }
+    if (this.y > H - m) { this.y = H - m; this.angle = -this.angle; }
+
+    // colisiones con obstáculos
+    for (const o of obstacles) {
+      const d = dist(this.x, this.y, o.x, o.y);
+      const minD = 7 + o.r;
+      if (d < minD) {
+        const ang = Math.atan2(this.y - o.y, this.x - o.x);
+        this.x = o.x + Math.cos(ang) * minD;
+        this.y = o.y + Math.sin(ang) * minD;
+        this.angle = ang;
+        this.collisions++;
+        this.fitness -= 0.5;
+      }
+    }
+
+    // exploración
+    const moved = dist(this.x, this.y, this.lastX, this.lastY);
+    this.moveAccum += moved;
+    this.lastX = this.x; this.lastY = this.y;
+
+    // fitness: gradiente de distancia
+    const curDist = dist(this.x, this.y, target.x, target.y);
+    const delta = this.prevDist - curDist; // positivo = se acerca
+    this.fitness += delta * 0.5;
+    this.prevDist = curDist;
+    this.minDist = Math.min(this.minDist, curDist);
+
+    // alcanzar objetivo
+    if (curDist < CFG.reachRadius && !this.reached) {
+      this.reached = true;
+      this.fitness += 100;
+      reachedCount++;
+    }
+
+    // bonus por movimiento (evita quedarse quieto)
+    this.fitness += moved * 0.005;
+
+    // trail
+    if (CFG.trails && frame % 2 === 0) {
+      this.trail.push({x: this.x, y: this.y});
+      if (this.trail.length > 40) this.trail.shift();
+    }
+  }
+}
+
+// -------- OBSTACLES --------
+function genObstacles() {
+  obstacles = [];
+  const n = CFG.obstacles;
+  const margin = 80;
+  for (let i = 0; i < n; i++) {
+    let placed = false;
+    for (let att = 0; att < 80 && !placed; att++) {
+      const x = margin + rand(W - margin*2);
+      const y = margin + 52 + rand(H - margin*2 - 52);
+      const r = 14 + rand(22);
+      let ok = true;
+      for (const o of obstacles) {
+        if (dist(x,y,o.x,o.y) < r + o.r + 50) { ok = false; break; }
+      }
+      // no muy cerca del centro (spawn)
+      if (dist(x,y,W/2,H/2) < 130) ok = false;
+      if (ok) { obstacles.push({x,y,r}); placed = true; }
+    }
+  }
+}
+
+// -------- TARGET --------
+function resetTarget() {
+  const m = 120;
+  // colocar lejos del centro
+  let tries = 0;
+  do {
+    target.x = m + rand(W - m*2);
+    target.y = m + rand(H - m*2);
+    tries++;
+  } while (dist(target.x, target.y, W/2, H/2) < 200 && tries < 30);
+
+  const sp = CFG.targetMode === 'fast' ? 80 : CFG.targetMode === 'slow' ? 30 : CFG.targetMode === 'erratic' ? 120 : 0;
+  const a = rand(Math.PI*2);
+  target.vx = Math.cos(a) * sp;
+  target.vy = Math.sin(a) * sp;
+  target.phase = 0;
+}
+
+function updateTarget(dt) {
+  if (CFG.targetMode === 'static') return;
+  if (CFG.targetMode === 'erratic') {
+    target.phase += dt;
+    if (target.phase > 0.8) {
+      target.phase = 0;
+      const a = rand(Math.PI*2);
+      const sp = 60 + rand(80);
+      target.vx = Math.cos(a) * sp;
+      target.vy = Math.sin(a) * sp;
+    }
+  }
+  target.x += target.vx * dt;
+  target.y += target.vy * dt;
+  const m = 100;
+  if (target.x < m) { target.x = m; target.vx = Math.abs(target.vx); }
+  if (target.x > W - m) { target.x = W - m; target.vx = -Math.abs(target.vx); }
+  if (target.y < m) { target.y = m; target.vy = Math.abs(target.vy); }
+  if (target.y > H - m) { target.y = H - m; target.vy = -Math.abs(target.vy); }
+}
+
+// -------- EVOLUTION --------
+function tournament(pop, k) {
+  let best = null;
+  for (let i = 0; i < k; i++) {
+    const c = pop[randInt(0, pop.length-1)];
+    if (!best || c.fitness > best.fitness) best = c;
+  }
+  return best;
+}
+
+function evolve() {
+  // calcular fitness final
+  for (const a of agents) {
+    // bonus por proximidad mínima
+    a.fitness += Math.max(0, 50 - a.minDist/10);
+    // supervivencia
+    a.fitness += 2;
+  }
+
+  const fits = agents.map(a => a.fitness);
+  const best = Math.max(...fits);
+  const avg = fits.reduce((s,v)=>s+v,0) / fits.length;
+  const worst = Math.min(...fits);
+
+  // diversidad
+  const flat = agents.map(a => a.brain.flatWeights());
+  const len = flat[0].length;
+  let div = 0;
+  for (let i = 0; i < len; i++) {
+    let m = 0;
+    for (const f of flat) m += f[i];
+    m /= flat.length;
+    let v = 0;
+    for (const f of flat) v += (f[i]-m)**2;
+    div += Math.sqrt(v / flat.length);
+  }
+  div /= len || 1;
+
+  hist.best.push(best);
+  hist.avg.push(avg);
+  hist.worst.push(worst);
+  hist.div.push(div);
+
+  if (best > bestEverFit) {
+    bestEverFit = best;
+    bestEver = agents.find(a => a.fitness === best).brain.clone();
+  }
+
+  // log
+  logGen(gen, best, avg, worst, reachedCount);
+
+  // ordenar
+  const sorted = [...agents].sort((a,b) => b.fitness - a.fitness);
+
+  // nueva población
+  const newPop = [];
+  const eliteN = Math.max(1, Math.floor(CFG.pop * CFG.elite));
+
+  // elitismo
+  for (let i = 0; i < eliteN; i++) {
+    const e = new Agent(sorted[i].brain.clone());
+    newPop.push(e);
+  }
+
+  // preservar el mejor histórico (siempre)
+  if (bestEver && eliteN < CFG.pop) {
+    const be = new Agent(bestEver.clone());
+    newPop.push(be);
+  }
+
+  // resto: torneo + cruce + mutación
+  while (newPop.length < CFG.pop) {
+    const p1 = tournament(sorted, CFG.tournament);
+    const p2 = tournament(sorted, CFG.tournament);
+    let child;
+    if (Math.random() < CFG.crossover && p1 !== p2) {
+      child = NN.cross(p1.brain, p2.brain);
+    } else {
+      child = p1.brain.clone();
+    }
+    child.mutate(CFG.mutRate, CFG.mutMag);
+    newPop.push(new Agent(child));
+  }
+
+  agents = newPop;
+  gen++;
+  genTime = 0;
+  reachedCount = 0;
+  collisionCount = 0;
+  resetTarget();
+  updateCharts();
+  updateStats();
+}
+
+function logGen(g, best, avg, worst, reached) {
+  const log = document.getElementById('glog');
+  const e = document.createElement('div');
+  e.className = 'lentry';
+  e.innerHTML = `<span class="g">Gen ${g}</span> · mejor: <span class="f">${best.toFixed(1)}</span> · prom: ${avg.toFixed(1)} · peor: ${worst.toFixed(1)} · alcanzados: ${reached}`;
+  log.prepend(e);
+  while (log.children.length > 60) log.removeChild(log.lastChild);
+}
+
+// -------- INIT --------
+function resize() {
+  W = window.innerWidth;
+  H = window.innerHeight;
+  C.width = W; C.height = H;
+}
+
+function init() {
+  resize();
+  agents = [];
+  gen = 1; genTime = 0;
+  bestEver = null; bestEverFit = 0;
+  hist = { best: [], avg: [], worst: [], div: [] };
+  reachedCount = 0; collisionCount = 0;
+  genObstacles();
+  resetTarget();
+  for (let i = 0; i < CFG.pop; i++) agents.push(new Agent());
+  updateStats();
+  updateNNInfo();
+}
+
+// -------- RENDER --------
+function drawGrid() {
+  if (!CFG.grid) return;
+  X.strokeStyle = 'rgba(45,58,79,0.18)';
+  X.lineWidth = 1;
+  const s = 60;
+  X.beginPath();
+  for (let x = 0; x < W; x += s) { X.moveTo(x,0); X.lineTo(x,H); }
+  for (let y = 0; y < H; y += s) { X.moveTo(0,y); X.lineTo(W,y); }
+  X.stroke();
+}
+
+function drawObstacles() {
+  for (const o of obstacles) {
+    const g = X.createRadialGradient(o.x, o.y, 0, o.x, o.y, o.r);
+    g.addColorStop(0, 'rgba(100,116,139,0.5)');
+    g.addColorStop(1, 'rgba(71,85,105,0.15)');
+    X.fillStyle = g;
+    X.beginPath(); X.arc(o.x, o.y, o.r, 0, Math.PI*2); X.fill();
+    X.strokeStyle = 'rgba(148,163,184,0.35)';
+    X.lineWidth = 1;
+    X.stroke();
+  }
+}
+
+function drawTarget() {
+  const pulse = Math.sin(frame * 0.08) * 4 + 14;
+  // halo
+  const g = X.createRadialGradient(target.x, target.y, 0, target.x, target.y, pulse + 25);
+  g.addColorStop(0, 'rgba(239,68,68,0.35)');
+  g.addColorStop(1, 'rgba(239,68,68,0)');
+  X.fillStyle = g;
+  X.beginPath(); X.arc(target.x, target.y, pulse + 25, 0, Math.PI*2); X.fill();
+  // anillos
+  X.strokeStyle = 'rgba(239,68,68,0.4)';
+  X.lineWidth = 1.5;
+  X.beginPath(); X.arc(target.x, target.y, pulse, 0, Math.PI*2); X.stroke();
+  X.strokeStyle = 'rgba(239,68,68,0.2)';
+  X.beginPath(); X.arc(target.x, target.y, pulse + 12, 0, Math.PI*2); X.stroke();
+  // centro
+  X.fillStyle = '#ef4444';
+  X.beginPath(); X.arc(target.x, target.y, 7, 0, Math.PI*2); X.fill();
+  // crosshair
+  X.strokeStyle = 'rgba(239,68,68,0.25)';
+  X.lineWidth = 0.8;
+  X.beginPath();
+  X.moveTo(target.x - 22, target.y); X.lineTo(target.x + 22, target.y);
+  X.moveTo(target.x, target.y - 22); X.lineTo(target.x, target.y + 22);
+  X.stroke();
+  // radio de alcance
+  X.strokeStyle = 'rgba(239,68,68,0.12)';
+  X.setLineDash([3,3]);
+  X.beginPath(); X.arc(target.x, target.y, CFG.reachRadius, 0, Math.PI*2); X.stroke();
+  X.setLineDash([]);
+}
+
+function drawAgent(a, isBest) {
+  // trail
+  if (CFG.trails && a.trail.length > 1) {
+    X.beginPath();
+    X.moveTo(a.trail[0].x, a.trail[0].y);
+    for (let i = 1; i < a.trail.length; i++) X.lineTo(a.trail[i].x, a.trail[i].y);
+    const fn = Math.min(1, a.fitness / Math.max(1, bestEverFit));
+    X.strokeStyle = isBest
+      ? `rgba(16,185,129,${0.35 + fn*0.4})`
+      : `rgba(59,130,246,${0.08 + fn*0.25})`;
+    X.lineWidth = isBest ? 1.8 : 0.8;
+    X.stroke();
+  }
+
+  // sensores (solo mejor)
+  if (CFG.sensors && isBest) {
+    X.strokeStyle = 'rgba(6,182,212,0.25)';
+    X.lineWidth = 0.6;
+    X.beginPath();
+    X.moveTo(a.x, a.y); X.lineTo(target.x, target.y);
+    X.stroke();
+    for (const o of obstacles) {
+      const d = dist(a.x,a.y,o.x,o.y);
+      if (d < 200) {
+        X.beginPath(); X.moveTo(a.x,a.y); X.lineTo(o.x,o.y); X.stroke();
+      }
+    }
+  }
+
+  // cuerpo
+  const fn = clamp(a.fitness / Math.max(1, bestEverFit), 0, 1);
+  const sz = isBest ? 8 : 5 + fn*2;
+
+  if (isBest) {
+    const gl = X.createRadialGradient(a.x, a.y, 0, a.x, a.y, sz + 14);
+    gl.addColorStop(0, 'rgba(16,185,129,0.5)');
+    gl.addColorStop(1, 'rgba(16,185,129,0)');
+    X.fillStyle = gl;
+    X.beginPath(); X.arc(a.x, a.y, sz + 14, 0, Math.PI*2); X.fill();
+  }
+
+  X.save();
+  X.translate(a.x, a.y);
+  X.rotate(a.angle);
+
+  const r = isBest ? 16 : 59;
+  const g = isBest ? 185 : 130;
+  const b = isBest ? 129 : 246;
+  const al = isBest ? 1 : 0.35 + fn*0.55;
+  X.fillStyle = `rgba(${r},${g},${b},${al})`;
+  X.beginPath();
+  X.moveTo(sz, 0);
+  X.lineTo(-sz*0.7, -sz*0.65);
+  X.lineTo(-sz*0.7, sz*0.65);
+  X.closePath();
+  X.fill();
+
+  if (isBest) {
+    X.strokeStyle = '#10b981';
+    X.lineWidth = 1.5;
+    X.stroke();
+  }
+  X.restore();
+}
+
+function drawMiniNN(a) {
+  if (!CFG.showNN || !a.brain.lastAct) return;
+  const nn = a.brain;
+  const acts = nn.lastAct;
+  const cx = a.x, cy = a.y - 35;
+  const pos = [];
+  for (let l = 0; l < nn.arch.length; l++) {
+    const xoff = (l - (nn.arch.length-1)/2) * 16;
+    const layer = [];
+    for (let n = 0; n < nn.arch[l]; n++) {
+      const yoff = (n - (nn.arch[l]-1)/2) * 5;
+      layer.push({x: cx + xoff, y: cy + yoff});
+    }
+    pos.push(layer);
+  }
+  // conexiones
+  for (let l = 0; l < nn.W.length; l++) {
+    for (let j = 0; j < nn.W[l].length; j++) {
+      for (let k = 0; k < nn.W[l][j].length; k++) {
+        const w = nn.W[l][j][k];
+        const aw = Math.min(Math.abs(w), 3) / 3;
+        if (aw < 0.1) continue;
+        X.strokeStyle = w > 0
+          ? `rgba(59,130,246,${aw*0.6})`
+          : `rgba(239,68,68,${aw*0.6})`;
+        X.lineWidth = aw * 1.2;
+        X.beginPath();
+        X.moveTo(pos[l][k].x, pos[l][k].y);
+        X.lineTo(pos[l+1][j].x, pos[l+1][j].y);
+        X.stroke();
+      }
+    }
+  }
+  // nodos
+  for (let l = 0; l < pos.length; l++) {
+    for (let n = 0; n < pos[l].length; n++) {
+      const p = pos[l][n];
+      const act = acts[l] ? Math.tanh(acts[l][n] || 0) : 0;
+      const col = l === 0 ? '#06b6d4' : l === nn.arch.length-1 ? '#10b981' : '#8b5cf6';
+      X.fillStyle = col;
+      X.globalAlpha = 0.4 + Math.abs(act) * 0.6;
+      X.beginPath(); X.arc(p.x, p.y, 2.5, 0, Math.PI*2); X.fill();
+      X.globalAlpha = 1;
+    }
+  }
+}
+
+function drawMainNN() {
+  const cv = document.getElementById('nnCv');
+  const c = cv.getContext('2d');
+  const w = cv.width, h = cv.height;
+  c.clearRect(0,0,w,h);
+  const nn = bestEver || (agents[0] && agents[0].brain);
+  if (!nn) return;
+
+  const pad = 45;
+  const pos = [];
+  for (let l = 0; l < nn.arch.length; l++) {
+    const x = pad + (l / Math.max(1, nn.arch.length-1)) * (w - pad*2);
+    const layer = [];
+    for (let n = 0; n < nn.arch[l]; n++) {
+      const y = pad + (nn.arch[l] === 1 ? 0.5 : n / (nn.arch[l]-1)) * (h - pad*2);
+      layer.push({x, y});
+    }
+    pos.push(layer);
+  }
+
+  // conexiones
+  for (let l = 0; l < nn.W.length; l++) {
+    for (let j = 0; j < nn.W[l].length; j++) {
+      for (let k = 0; k < nn.W[l][j].length; k++) {
+        const wt = nn.W[l][j][k];
+        const aw = Math.min(Math.abs(wt), 3) / 3;
+        if (aw < 0.05) continue;
+        c.strokeStyle = wt > 0
+          ? `rgba(59,130,246,${0.15 + aw*0.75})`
+          : `rgba(239,68,68,${0.15 + aw*0.75})`;
+        c.lineWidth = 0.5 + aw * 2.5;
+        c.beginPath();
+        c.moveTo(pos[l][k].x, pos[l][k].y);
+        c.lineTo(pos[l+1][j].x, pos[l+1][j].y);
+        c.stroke();
+      }
+    }
+  }
+
+  // nodos
+  for (let l = 0; l < pos.length; l++) {
+    for (let n = 0; n < pos[l].length; n++) {
+      const p = pos[l][n];
+      const col = l === 0 ? '#06b6d4' : l === nn.arch.length-1 ? '#10b981' : '#8b5cf6';
+      c.fillStyle = col;
+      c.beginPath(); c.arc(p.x, p.y, 6, 0, Math.PI*2); c.fill();
+      c.strokeStyle = 'rgba(255,255,255,0.25)';
+      c.lineWidth = 1;
+      c.stroke();
+    }
+  }
+
+  // etiquetas
+  c.fillStyle = '#64748b';
+  c.font = '9px Inter';
+  c.textAlign = 'center';
+  const inLabels = ['Δx','Δy','ObsD','ObsA','ω','bias'];
+  const outLabels = ['vL','vR'];
+  for (let l = 0; l < pos.length; l++) {
+    const x = pos[l][0].x;
+    const topY = pos[l][0].y;
+    if (l === 0) {
+      c.fillText('Entradas', x, topY - 18);
+      for (let n = 0; n < pos[l].length; n++) {
+        c.fillStyle = '#94a3b8';
+        c.fillText(inLabels[n] || '', pos[l][n].x - 12, pos[l][n].y + 3);
+        c.fillStyle = '#64748b';
+      }
+    } else if (l === nn.arch.length-1) {
+      c.fillText('Salidas', x, topY - 18);
+      for (let n = 0; n < pos[l].length; n++) {
+        c.fillStyle = '#94a3b8';
+        c.fillText(outLabels[n] || '', pos[l][n].x + 12, pos[l][n].y + 3);
+        c.fillStyle = '#64748b';
+      }
+    } else {
+      c.fillText(`Oculta ${l}`, x, topY - 18);
+    }
+  }
+
+  document.getElementById('nnGen').textContent = gen;
+  document.getElementById('nnParams').textContent = nn.paramCount();
+  document.getElementById('nnAct').textContent = CFG.activation;
+
+  // live activations
+  const bestA = agents.reduce((b,a) => a.fitness > (b?.fitness ?? -Infinity) ? a : b, null);
+  if (bestA && bestA.brain.lastAct) {
+    const acts = bestA.brain.lastAct;
+    let html = '';
+    const names = ['Entradas', ...nn.arch.slice(1).map((_,i) => `Oculta ${i+1}`), 'Salidas'];
+    for (let l = 0; l < acts.length; l++) {
+      html += `<div style="color:var(--text-4);margin-top:4px">${names[l]}:</div>`;
+      html += acts[l].map(v => `<span style="color:var(--cyan)">${v.toFixed(2)}</span>`).join(' · ');
+    }
+    document.getElementById('nnLive').innerHTML = html;
+  }
+}
+
+// -------- CHARTS --------
+let chFit, chDist, chDiv;
+function initCharts() {
+  const base = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: '#94a3b8', font: { size: 10 } } } },
+    scales: {
+      x: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { color: 'rgba(45,58,79,0.25)' } },
+      y: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { color: 'rgba(45,58,79,0.25)' } }
+    },
+    animation: { duration: 0 }
+  };
+
+  chFit = new Chart(document.getElementById('chFit').getContext('2d'), {
+    type: 'line',
+    data: { labels: [], datasets: [
+      { label: 'Mejor', data: [], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
+      { label: 'Promedio', data: [], borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.05)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
+      { label: 'Peor', data: [], borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.03)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 1.5, borderDash: [3,3] }
+    ]},
+    options: base
+  });
+
+  chDist = new Chart(document.getElementById('chDist').getContext('2d'), {
+    type: 'bar',
+    data: { labels: [], datasets: [{
+      label: 'Agentes', data: [], backgroundColor: 'rgba(139,92,246,0.6)',
+      borderColor: '#8b5cf6', borderWidth: 1
+    }]},
+    options: {
+      ...base,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { title: { display: true, text: 'Fitness', color: '#64748b' }, ticks: { color: '#64748b', font: { size: 9 } }, grid: { color: 'rgba(45,58,79,0.25)' } },
+        y: { title: { display: true, text: 'Cantidad', color: '#64748b' }, ticks: { color: '#64748b', font: { size: 9 } }, grid: { color: 'rgba(45,58,79,0.25)' } }
+      }
+    }
+  });
+
+  chDiv = new Chart(document.getElementById('chDiv').getContext('2d'), {
+    type: 'line',
+    data: { labels: [], datasets: [{
+      label: 'Diversidad (σ)', data: [], borderColor: '#f59e0b',
+      backgroundColor: 'rgba(245,158,11,0.1)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2
+    }]},
+    options: base
+  });
+}
+
+function updateCharts() {
+  if (!chFit) return;
+  const labels = hist.best.map((_,i) => i+1);
+  chFit.data.labels = labels;
+  chFit.data.datasets[0].data = hist.best;
+  chFit.data.datasets[1].data = hist.avg;
+  chFit.data.datasets[2].data = hist.worst;
+  chFit.update();
+
+  chDiv.data.labels = labels;
+  chDiv.data.datasets[0].data = hist.div;
+  chDiv.update();
+
+  // histograma
+  const fits = agents.map(a => a.fitness);
+  if (fits.length) {
+    const mn = Math.min(...fits), mx = Math.max(...fits);
+    const bins = 15;
+    const step = (mx - mn) / bins || 1;
+    const counts = new Array(bins).fill(0);
+    const lbls = [];
+    for (let i = 0; i < bins; i++) lbls.push((mn + step*(i+0.5)).toFixed(1));
+    for (const f of fits) {
+      const idx = Math.min(bins-1, Math.floor((f - mn) / step));
+      counts[idx]++;
+    }
+    chDist.data.labels = lbls;
+    chDist.data.datasets[0].data = counts;
+    chDist.update();
+  }
+}
+
+function updateStats() {
+  const fits = agents.map(a => a.fitness);
+  const best = fits.length ? Math.max(...fits) : 0;
+  const avg = fits.length ? fits.reduce((s,v)=>s+v,0)/fits.length : 0;
+  const worst = fits.length ? Math.min(...fits) : 0;
+  const en = agents.reduce((s,a)=>s+Math.max(0,a.fitness), 0);
+
+  document.getElementById('sPop').textContent = agents.length;
+  document.getElementById('sGen').textContent = gen;
+  document.getElementById('sBest').textContent = best.toFixed(1);
+  document.getElementById('sAvg').textContent = avg.toFixed(1);
+  document.getElementById('sWorst').textContent = worst.toFixed(1);
+  document.getElementById('sRch').textContent = reachedCount;
+  document.getElementById('sCol').textContent = collisionCount;
+  document.getElementById('sEn').textContent = Math.round(en);
+  document.getElementById('sBestEver').textContent = bestEverFit.toFixed(1);
+
+  document.getElementById('tPop').textContent = agents.length;
+  document.getElementById('tGen').textContent = gen;
+  document.getElementById('tBest').textContent = best.toFixed(1);
+  document.getElementById('tAvg').textContent = avg.toFixed(1);
+  document.getElementById('tReached').textContent = reachedCount;
+}
+
+function updateNNInfo() {
+  const a = CFG.arch;
+  const s = a.map((n,i) => i===0 ? `Input(${n})` : i===a.length-1 ? `Output(${n})` : `Oculta(${n})`).join(' → ');
+  document.getElementById('nnTopo').textContent = s;
+  document.getElementById('hArch').textContent = a.join('→');
+}
+
+// -------- MAIN LOOP --------
+let lastT = performance.now();
+
+function loop(t) {
+  requestAnimationFrame(loop);
+  const dt = Math.min((t - lastT) / 1000, 0.05);
+  lastT = t;
+
+  // fps
+  fpsAcc++;
+  if (t - fpsT > 1000) {
+    fps = fpsAcc;
+    fpsAcc = 0;
+    fpsT = t;
+    document.getElementById('hFps').textContent = fps;
+  }
+
+  if (!CFG.paused) {
+    const simDt = dt * CFG.speed;
+    for (let s = 0; s < CFG.steps; s++) {
+      genTime += simDt / CFG.steps;
+      updateTarget(simDt / CFG.steps);
+      for (const a of agents) a.step(simDt / CFG.steps);
+      if (genTime >= CFG.duration) { evolve(); break; }
+    }
+  }
+
+  // render
+  X.fillStyle = 'rgba(6,9,18,1)';
+  X.fillRect(0,0,W,H);
+  drawGrid();
+  drawObstacles();
+  drawTarget();
+
+  // heatmap
+  if (CFG.heatmap) {
+    for (const a of agents) {
+      const fn = clamp(a.fitness / Math.max(1, bestEverFit), 0, 1);
+      if (fn < 0.05) continue;
+      const g = X.createRadialGradient(a.x, a.y, 0, a.x, a.y, 30);
+      g.addColorStop(0, `rgba(59,130,246,${fn*0.15})`);
+      g.addColorStop(1, 'rgba(59,130,246,0)');
+      X.fillStyle = g;
+      X.beginPath(); X.arc(a.x, a.y, 30, 0, Math.PI*2); X.fill();
+    }
+  }
+
+  // mejor agente
+  let bestA = null;
+  for (const a of agents) if (!bestA || a.fitness > bestA.fitness) bestA = a;
+
+  // dibujar agentes
+  const visible = CFG.topOnly
+    ? agents.filter(a => {
+        const fits = agents.map(x => x.fitness).sort((p,q) => q-p);
+        const thr = fits[Math.floor(fits.length * 0.2)] || 0;
+        return a.fitness >= thr;
+      })
+    : agents;
+
+  for (const a of visible) drawAgent(a, a === bestA);
+  if (bestA && CFG.showNN) drawMiniNN(bestA);
+
+  // HUD updates
+  document.getElementById('hSpeed').textContent = CFG.speed.toFixed(1) + 'x';
+  document.getElementById('hTime').textContent = genTime.toFixed(1) + 's / ' + CFG.duration + 's';
+  document.getElementById('hBestEver').textContent = bestEverFit.toFixed(1);
+  document.getElementById('hMut').textContent = (CFG.mutRate*100).toFixed(0) + '%';
+  document.getElementById('hAlive').textContent = agents.filter(a => a.alive).length;
+  document.getElementById('genBar').style.width = (genTime / CFG.duration * 100) + '%';
+
+  frame++;
+
+  if (frame % 30 === 0) drawMainNN();
+}
+
+// -------- UI --------
+function setupUI() {
+  const drw = document.getElementById('drw');
+  const ov = document.getElementById('ov');
+  const toggleDrw = (open) => {
+    if (open === undefined) open = !drw.classList.contains('open');
+    drw.classList.toggle('open', open);
+    ov.classList.toggle('open', open);
+    document.getElementById('bDrawer').classList.toggle('on', open);
+  };
+  document.getElementById('bDrawer').onclick = () => toggleDrw();
+  document.getElementById('dClose').onclick = () => toggleDrw(false);
+  ov.onclick = () => toggleDrw(false);
+
+  // tabs
+  document.querySelectorAll('.tbtn').forEach(b => {
+    b.onclick = () => {
+      document.querySelectorAll('.tbtn').forEach(x => x.classList.remove('on'));
+      document.querySelectorAll('.pane').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      document.getElementById('p-' + b.dataset.t).classList.add('on');
+      if (b.dataset.t === 'net') drawMainNN();
+    };
+  });
+
+  // sliders
+  const bind = (id, vid, key, fmt, parse) => {
+    const s = document.getElementById(id);
+    const v = document.getElementById(vid);
+    s.oninput = () => {
+      const val = parse ? parse(s.value) : parseFloat(s.value);
+      CFG[key] = val;
+      v.textContent = fmt(val);
+    };
+  };
+  bind('cSpd','vSpd','speed', v=>v.toFixed(1)+'x');
+  bind('cStp','vStp','steps', v=>v.toString(), v=>parseInt(v));
+  bind('cDur','vDur','duration', v=>v+'s', v=>parseInt(v));
+  bind('cMut','vMut','mutRate', v=>(v*100).toFixed(0)+'%', v=>parseFloat(v)/100);
+  bind('cMag','vMag','mutMag', v=>v.toFixed(2));
+  bind('cPop','vPop','pop', v=>v.toString(), v=>parseInt(v));
+  bind('cEli','vEli','elite', v=>(v*100).toFixed(0)+'%', v=>parseFloat(v)/100);
+  bind('cTor','vTor','tournament', v=>v.toString(), v=>parseInt(v));
+  bind('cCrx','vCrx','crossover', v=>(v*100).toFixed(0)+'%', v=>parseFloat(v)/100);
+  bind('cRch','vRch','reachRadius', v=>v.toString(), v=>parseInt(v));
+
+  document.getElementById('cArch').onchange = e => {
+    CFG.arch = e.target.value.split(',').map(Number);
+    updateNNInfo();
+  };
+  document.getElementById('cAct').onchange = e => {
+    CFG.activation = e.target.value;
+    document.getElementById('nnAct').textContent = CFG.activation;
+  };
+  document.getElementById('cObs').onchange = e => {
+    CFG.obstacles = parseInt(e.target.value);
+    genObstacles();
+  };
+  document.getElementById('cTgt').onchange = e => {
+    CFG.targetMode = e.target.value;
+    resetTarget();
+  };
+
+  // toggles
+  document.querySelectorAll('.tsw').forEach(t => {
+    t.onclick = () => {
+      t.classList.toggle('on');
+      CFG[t.dataset.k] = t.classList.contains('on');
+    };
+  });
+
+  // acciones
+  const togglePause = () => {
+    CFG.paused = !CFG.paused;
+    document.getElementById('bPause').textContent = CFG.paused ? '▶' : '⏸';
+    document.getElementById('bPause2').innerHTML = CFG.paused ? '▶ Reanudar' : '⏸ Pausar';
+  };
+  document.getElementById('bPause').onclick = togglePause;
+  document.getElementById('bPause2').onclick = togglePause;
+
+  const doReset = () => { init(); updateCharts(); };
+  document.getElementById('bReset').onclick = doReset;
+  document.getElementById('bReset2').onclick = doReset;
+
+  document.getElementById('bSeed').onclick = () => doReset();
+  document.getElementById('bSkip').onclick = () => { genTime = CFG.duration; };
+
+  document.getElementById('bExport').onclick = () => {
+    const data = {
+      gen, bestEverFit, hist,
+      config: {...CFG},
+      bestBrain: bestEver ? { arch: bestEver.arch, W: bestEver.W, B: bestEver.B } : null,
+      timestamp: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `neuroevo_gen${gen}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  document.getElementById('bBest').onclick = () => {
+    if (bestEver) {
+      alert(`Mejor cerebro preservado (Gen ${gen-1}, fitness ${bestEverFit.toFixed(2)}).\nSe mantendrá en la población actual como élite permanente.`);
+    } else {
+      alert('Aún no hay un mejor cerebro guardado. Espera al menos una generación.');
+    }
+  };
+
+  // teclado
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    switch(e.key) {
+      case ' ': e.preventDefault(); togglePause(); break;
+      case 'r': case 'R': doReset(); break;
+      case 'd': case 'D': toggleDrw(); break;
+      case 's': case 'S': genTime = CFG.duration; break;
+      case 'h': case 'H':
+        showHud = !showHud;
+        document.querySelectorAll('.hud').forEach(h => h.style.display = showHud ? '' : 'none');
+        break;
+      case '+': case '=':
+        CFG.speed = Math.min(20, CFG.speed + 0.5);
+        document.getElementById('cSpd').value = CFG.speed;
+        document.getElementById('vSpd').textContent = CFG.speed.toFixed(1)+'x';
+        break;
+      case '-':
+        CFG.speed = Math.max(0.1, CFG.speed - 0.5);
+        document.getElementById('cSpd').value = CFG.speed;
+        document.getElementById('vSpd').textContent = CFG.speed.toFixed(1)+'x';
+        break;
+    }
+  });
+}
+
+// -------- START --------
+window.addEventListener('resize', resize);
+resize();
+setupUI();
+initCharts();
+init();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

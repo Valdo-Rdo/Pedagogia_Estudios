@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Laboratorio de Óptica · Simulador de Lentes Delgadas</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.0/index.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.0/index.css">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0a0e1a;
+    --bg-2:#0f1424;
+    --panel:rgba(18,24,42,0.78);
+    --panel-border:rgba(120,160,220,0.18);
+    --text:#e6ecf5;
+    --muted:#8a95ad;
+    --accent:#4ea1ff;
+    --accent-2:#7c5cff;
+    --danger:#ff5c7a;
+    --ok:#3ddc97;
+    --warn:#ffb454;
+    --ray1:#ffcf4a;
+    --ray2:#4ad6ff;
+    --ray3:#ff6b9a;
+    --lens:#4ea1ff;
+    --obj:#ffd24a;
+    --img:#e6ecf5;
+  }
+  html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif}
+  body{
+    background:
+      radial-gradient(1200px 800px at 80% -10%, rgba(124,92,255,0.15), transparent 60%),
+      radial-gradient(900px 700px at -10% 110%, rgba(78,161,255,0.12), transparent 60%),
+      linear-gradient(180deg,#070a14,#0a0e1a);
+  }
+  #app{position:relative;width:100%;height:100%}
+  canvas{display:block;width:100%;height:100%;cursor:crosshair}
+
+  /* Top bar */
+  .topbar{
+    position:absolute;top:0;left:0;right:0;height:56px;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 18px;z-index:20;
+    background:linear-gradient(180deg,rgba(10,14,26,0.85),rgba(10,14,26,0));
+    pointer-events:none;
+  }
+  .topbar > *{pointer-events:auto}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand .logo{
+    width:36px;height:36px;border-radius:10px;
+    background:conic-gradient(from 210deg,#4ea1ff,#7c5cff,#4ea1ff);
+    display:grid;place-items:center;color:#fff;font-weight:700;
+    box-shadow:0 6px 24px rgba(78,161,255,0.35), inset 0 0 0 1px rgba(255,255,255,0.15);
+  }
+  .brand h1{font-size:14px;letter-spacing:0.18em;text-transform:uppercase;color:#cfd6e6}
+  .brand h1 span{color:var(--accent);font-weight:600}
+  .brand small{display:block;font-size:11px;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-top:2px}
+
+  .top-actions{display:flex;gap:8px;align-items:center}
+  .btn{
+    background:var(--panel);border:1px solid var(--panel-border);
+    color:var(--text);padding:9px 14px;border-radius:10px;cursor:pointer;
+    font-size:13px;font-family:inherit;display:inline-flex;align-items:center;gap:8px;
+    transition:all .2s ease;backdrop-filter:blur(10px);
+  }
+  .btn:hover{border-color:rgba(120,160,220,0.4);transform:translateY(-1px)}
+  .btn.primary{background:linear-gradient(135deg,#4ea1ff,#7c5cff);border-color:transparent;color:#fff}
+  .btn.primary:hover{box-shadow:0 8px 24px rgba(78,161,255,0.35)}
+  .btn.icon{padding:9px 10px}
+
+  /* Drawer */
+  .drawer{
+    position:absolute;top:0;bottom:0;left:0;width:360px;
+    background:var(--panel);backdrop-filter:blur(22px);
+    border-right:1px solid var(--panel-border);
+    transform:translateX(-100%);transition:transform .35s cubic-bezier(.2,.8,.2,1);
+    z-index:30;display:flex;flex-direction:column;
+    box-shadow:20px 0 60px rgba(0,0,0,0.4);
+  }
+  .drawer.open{transform:translateX(0)}
+  .drawer-header{
+    padding:18px 20px;border-bottom:1px solid var(--panel-border);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .drawer-header h2{font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:#cfd6e6}
+  .drawer-header h2 span{color:var(--accent)}
+  .close-btn{
+    width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.04);
+    border:1px solid var(--panel-border);color:var(--muted);cursor:pointer;
+    display:grid;place-items:center;transition:all .2s;
+  }
+  .close-btn:hover{color:#fff;background:rgba(255,255,255,0.08)}
+  .drawer-body{flex:1;overflow-y:auto;padding:16px 20px 24px}
+  .drawer-body::-webkit-scrollbar{width:6px}
+  .drawer-body::-webkit-scrollbar-thumb{background:rgba(120,160,220,0.2);border-radius:3px}
+
+  .section{margin-bottom:20px}
+  .section-title{
+    font-size:10.5px;letter-spacing:0.22em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;
+  }
+  .section-title::before{content:"";width:14px;height:1px;background:var(--panel-border)}
+
+  .control{margin-bottom:14px}
+  .control label{
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:12.5px;color:#cfd6e6;margin-bottom:8px;
+  }
+  .control label .val{
+    font-family:'JetBrains Mono',monospace;font-size:12px;
+    color:var(--accent);background:rgba(78,161,255,0.08);
+    padding:2px 8px;border-radius:6px;border:1px solid rgba(78,161,255,0.2);
+  }
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:4px;
+    background:linear-gradient(90deg,rgba(78,161,255,0.3),rgba(124,92,255,0.3));
+    border-radius:2px;outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+    background:linear-gradient(135deg,#4ea1ff,#7c5cff);cursor:pointer;
+    box-shadow:0 2px 8px rgba(78,161,255,0.5);border:2px solid #fff;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:16px;height:16px;border-radius:50%;
+    background:linear-gradient(135deg,#4ea1ff,#7c5cff);cursor:pointer;border:2px solid #fff;
+  }
+
+  .seg{
+    display:grid;grid-template-columns:1fr 1fr;gap:6px;
+    background:rgba(255,255,255,0.03);border:1px solid var(--panel-border);
+    border-radius:10px;padding:4px;
+  }
+  .seg button{
+    background:transparent;border:none;color:var(--muted);
+    padding:9px 10px;border-radius:7px;cursor:pointer;font-family:inherit;
+    font-size:12px;font-weight:500;transition:all .2s;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+  }
+  .seg button.active{
+    background:linear-gradient(135deg,rgba(78,161,255,0.2),rgba(124,92,255,0.2));
+    color:#fff;box-shadow:inset 0 0 0 1px rgba(78,161,255,0.3);
+  }
+  .seg button:hover:not(.active){color:#cfd6e6;background:rgba(255,255,255,0.03)}
+
+  .toggle{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 12px;background:rgba(255,255,255,0.03);
+    border:1px solid var(--panel-border);border-radius:9px;margin-bottom:8px;
+    font-size:12.5px;color:#cfd6e6;
+  }
+  .switch{position:relative;width:36px;height:20px;background:rgba(255,255,255,0.1);border-radius:10px;cursor:pointer;transition:background .2s}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;background:#cfd6e6;border-radius:50%;transition:all .2s}
+  .switch.on{background:linear-gradient(135deg,#4ea1ff,#7c5cff)}
+  .switch.on::after{left:18px;background:#fff}
+
+  /* Metrics panel */
+  .metrics{
+    position:absolute;bottom:20px;right:20px;z-index:15;
+    background:var(--panel);backdrop-filter:blur(18px);
+    border:1px solid var(--panel-border);border-radius:14px;
+    padding:16px 18px;min-width:280px;
+    box-shadow:0 12px 40px rgba(0,0,0,0.35);
+  }
+  .metrics h3{
+    font-size:10.5px;letter-spacing:0.22em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;
+  }
+  .metrics h3::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
+  .metric{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:7px 0;border-bottom:1px dashed rgba(120,160,220,0.1);
+    font-size:13px;
+  }
+  .metric:last-child{border-bottom:none}
+  .metric .k{color:var(--muted);font-size:12px}
+  .metric .v{font-family:'JetBrains Mono',monospace;color:#fff;font-size:13px}
+  .metric .v.accent{color:var(--accent)}
+  .badge{
+    display:inline-block;padding:3px 9px;border-radius:6px;
+    font-size:11px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;
+  }
+  .badge.real{background:rgba(61,220,151,0.15);color:var(--ok);border:1px solid rgba(61,220,151,0.3)}
+  .badge.virtual{background:rgba(255,180,84,0.15);color:var(--warn);border:1px solid rgba(255,180,84,0.3)}
+  .badge.none{background:rgba(138,149,173,0.15);color:var(--muted);border:1px solid rgba(138,149,173,0.3)}
+
+  /* Legend */
+  .legend{
+    position:absolute;bottom:20px;left:20px;z-index:15;
+    background:var(--panel);backdrop-filter:blur(18px);
+    border:1px solid var(--panel-border);border-radius:12px;
+    padding:12px 16px;font-size:12px;
+    transition:transform .35s cubic-bezier(.2,.8,.2,1);
+  }
+  .legend.shifted{transform:translateX(380px)}
+  .legend-row{display:flex;align-items:center;gap:10px;margin:5px 0;color:#cfd6e6}
+  .legend-row .swatch{width:22px;height:3px;border-radius:2px}
+  .legend-row .dot{width:10px;height:10px;border-radius:50%}
+
+  /* Formula bar */
+  .formula-bar{
+    position:absolute;top:70px;left:50%;transform:translateX(-50%);z-index:15;
+    background:var(--panel);backdrop-filter:blur(14px);
+    border:1px solid var(--panel-border);border-radius:10px;
+    padding:10px 18px;font-family:'JetBrains Mono',monospace;font-size:13px;
+    color:#cfd6e6;display:flex;gap:18px;align-items:center;
+    box-shadow:0 8px 28px rgba(0,0,0,0.3);
+  }
+  .formula-bar .eq{color:var(--accent)}
+  .formula-bar .sep{color:var(--panel-border)}
+
+  /* Hint */
+  .hint{
+    position:absolute;top:70px;right:20px;z-index:15;
+    background:var(--panel);backdrop-filter:blur(14px);
+    border:1px solid var(--panel-border);border-radius:10px;
+    padding:10px 14px;font-size:11.5px;color:var(--muted);
+    max-width:260px;line-height:1.5;
+  }
+  .hint strong{color:#cfd6e6}
+
+  @media (max-width:720px){
+    .drawer{width:100%}
+    .metrics{left:20px;right:20px;min-width:0}
+    .legend.shifted{transform:translateX(0)}
+    .formula-bar{font-size:11px;gap:10px;padding:8px 12px}
+    .hint{display:none}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="scene"></canvas>
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">∫</div>
+      <div>
+        <h1>Laboratorio de <span>Óptica</span></h1>
+        <small>Simulador de Lentes Delgadas · v2.0</small>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="btn icon" id="toggleDrawer" title="Controles">☰</button>
+      <button class="btn" id="resetBtn">↺ Reiniciar</button>
+      <button class="btn primary" id="presetBtn">⚡ Presets</button>
+    </div>
+  </div>
+
+  <!-- Drawer -->
+  <aside class="drawer" id="drawer">
+    <div class="drawer-header">
+      <h2>Panel de <span>Control</span></h2>
+      <button class="close-btn" id="closeDrawer">✕</button>
+    </div>
+    <div class="drawer-body">
+
+      <div class="section">
+        <div class="section-title">Tipo de lente</div>
+        <div class="seg" id="lensType">
+          <button data-type="convergent" class="active">🔍 Convergente</button>
+          <button data-type="divergent">🔎 Divergente</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Geometría de la lente</div>
+        <div class="control">
+          <label>Radio de curvatura R₁ <span class="val" id="r1Val">80 px</span></label>
+          <input type="range" id="r1" min="-200" max="200" value="80" step="1">
+        </div>
+        <div class="control">
+          <label>Radio de curvatura R₂ <span class="val" id="r2Val">-80 px</span></label>
+          <input type="range" id="r2" min="-200" max="200" value="-80" step="1">
+        </div>
+        <div class="control">
+          <label>Índice de refracción n <span class="val" id="nVal">1.50</span></label>
+          <input type="range" id="nIdx" min="1.00" max="2.50" value="1.50" step="0.01">
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Objeto</div>
+        <div class="control">
+          <label>Altura del objeto h₀ <span class="val" id="hVal">40 px</span></label>
+          <input type="range" id="hObj" min="-120" max="120" value="40" step="1">
+        </div>
+        <div class="control">
+          <label>Distancia al objeto s <span class="val" id="sVal">150 px</span></label>
+          <input type="range" id="sObj" min="20" max="500" value="150" step="1">
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Visualización</div>
+        <div class="toggle">
+          <span>🟡 Rayo paralelo</span>
+          <div class="switch on" data-ray="0"></div>
+        </div>
+        <div class="toggle">
+          <span>🔵 Rayo focal</span>
+          <div class="switch on" data-ray="1"></div>
+        </div>
+        <div class="toggle">
+          <span>🔴 Rayo central</span>
+          <div class="switch on" data-ray="2"></div>
+        </div>
+        <div class="toggle">
+          <span>Mostrar rejilla</span>
+          <div class="switch on" id="gridToggle"></div>
+        </div>
+        <div class="toggle">
+          <span>Mostrar focos (F, 2F)</span>
+          <div class="switch on" id="fociToggle"></div>
+        </div>
+        <div class="toggle">
+          <span>Animación de rayos</span>
+          <div class="switch" id="animToggle"></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Escala</div>
+        <div class="control">
+          <label>Zoom <span class="val" id="zoomVal">1.00×</span></label>
+          <input type="range" id="zoom" min="0.4" max="2.5" value="1" step="0.05">
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- Formula bar -->
+  <div class="formula-bar">
+    <span><span class="eq">1/s + 1/s' = 1/f</span></span>
+    <span class="sep">│</span>
+    <span><span class="eq">1/f = (n−1)(1/R₁ − 1/R₂)</span></span>
+    <span class="sep">│</span>
+    <span><span class="eq">M = −s'/s</span></span>
+  </div>
+
+  <!-- Hint -->
+  <div class="hint">
+    <strong>Interacción:</strong> haz clic y arrastra sobre el lienzo para mover el objeto. Usa <strong>Shift + arrastrar</strong> para ajustar la altura.
+  </div>
+
+  <!-- Legend -->
+  <div class="legend" id="legend">
+    <div class="legend-row"><span class="dot" style="background:var(--lens);box-shadow:0 0 8px var(--lens)"></span> Lente delgada</div>
+    <div class="legend-row"><span class="dot" style="background:var(--obj);box-shadow:0 0 8px var(--obj)"></span> Objeto</div>
+    <div class="legend-row"><span class="dot" style="background:var(--img);box-shadow:0 0 8px var(--img)"></span> Imagen</div>
+    <div class="legend-row"><span class="swatch" style="background:var(--ray1)"></span> Rayo paralelo → foco</div>
+    <div class="legend-row"><span class="swatch" style="background:var(--ray2)"></span> Rayo focal → paralelo</div>
+    <div class="legend-row"><span class="swatch" style="background:var(--ray3)"></span> Rayo central (sin desviación)</div>
+  </div>
+
+  <!-- Metrics -->
+  <div class="metrics">
+    <h3>Resultados en tiempo real</h3>
+    <div class="metric"><span class="k">Distancia focal f</span><span class="v accent" id="mF">—</span></div>
+    <div class="metric"><span class="k">Potencia P</span><span class="v" id="mP">—</span></div>
+    <div class="metric"><span class="k">Distancia objeto s</span><span class="v" id="mS">—</span></div>
+    <div class="metric"><span class="k">Distancia imagen s'</span><span class="v" id="mSp">—</span></div>
+    <div class="metric"><span class="k">Aumento lateral M</span><span class="v" id="mM">—</span></div>
+    <div class="metric"><span class="k">Altura imagen h'</span><span class="v" id="mHp">—</span></div>
+    <div class="metric"><span class="k">Tipo de imagen</span><span class="v" id="mType"><span class="badge none">—</span></span></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+  let W=0,H=0,DPR=Math.min(window.devicePixelRatio||1, 2);
+
+  // State
+  const state = {
+    lensType:'convergent',
+    r1:80, r2:-80, n:1.5,
+    h:40, s:150,
+    zoom:1,
+    showGrid:true, showFoci:true, animate:false,
+    rays:[true,true,true],
+    // interaction
+    dragging:false, dragMode:null,
+    // animation phase
+    phase:0,
+  };
+
+  function resize(){
+    W = canvas.clientWidth; H = canvas.clientHeight;
+    canvas.width = W*DPR; canvas.height = H*DPR;
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  window.addEventListener('resize', resize);
+
+  // Physics
+  function computeFocal(){
+    // Lensmaker (sign convention: R positive if center of curvature is to the right)
+    // 1/f = (n-1)(1/R1 - 1/R2)
+    if(state.r1===0 || state.r2===0) return Infinity;
+    const inv = (state.n-1)*(1/state.r1 - 1/state.r2);
+    if(inv===0) return Infinity;
+    return 1/inv;
+  }
+
+  function computeImage(){
+    const f = computeFocal();
+    const s = state.s;
+    // 1/s' = 1/f - 1/s
+    if(!isFinite(f) || f===0) return {f, sp:Infinity, M:0, hp:0, type:'none'};
+    const invSp = 1/f - 1/s;
+    let sp = invSp===0 ? Infinity : 1/invSp;
+    const M = -sp/s;
+    const hp = M*state.h;
+    let type='none';
+    if(isFinite(sp)){
+      if(sp>0) type='real';
+      else type='virtual';
+    }
+    return {f, sp, M, hp, type};
+  }
+
+  // Drawing helpers
+  function cx(){ return W/2; }
+  function cy(){ return H/2; }
+
+  function drawGrid(){
+    if(!state.showGrid) return;
+    const step = 40*state.zoom;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(120,160,220,0.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(let x = cx()%step; x<W; x+=step){
+      ctx.moveTo(x,0); ctx.lineTo(x,H);
+    }
+    for(let y = cy()%step; y<H; y+=step){
+      ctx.moveTo(0,y); ctx.lineTo(W,y);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawAxis(){
+    ctx.save();
+    // Optical axis
+    ctx.strokeStyle = 'rgba(200,215,240,0.35)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6,6]);
+    ctx.beginPath();
+    ctx.moveTo(0,cy()); ctx.lineTo(W,cy());
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Tick marks
+    ctx.strokeStyle='rgba(200,215,240,0.25)';
+    ctx.fillStyle='rgba(200,215,240,0.45)';
+    ctx.font='10px JetBrains Mono, monospace';
+    ctx.textAlign='center';
+    const step = 50*state.zoom;
+    for(let x=cx()%step; x<W; x+=step){
+      const d = Math.round(x-cx());
+      if(Math.abs(d)<5) continue;
+      ctx.beginPath();
+      ctx.moveTo(x,cy()-4); ctx.lineTo(x,cy()+4);
+      ctx.stroke();
+      if(Math.abs(d)%(step*2)<1){
+        ctx.fillText(d, x, cy()+16);
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawLens(){
+    const x = cx();
+    const hLens = Math.min(H*0.45, 220*state.zoom);
+    // Determine curvature sign for visual
+    const isConv = state.lensType==='convergent';
+    ctx.save();
+
+    // Glow
+    const grad = ctx.createLinearGradient(x-30,0,x+30,0);
+    grad.addColorStop(0,'rgba(78,161,255,0)');
+    grad.addColorStop(0.5,'rgba(78,161,255,0.18)');
+    grad.addColorStop(1,'rgba(78,161,255,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(x-30, cy()-hLens, 60, hLens*2);
+
+    // Lens body (biconvex / biconcav shape)
+    ctx.beginPath();
+    const bulge = isConv ? 18 : -18;
+    ctx.moveTo(x, cy()-hLens);
+    ctx.quadraticCurveTo(x+bulge, cy(), x, cy()+hLens);
+    ctx.quadraticCurveTo(x-bulge, cy(), x, cy()-hLens);
+    ctx.closePath();
+    const fill = ctx.createLinearGradient(x-bulge,0,x+bulge,0);
+    fill.addColorStop(0,'rgba(78,161,255,0.08)');
+    fill.addColorStop(0.5,'rgba(124,92,255,0.22)');
+    fill.addColorStop(1,'rgba(78,161,255,0.08)');
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(78,161,255,0.9)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Arrows at tips
+    const arr = 10;
+    ctx.strokeStyle='rgba(78,161,255,0.9)';
+    ctx.lineWidth=1.5;
+    // top arrow
+    if(isConv){
+      ctx.beginPath();
+      ctx.moveTo(x-arr, cy()-hLens+arr); ctx.lineTo(x, cy()-hLens); ctx.lineTo(x+arr, cy()-hLens+arr);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x-arr, cy()+hLens-arr); ctx.lineTo(x, cy()+hLens); ctx.lineTo(x+arr, cy()+hLens-arr);
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(x-arr, cy()-hLens-arr); ctx.lineTo(x, cy()-hLens); ctx.lineTo(x+arr, cy()-hLens-arr);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x-arr, cy()+hLens+arr); ctx.lineTo(x, cy()+hLens); ctx.lineTo(x+arr, cy()+hLens+arr);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawFoci(){
+    if(!state.showFoci) return;
+    const f = computeFocal();
+    if(!isFinite(f) || f===0) return;
+    const fAbs = Math.abs(f);
+    const labels = [
+      {x: cx()-fAbs, label:'F', sub:'foco objeto'},
+      {x: cx()+fAbs, label:"F'", sub:'foco imagen'},
+      {x: cx()-2*fAbs, label:'2F', sub:''},
+      {x: cx()+2*fAbs, label:"2F'", sub:''},
+    ];
+    ctx.save();
+    labels.forEach(p=>{
+      if(p.x<0 || p.x>W) return;
+      ctx.fillStyle='rgba(78,161,255,0.9)';
+      ctx.beginPath();
+      ctx.arc(p.x, cy(), 4, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle='rgba(200,215,240,0.75)';
+      ctx.font='bold 11px JetBrains Mono, monospace';
+      ctx.textAlign='center';
+      ctx.fillText(p.label, p.x, cy()-12);
+      if(p.sub){
+        ctx.font='9px Inter, sans-serif';
+        ctx.fillStyle='rgba(200,215,240,0.4)';
+        ctx.fillText(p.sub, p.x, cy()+22);
+      }
+    });
+    ctx.restore();
+  }
+
+  function drawArrow(x1,y1,x2,y2,color,glow,dashed){
+    ctx.save();
+    if(glow){
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 10;
+    }
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = 2;
+    if(dashed) ctx.setLineDash([5,5]);
+    ctx.beginPath();
+    ctx.moveTo(x1,y1); ctx.lineTo(x2,y2);
+    ctx.stroke();
+    // arrowhead
+    const ang = Math.atan2(y2-y1, x2-x1);
+    const ah = 8;
+    ctx.beginPath();
+    ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-ah*Math.cos(ang-0.4), y2-ah*Math.sin(ang-0.4));
+    ctx.lineTo(x2-ah*Math.cos(ang+0.4), y2-ah*Math.sin(ang+0.4));
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawObject(){
+    const ox = cx() - state.s*state.zoom;
+    const oy = cy();
+    const top = oy - state.h*state.zoom;
+    drawArrow(ox, oy, ox, top, '#ffd24a', true, false);
+    // label
+    ctx.save();
+    ctx.fillStyle='rgba(255,210,74,0.9)';
+    ctx.font='bold 11px JetBrains Mono, monospace';
+    ctx.textAlign='center';
+    ctx.fillText('Objeto', ox, Math.min(top,oy)-10);
+    ctx.restore();
+  }
+
+  // Ray tracing
+  function traceRays(){
+    const res = computeImage();
+    const f = res.f;
+    if(!isFinite(f) || f===0) return;
+
+    const ox = cx() - state.s*state.zoom;
+    const oy = cy();
+    const top = oy - state.h*state.zoom;
+    const lensX = cx();
+    const isConv = state.lensType==='convergent';
+
+    // We'll draw rays from the top of the object
+    // Ray 1: parallel to axis → refracts through F' (image-side focus)
+    // Ray 2: through F (object-side focus) → refracts parallel
+    // Ray 3: through center → no deviation
+
+    // For diverging lens:
+    // Ray 1: parallel → refracts as if coming from F (object side)
+    // Ray 2: aimed toward F' (image side) → refracts parallel
+    // Ray 3: through center → no deviation
+
+    const fAbs = Math.abs(f);
+    const Fp = {x: cx()+fAbs, y: cy()}; // image-side focus
+    const F  = {x: cx()-fAbs, y: cy()}; // object-side focus
+
+    // Compute image position
+    const imgX = cx() + res.sp*state.zoom;
+    const imgTop = cy() - res.hp*state.zoom;
+
+    // Helper: extend line from (x1,y1) through (x2,y2) to canvas edge
+    const extend = (x1,y1,x2,y2, dir) => {
+      const dx = x2-x1, dy = y2-y1;
+      if(Math.abs(dx)<1e-6){
+        return {x:x1, y: dir>0 ? H : 0};
+      }
+      const t = dir>0 ? (W-x1)/dx : (0-x1)/dx;
+      const tY = dir>0 ? (H-y1)/dy : (0-y1)/dy;
+      const tMin = Math.max(
+        dir>0 ? (0-x1)/dx : (W-x1)/dx,
+        dir>0 ? (0-y1)/dy : (H-y1)/dy
+      );
+      // simpler: just go far
+      const far = 3000;
+      return {x: x1+dx*far/Math.hypot(dx,dy)*(dir>0?1:-1), y: y1+dy*far/Math.hypot(dx,dy)*(dir>0?1:-1)};
+    };
+
+    const drawRay = (segments, color, dashed=false) => {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 8;
+      if(dashed) ctx.setLineDash([5,5]);
+      ctx.beginPath();
+      ctx.moveTo(segments[0].x, segments[0].y);
+      for(let i=1;i<segments.length;i++) ctx.lineTo(segments[i].x, segments[i].y);
+      ctx.stroke();
+      ctx.restore();
+    };
+
+    // Animation progress
+    const prog = state.animate ? state.phase : 1;
+
+    // RAY 1: parallel → focus
+    if(state.rays[0]){
+      // Incident: horizontal from top of object to lens
+      const p1 = {x: ox, y: top};
+      const p2 = {x: lensX, y: top};
+      // Refracted:
+      let p3;
+      if(isConv){
+        // Through F'
+        const dx = Fp.x - p2.x, dy = Fp.y - p2.y;
+        const L = 2500;
+        p3 = {x: p2.x + dx/L*2500, y: p2.y + dy/L*2500};
+      } else {
+        // Diverges as if coming from F (object-side)
+        const dx = p2.x - F.x, dy = p2.y - F.y;
+        const L = Math.hypot(dx,dy);
+        p3 = {x: p2.x + dx/L*2500, y: p2.y + dy/L*2500};
+      }
+      // Draw incident
+      const incEnd = {x: p1.x + (p2.x-p1.x)*Math.min(prog*2,1), y: p1.y + (p2.y-p1.y)*Math.min(prog*2,1)};
+      drawRay([p1, incEnd], '#ffcf4a');
+      // Draw refracted (after prog>0.5)
+      if(prog>0.5){
+        const r = (prog-0.5)*2;
+        const re = {x: p2.x + (p3.x-p2.x)*r, y: p2.y + (p3.y-p2.y)*r};
+        drawRay([p2, re], '#ffcf4a');
+        // For diverging: dashed virtual extension back to F
+        if(!isConv){
+          ctx.save();
+          ctx.strokeStyle='rgba(255,207,74,0.35)';
+          ctx.setLineDash([4,4]);
+          ctx.lineWidth=1.5;
+          ctx.beginPath();
+          ctx.moveTo(p2.x,p2.y); ctx.lineTo(F.x,F.y);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+    }
+
+    // RAY 2: through focal → parallel
+    if(state.rays[1]){
+      const p1 = {x: ox, y: top};
+      let p2; // point on lens
+      if(isConv){
+        // Line from top through F, intersect lens (x=lensX)
+        const dx = F.x - p1.x, dy = F.y - p1.y;
+        if(Math.abs(dx)<1e-6){
+          p2 = {x:lensX, y:p1.y};
+        } else {
+          const t = (lensX - p1.x)/dx;
+          p2 = {x:lensX, y: p1.y + dy*t};
+        }
+        // Refracted: horizontal
+        const p3 = {x: lensX + 2500, y: p2.y};
+        const incEnd = {x: p1.x + (p2.x-p1.x)*Math.min(prog*2,1), y: p1.y + (p2.y-p1.y)*Math.min(prog*2,1)};
+        drawRay([p1, incEnd], '#4ad6ff');
+        if(prog>0.5){
+          const r = (prog-0.5)*2;
+          const re = {x: p2.x + (p3.x-p2.x)*r, y: p2.y};
+          drawRay([p2, re], '#4ad6ff');
+        }
+      } else {
+        // Divergent: aimed toward F' (image-side), refracts parallel
+        const dx = Fp.x - p1.x, dy = Fp.y - p1.y;
+        const t = (lensX - p1.x)/dx;
+        p2 = {x:lensX, y: p1.y + dy*t};
+        const p3 = {x: lensX + 2500, y: p2.y};
+        const incEnd = {x: p1.x + (p2.x-p1.x)*Math.min(prog*2,1), y: p1.y + (p2.y-p1.y)*Math.min(prog*2,1)};
+        drawRay([p1, incEnd], '#4ad6ff');
+        if(prog>0.5){
+          const r = (prog-0.5)*2;
+          const re = {x: p2.x + (p3.x-p2.x)*r, y: p2.y};
+          drawRay([p2, re], '#4ad6ff');
+          // virtual extension back to F'
+          ctx.save();
+          ctx.strokeStyle='rgba(74,214,255,0.35)';
+          ctx.setLineDash([4,4]);
+          ctx.lineWidth=1.5;
+          ctx.beginPath();
+          ctx.moveTo(p2.x,p2.y); ctx.lineTo(Fp.x,Fp.y);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+    }
+
+    // RAY 3: through center → no deviation
+    if(state.rays[2]){
+      const p1 = {x: ox, y: top};
+      const p2 = {x: lensX, y: cy()};
+      const dx = p2.x - p1.x, dy = p2.y - p1.y;
+      const p3 = {x: p2.x + dx*10, y: p2.y + dy*10};
+      const incEnd = {x: p1.x + (p2.x-p1.x)*Math.min(prog*2,1), y: p1.y + (p2.y-p1.y)*Math.min(prog*2,1)};
+      drawRay([p1, incEnd], '#ff6b9a');
+      if(prog>0.5){
+        const r = (prog-0.5)*2;
+        const re = {x: p2.x + (p3.x-p2.x)*r, y: p2.y + (p3.y-p2.y)*r};
+        drawRay([p2, re], '#ff6b9a');
+      }
+    }
+
+    // Draw image
+    if(isFinite(res.sp) && isFinite(res.hp)){
+      const imgColor = res.type==='real' ? '#e6ecf5' : '#ffb454';
+      const dashed = res.type==='virtual';
+      drawArrow(imgX, cy(), imgX, imgTop, imgColor, true, dashed);
+      ctx.save();
+      ctx.fillStyle = imgColor;
+      ctx.font='bold 11px JetBrains Mono, monospace';
+      ctx.textAlign='center';
+      const labelY = res.hp>=0 ? Math.min(imgTop,cy())-10 : Math.max(imgTop,cy())+18;
+      ctx.fillText('Imagen', imgX, labelY);
+      ctx.restore();
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    drawGrid();
+    drawAxis();
+    drawFoci();
+    drawLens();
+    drawObject();
+    traceRays();
+  }
+
+  // Metrics
+  function updateMetrics(){
+    const r = computeImage();
+    const f = r.f;
+    const fmt = (v, unit='px') => {
+      if(!isFinite(v)) return '∞';
+      return v.toFixed(1)+' '+unit;
+    };
+    document.getElementById('mF').textContent = fmt(f);
+    // Power in "dioptrías" using pixel scale (just display 1/f in 1/px)
+    document.getElementById('mP').textContent = isFinite(f) && f!==0 ? (1/f).toFixed(4)+' px⁻¹' : '0';
+    document.getElementById('mS').textContent = fmt(state.s);
+    document.getElementById('mSp').textContent = fmt(r.sp);
+    document.getElementById('mM').textContent = isFinite(r.M) ? r.M.toFixed(3)+'×' : '∞';
+    document.getElementById('mHp').textContent = fmt(r.hp);
+    const typeEl = document.getElementById('mType');
+    if(r.type==='real') typeEl.innerHTML = '<span class="badge real">Real · Invertida</span>';
+    else if(r.type==='virtual') typeEl.innerHTML = '<span class="badge virtual">Virtual · Derecha</span>';
+    else typeEl.innerHTML = '<span class="badge none">En el infinito</span>';
+  }
+
+  // UI bindings
+  const drawer = document.getElementById('drawer');
+  const legend = document.getElementById('legend');
+  document.getElementById('toggleDrawer').addEventListener('click', ()=>{
+    drawer.classList.toggle('open');
+    legend.classList.toggle('shifted', drawer.classList.contains('open'));
+  });
+  document.getElementById('closeDrawer').addEventListener('click', ()=>{
+    drawer.classList.remove('open');
+    legend.classList.remove('shifted');
+  });
+
+  // Lens type segmented
+  document.getElementById('lensType').addEventListener('click', e=>{
+    const b = e.target.closest('button'); if(!b) return;
+    document.querySelectorAll('#lensType button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    state.lensType = b.dataset.type;
+    // auto-adjust R signs for visual consistency
+    if(state.lensType==='convergent'){
+      if(state.r1<0) state.r1 = Math.abs(state.r1)||80;
+      if(state.r2>0) state.r2 = -(Math.abs(state.r2)||80);
+    } else {
+      if(state.r1>0) state.r1 = -(Math.abs(state.r1)||80);
+      if(state.r2<0) state.r2 = Math.abs(state.r2)||80;
+    }
+    document.getElementById('r1').value = state.r1;
+    document.getElementById('r2').value = state.r2;
+    document.getElementById('r1Val').textContent = state.r1+' px';
+    document.getElementById('r2Val').textContent = state.r2+' px';
+    update();
+  });
+
+  // Sliders
+  const bind = (id, key, fmt, after) => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', ()=>{
+      state[key] = parseFloat(el.value);
+      if(fmt) fmt();
+      update();
+      if(after) after();
+    });
+  };
+  bind('r1','r1', ()=>document.getElementById('r1Val').textContent = state.r1+' px');
+  bind('r2','r2', ()=>document.getElementById('r2Val').textContent = state.r2+' px');
+  bind('nIdx','n', ()=>document.getElementById('nVal').textContent = state.n.toFixed(2));
+  bind('hObj','h', ()=>document.getElementById('hVal').textContent = state.h+' px');
+  bind('sObj','s', ()=>document.getElementById('sVal').textContent = state.s+' px');
+  bind('zoom','zoom', ()=>document.getElementById('zoomVal').textContent = state.zoom.toFixed(2)+'×');
+
+  // Toggles
+  const bindToggle = (id, key) => {
+    const el = document.getElementById(id);
+    el.addEventListener('click', ()=>{
+      state[key] = !state[key];
+      el.classList.toggle('on', state[key]);
+      update();
+    });
+  };
+  bindToggle('gridToggle','showGrid');
+  bindToggle('fociToggle','showFoci');
+  bindToggle('animToggle','animate');
+
+  document.querySelectorAll('.switch[data-ray]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const i = parseInt(el.dataset.ray);
+      state.rays[i] = !state.rays[i];
+      el.classList.toggle('on', state.rays[i]);
+      update();
+    });
+  });
+
+  // Reset
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    state.r1=80; state.r2=-80; state.n=1.5; state.h=40; state.s=150; state.zoom=1;
+    state.lensType='convergent';
+    document.getElementById('r1').value=80;
+    document.getElementById('r2').value=-80;
+    document.getElementById('nIdx').value=1.5;
+    document.getElementById('hObj').value=40;
+    document.getElementById('sObj').value=150;
+    document.getElementById('zoom').value=1;
+    document.getElementById('r1Val').textContent='80 px';
+    document.getElementById('r2Val').textContent='-80 px';
+    document.getElementById('nVal').textContent='1.50';
+    document.getElementById('hVal').textContent='40 px';
+    document.getElementById('sVal').textContent='150 px';
+    document.getElementById('zoomVal').textContent='1.00×';
+    document.querySelectorAll('#lensType button').forEach(b=>b.classList.toggle('active', b.dataset.type==='convergent'));
+    update();
+  });
+
+  // Presets
+  const presets = [
+    {name:'Lupa simple', lens:'convergent', r1:100, r2:-100, n:1.5, s:60, h:30},
+    {name:'Proyector', lens:'convergent', r1:80, r2:-80, n:1.5, s:120, h:40},
+    {name:'Cámara (s>2f)', lens:'convergent', r1:80, r2:-80, n:1.5, s:250, h:50},
+    {name:'Lente divergente', lens:'divergent', r1:-80, r2:80, n:1.5, s:150, h:40},
+    {name:'Alto índice', lens:'convergent', r1:120, r2:-120, n:2.0, s:180, h:40},
+  ];
+  let presetIdx = 0;
+  document.getElementById('presetBtn').addEventListener('click', ()=>{
+    const p = presets[presetIdx % presets.length];
+    presetIdx++;
+    state.lensType=p.lens; state.r1=p.r1; state.r2=p.r2; state.n=p.n; state.s=p.s; state.h=p.h;
+    document.getElementById('r1').value=p.r1;
+    document.getElementById('r2').value=p.r2;
+    document.getElementById('nIdx').value=p.n;
+    document.getElementById('sObj').value=p.s;
+    document.getElementById('hObj').value=p.h;
+    document.getElementById('r1Val').textContent=p.r1+' px';
+    document.getElementById('r2Val').textContent=p.r2+' px';
+    document.getElementById('nVal').textContent=p.n.toFixed(2);
+    document.getElementById('sVal').textContent=p.s+' px';
+    document.getElementById('hVal').textContent=p.h+' px';
+    document.querySelectorAll('#lensType button').forEach(b=>b.classList.toggle('active', b.dataset.type===p.lens));
+    update();
+  });
+
+  // Mouse interaction
+  canvas.addEventListener('mousedown', e=>{
+    state.dragging = true;
+    state.dragMode = e.shiftKey ? 'height' : 'position';
+  });
+  canvas.addEventListener('mouseup', ()=>state.dragging=false);
+  canvas.addEventListener('mouseleave', ()=>state.dragging=false);
+  canvas.addEventListener('mousemove', e=>{
+    if(!state.dragging) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    if(state.dragMode==='position'){
+      // distance from lens center
+      const d = cx() - mx;
+      state.s = Math.max(20, Math.min(500, d/state.zoom));
+      document.getElementById('sObj').value = state.s;
+      document.getElementById('sVal').textContent = Math.round(state.s)+' px';
+    } else {
+      const d = cy() - my;
+      state.h = Math.max(-120, Math.min(120, d/state.zoom));
+      document.getElementById('hObj').value = state.h;
+      document.getElementById('hVal').textContent = Math.round(state.h)+' px';
+    }
+    update();
+  });
+
+  // Touch support
+  canvas.addEventListener('touchstart', e=>{
+    state.dragging = true;
+    state.dragMode = 'position';
+  }, {passive:true});
+  canvas.addEventListener('touchend', ()=>state.dragging=false);
+  canvas.addEventListener('touchmove', e=>{
+    if(!state.dragging) return;
+    const t = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const mx = t.clientX - rect.left;
+    const d = cx() - mx;
+    state.s = Math.max(20, Math.min(500, d/state.zoom));
+    document.getElementById('sObj').value = state.s;
+    document.getElementById('sVal').textContent = Math.round(state.s)+' px';
+    update();
+  }, {passive:true});
+
+  // Animation loop
+  let last = performance.now();
+  function loop(t){
+    const dt = (t-last)/1000; last = t;
+    if(state.animate){
+      state.phase = (state.phase + dt*0.6) % 1;
+    }
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function update(){
+    updateMetrics();
+  }
+
+  // Init
+  resize();
+  update();
+  requestAnimationFrame(loop);
+
+  // Open drawer by default on wide screens
+  if(window.innerWidth > 1100){
+    drawer.classList.add('open');
+    legend.classList.add('shifted');
+  }
+})();
+</script>
+</body>
+</html>

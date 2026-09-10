@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>BIOLAB v8 · Ecología Sintética</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/inter@latest/index.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/jetbrains-mono@latest/index.css">
+<style>
+  :root{
+    --bg:#05070d;
+    --panel:#0b1020;
+    --panel2:#10172b;
+    --line:#1e2a4a;
+    --accent:#4ade80;
+    --accent2:#22d3ee;
+    --danger:#f87171;
+    --warn:#fbbf24;
+    --text:#e5e7eb;
+    --muted:#94a3b8;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overflow:hidden;height:100vh;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .glass{background:linear-gradient(180deg,rgba(16,23,43,.92),rgba(11,16,32,.92));backdrop-filter:blur(10px);border:1px solid var(--line);}
+  .grid-bg{
+    background-image:
+      radial-gradient(ellipse at 20% 10%, rgba(34,211,238,.08), transparent 50%),
+      radial-gradient(ellipse at 80% 90%, rgba(74,222,128,.06), transparent 50%),
+      linear-gradient(rgba(30,42,74,.25) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(30,42,74,.25) 1px, transparent 1px);
+    background-size:auto,auto,40px 40px,40px 40px;
+  }
+  /* Drawer */
+  #drawer{
+    position:fixed;left:0;top:0;bottom:0;width:360px;z-index:40;
+    transform:translateX(0);transition:transform .35s cubic-bezier(.2,.8,.2,1);
+    box-shadow:6px 0 40px rgba(0,0,0,.5);
+  }
+  #drawer.closed{transform:translateX(-360px);}
+  #drawerToggle{
+    position:fixed;top:16px;left:16px;z-index:50;
+    transition:left .35s cubic-bezier(.2,.8,.2,1);
+  }
+  #drawerToggle.open{left:376px;}
+  .section-title{
+    display:flex;align-items:center;justify-content:space-between;
+    cursor:pointer;user-select:none;padding:10px 14px;
+    border-bottom:1px solid var(--line);
+  }
+  .section-title:hover{background:rgba(255,255,255,.02);}
+  .section-body{max-height:0;overflow:hidden;transition:max-height .35s ease;}
+  .section.open .section-body{max-height:800px;}
+  .section.open .chev{transform:rotate(180deg);}
+  .chev{transition:transform .3s;}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:4px;
+    background:linear-gradient(90deg,var(--accent) 0%,var(--accent) var(--p,50%),#1e2a4a var(--p,50%),#1e2a4a 100%);
+    border-radius:2px;outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:50%;
+    background:var(--accent);border:2px solid #0b1020;cursor:pointer;box-shadow:0 0 8px rgba(74,222,128,.5);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid #0b1020;cursor:pointer;
+  }
+  .btn{
+    display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;
+    background:var(--panel2);border:1px solid var(--line);color:var(--text);
+    font-size:13px;cursor:pointer;transition:all .15s;
+  }
+  .btn:hover{background:#182247;border-color:#33416e;transform:translateY(-1px);}
+  .btn.primary{background:linear-gradient(135deg,#065f46,#047857);border-color:#10b981;}
+  .btn.primary:hover{background:linear-gradient(135deg,#047857,#059669);}
+  .btn.danger{background:linear-gradient(135deg,#7f1d1d,#991b1b);border-color:#ef4444;}
+  .btn.warn{background:linear-gradient(135deg,#78350f,#92400e);border-color:#f59e0b;}
+  .stat-card{
+    background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+  }
+  .stat-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+  .stat-value{font-size:18px;font-weight:600;font-family:'JetBrains Mono',monospace;}
+  .badge{
+    display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;
+    font-size:10px;font-family:'JetBrains Mono',monospace;border:1px solid var(--line);
+    background:var(--panel2);
+  }
+  .legend-dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+  #canvasWrap{position:fixed;inset:0;}
+  #topbar{
+    position:fixed;top:16px;right:16px;z-index:30;display:flex;gap:8px;flex-wrap:wrap;max-width:calc(100vw - 100px);justify-content:flex-end;
+  }
+  .tooltip{
+    position:fixed;pointer-events:none;z-index:60;
+    background:rgba(11,16,32,.95);border:1px solid var(--line);border-radius:8px;
+    padding:8px 10px;font-size:11px;font-family:'JetBrains Mono',monospace;
+    box-shadow:0 4px 20px rgba(0,0,0,.5);display:none;
+  }
+  .pulse{animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+  .scrollbar::-webkit-scrollbar{width:6px;}
+  .scrollbar::-webkit-scrollbar-track{background:transparent;}
+  .scrollbar::-webkit-scrollbar-thumb{background:#1e2a4a;border-radius:3px;}
+  .scrollbar::-webkit-scrollbar-thumb:hover{background:#33416e;}
+  .gene-bar{height:6px;border-radius:3px;background:#1e2a4a;overflow:hidden;}
+  .gene-fill{height:100%;border-radius:3px;transition:width .3s;}
+</style>
+</head>
+<body>
+
+<!-- Drawer Toggle -->
+<button id="drawerToggle" class="open glass rounded-full p-3 hover:bg-[#182247] transition" title="Panel de Control">
+  <svg id="toggleIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+</button>
+
+<!-- Drawer -->
+<aside id="drawer" class="glass scrollbar overflow-y-auto">
+  <div class="p-5 border-b border-[var(--line)]">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-xl">🧬</div>
+      <div>
+        <h1 class="text-lg font-bold tracking-tight">BIOLAB <span class="text-emerald-400">v8</span></h1>
+        <p class="text-xs text-[var(--muted)]">Ecología Sintética · Simulación Universitaria</p>
+      </div>
+    </div>
+    <div class="flex gap-2 mt-3">
+      <span class="badge"><span class="legend-dot bg-emerald-400"></span>Rep</span>
+      <span class="badge"><span class="legend-dot bg-rose-400"></span>Mort</span>
+      <span class="badge"><span class="legend-dot bg-cyan-400"></span>Mut</span>
+    </div>
+  </div>
+
+  <!-- Sección: Parámetros -->
+  <div class="section open" data-section="params">
+    <div class="section-title">
+      <span class="flex items-center gap-2 text-sm font-semibold"><span>⚙️</span> Parámetros del Ecosistema</span>
+      <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="section-body p-4 space-y-4">
+      <div>
+        <div class="flex justify-between text-xs mb-1.5"><span class="text-[var(--muted)]">Velocidad de simulación</span><span class="mono text-emerald-400" id="vSpeed">1.0x</span></div>
+        <input type="range" id="speed" min="0.1" max="5" step="0.1" value="1">
+      </div>
+      <div>
+        <div class="flex justify-between text-xs mb-1.5"><span class="text-[var(--muted)]">Tasa de integración colonial</span><span class="mono text-emerald-400" id="vInteg">8%</span></div>
+        <input type="range" id="integ" min="0" max="100" step="1" value="8">
+      </div>
+      <div>
+        <div class="flex justify-between text-xs mb-1.5"><span class="text-[var(--muted)]">Mortalidad base</span><span class="mono text-rose-400" id="vMort">3%</span></div>
+        <input type="range" id="mort" min="0" max="30" step="0.5" value="3">
+      </div>
+      <div>
+        <div class="flex justify-between text-xs mb-1.5"><span class="text-[var(--muted)]">Replicación base</span><span class="mono text-emerald-400" id="vRep">5%</span></div>
+        <input type="range" id="rep" min="0" max="30" step="0.5" value="5">
+      </div>
+      <div>
+        <div class="flex justify-between text-xs mb-1.5"><span class="text-[var(--muted)]">Tasa de mutación</span><span class="mono text-cyan-400" id="vMut">5%</span></div>
+        <input type="range" id="mut" min="0" max="30" step="0.5" value="5">
+      </div>
+      <div>
+        <div class="flex justify-between text-xs mb-1.5"><span class="text-[var(--muted)]">Costo energético metabólico</span><span class="mono text-amber-400" id="vCost">0.50</span></div>
+        <input type="range" id="cost" min="0.1" max="3" step="0.05" value="0.5">
+      </div>
+      <div>
+        <div class="flex justify-between text-xs mb-1.5"><span class="text-[var(--muted)]">Capacidad de carga (K)</span><span class="mono text-purple-400" id="vCap">600</span></div>
+        <input type="range" id="cap" min="100" max="2000" step="50" value="600">
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección: Acciones -->
+  <div class="section open" data-section="actions">
+    <div class="section-title">
+      <span class="flex items-center gap-2 text-sm font-semibold"><span>🧪</span> Intervenciones Experimentales</span>
+      <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="section-body p-4 grid grid-cols-2 gap-2">
+      <button class="btn primary" id="btnPause"><span>⏸️</span><span id="pauseLabel">Pausar</span></button>
+      <button class="btn danger" id="btnClear"><span>🧹</span>Limpiar</button>
+      <button class="btn" id="btnCulture"><span>🌱</span>Nuevo cultivo</button>
+      <button class="btn warn" id="btnNutrients"><span>💊</span>Nutrientes</button>
+      <button class="btn" id="btnGiant"><span>🦠</span>Célula gigante</button>
+      <button class="btn" id="btnStress"><span>⚠️</span>Estrés ambiental</button>
+      <button class="btn" id="btnExport"><span>📊</span>Exportar CSV</button>
+      <button class="btn" id="btnReset"><span>🔄</span>Reset parámetros</button>
+    </div>
+  </div>
+
+  <!-- Sección: Estadísticas -->
+  <div class="section open" data-section="stats">
+    <div class="section-title">
+      <span class="flex items-center gap-2 text-sm font-semibold"><span>📈</span> Telemetría en Tiempo Real</span>
+      <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="section-body p-4 space-y-3">
+      <div class="grid grid-cols-2 gap-2">
+        <div class="stat-card">
+          <div class="stat-label">Población</div>
+          <div class="stat-value text-emerald-400" id="sPop">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Generación</div>
+          <div class="stat-value text-cyan-400" id="sGen">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Masa total</div>
+          <div class="stat-value text-purple-400" id="sMass">0.0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Energía</div>
+          <div class="stat-value text-amber-400" id="sEnergy">0</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="flex justify-between items-center mb-2">
+          <span class="stat-label">Diversidad genética</span>
+          <span class="mono text-xs text-cyan-400" id="sDiv">0.00</span>
+        </div>
+        <div class="gene-bar"><div class="gene-fill bg-gradient-to-r from-emerald-400 via-cyan-400 to-purple-400" id="divBar" style="width:0%"></div></div>
+      </div>
+      <div class="stat-card">
+        <div class="flex justify-between items-center mb-2">
+          <span class="stat-label">Presión selectiva (N/K)</span>
+          <span class="mono text-xs text-rose-400" id="sPress">0.00</span>
+        </div>
+        <div class="gene-bar"><div class="gene-fill bg-gradient-to-r from-emerald-400 to-rose-400" id="pressBar" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección: Gráfico -->
+  <div class="section open" data-section="chart">
+    <div class="section-title">
+      <span class="flex items-center gap-2 text-sm font-semibold"><span>📉</span> Dinámica Poblacional</span>
+      <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="section-body p-4">
+      <div class="stat-card" style="height:180px;padding:6px;">
+        <canvas id="popChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección: Info científica -->
+  <div class="section" data-section="info">
+    <div class="section-title">
+      <span class="flex items-center gap-2 text-sm font-semibold"><span>🔬</span> Marco Teórico</span>
+      <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="section-body p-4 text-xs text-[var(--muted)] space-y-3 leading-relaxed">
+      <p><span class="text-emerald-400 font-semibold">Modelo:</span> Sistema multi-agente con genotipo tri-dimensional (H, S, L) mapeado a HSL. Cada célula posee fitness dependiente del ambiente.</p>
+      <p><span class="text-cyan-400 font-semibold">Selección natural:</span> Individuos con mejor adaptación al entorno actual tienen mayor probabilidad de replicarse (selección direccional/estabilizadora).</p>
+      <p><span class="text-purple-400 font-semibold">Fusión colonial:</span> Células compatibles genéticamente pueden formar colonias con ventajas cooperativas (simbiosis).</p>
+      <p><span class="text-amber-400 font-semibold">Mutación:</span> Deriva genética estocástica sobre los tres loci. Tasa configurable.</p>
+      <p><span class="text-rose-400 font-semibold">Capacidad de carga (K):</span> Limitación logística tipo Verhulst. Aumenta la presión selectiva cuando N → K.</p>
+      <p class="pt-2 border-t border-[var(--line)]"><span class="text-white">Interacción:</span> Clic en el lienzo para sembrar una colonia. Shift+clic para análisis individual.</p>
+    </div>
+  </div>
+
+  <div class="p-4 text-[10px] text-[var(--muted)] border-t border-[var(--line)] mono">
+    BIOLAB v8 · Simulación académica · Modelo Lotka-Volterra extendido
+  </div>
+</aside>
+
+<!-- Top bar stats -->
+<div id="topbar">
+  <div class="glass rounded-lg px-3 py-2 flex items-center gap-2">
+    <span class="legend-dot bg-emerald-400 pulse"></span>
+    <span class="text-xs text-[var(--muted)]">Población</span>
+    <span class="mono text-sm font-semibold text-emerald-400" id="tPop">0</span>
+  </div>
+  <div class="glass rounded-lg px-3 py-2 flex items-center gap-2">
+    <span class="text-xs text-[var(--muted)]">Gen</span>
+    <span class="mono text-sm font-semibold text-cyan-400" id="tGen">0</span>
+  </div>
+  <div class="glass rounded-lg px-3 py-2 flex items-center gap-2">
+    <span class="text-xs text-[var(--muted)]">FPS</span>
+    <span class="mono text-sm font-semibold text-amber-400" id="tFps">60</span>
+  </div>
+  <div class="glass rounded-lg px-3 py-2 flex items-center gap-2">
+    <span class="text-xs text-[var(--muted)]">Estado</span>
+    <span class="mono text-sm font-semibold text-emerald-400" id="tState">ACTIVO</span>
+  </div>
+</div>
+
+<!-- Canvas -->
+<div id="canvasWrap" class="grid-bg"></div>
+
+<!-- Tooltip -->
+<div id="tooltip" class="tooltip"></div>
+
+<script>
+/* ============================================================
+   BIOLAB v8 — Synthetic Ecology Simulator
+   ============================================================ */
+
+const SIM = {
+  speed: 1.0, integ: 0.08, mort: 0.03, rep: 0.05, mut: 0.05, cost: 0.5, cap: 600,
+  paused: false,
+  cells: [],
+  nutrients: [],
+  colonies: [],
+  generation: 0,
+  tick: 0,
+  history: { pop: [], gen: [], div: [] },
+  maxHistory: 300,
+};
+
+// ---------- Cell class ----------
+class Cell {
+  constructor(x, y, genes = null, mass = 1) {
+    this.x = x; this.y = y;
+    this.vx = (Math.random() - 0.5) * 0.4;
+    this.vy = (Math.random() - 0.5) * 0.4;
+    this.mass = mass;
+    this.energy = 1;
+    this.age = 0;
+    this.genes = genes || {
+      rep: Math.random(),   // H
+      mort: Math.random(),  // S
+      mut: Math.random()    // L
+    };
+    this.id = Math.random().toString(36).slice(2, 9);
+    this.colony = null;
+    this.alive = true;
+  }
+  color() {
+    const h = this.genes.rep * 160;       // 0-160 (red->green)
+    const s = 60 + this.genes.mort * 40;  // saturation
+    const l = 45 + this.genes.mut * 20;   // lightness
+    return `hsl(${h}, ${s}%, ${l}%)`;
+  }
+  radius() { return Math.sqrt(this.mass) * 3 + 2; }
+  fitness(env) {
+    // fitness depends on current environment pressure
+    const pressure = SIM.cells.length / SIM.cap;
+    const repFit = this.genes.rep * (1 - pressure * 0.5);
+    const survFit = (1 - this.genes.mort) * (1 - pressure * 0.3);
+    const adaptFit = 1 - Math.abs(this.genes.mut - env.optMut) * 0.8;
+    return repFit * 0.4 + survFit * 0.4 + adaptFit * 0.2;
+  }
+  mutate() {
+    const m = SIM.mut;
+    if (Math.random() < m) this.genes.rep = Math.max(0, Math.min(1, this.genes.rep + (Math.random() - 0.5) * 0.2));
+    if (Math.random() < m) this.genes.mort = Math.max(0, Math.min(1, this.genes.mort + (Math.random() - 0.5) * 0.2));
+    if (Math.random() < m) this.genes.mut = Math.max(0, Math.min(1, this.genes.mut + (Math.random() - 0.5) * 0.2));
+  }
+}
+
+class Nutrient {
+  constructor(x, y) {
+    this.x = x; this.y = y;
+    this.energy = 0.5 + Math.random() * 0.5;
+    this.life = 1;
+  }
+}
+
+// ---------- Environment ----------
+const ENV = { optMut: 0.5, stress: 0 };
+
+// ---------- p5 sketch ----------
+let sketch = (p) => {
+  let W, H;
+  let fpsBuffer = [];
+
+  p.setup = () => {
+    W = p.windowWidth; H = p.windowHeight;
+    const canvas = p.createCanvas(W, H);
+    canvas.parent('canvasWrap');
+    p.frameRate(60);
+    // seed initial culture
+    seedColony(W/2, H/2, 40);
+  };
+
+  p.windowResized = () => {
+    W = p.windowWidth; H = p.windowHeight;
+    p.resizeCanvas(W, H);
+  };
+
+  p.draw = () => {
+    p.background(5, 7, 13, 40);
+    if (!SIM.paused) {
+      for (let s = 0; s < SIM.speed; s++) stepSimulation();
+    }
+    drawNutrients();
+    drawCells();
+    drawColonies();
+    updateTelemetry();
+    trackFPS();
+  };
+
+  p.mousePressed = () => {
+    if (p.mouseX < 0 || p.mouseX > W || p.mouseY < 0 || p.mouseY > H) return;
+    // ignore clicks on drawer
+    const drawer = document.getElementById('drawer');
+    if (!drawer.classList.contains('closed') && p.mouseX < 360) return;
+    if (p.mouseX > W - 300 && p.mouseY < 80) return;
+    
+    if (p.shiftKey) {
+      inspectCell(p.mouseX, p.mouseY);
+    } else {
+      seedColony(p.mouseX, p.mouseY, 8 + Math.floor(Math.random() * 8));
+    }
+  };
+
+  function trackFPS() {
+    fpsBuffer.push(p.frameRate());
+    if (fpsBuffer.length > 30) fpsBuffer.shift();
+    const avg = fpsBuffer.reduce((a,b)=>a+b,0)/fpsBuffer.length;
+    document.getElementById('tFps').textContent = Math.round(avg);
+  }
+
+  function drawCells() {
+    for (const c of SIM.cells) {
+      if (!c.alive) continue;
+      const r = c.radius();
+      // glow
+      p.noStroke();
+      const col = p.color(c.color());
+      col.setAlpha(40);
+      p.fill(col);
+      p.ellipse(c.x, c.y, r * 3, r * 3);
+      // body
+      col.setAlpha(220);
+      p.fill(col);
+      p.ellipse(c.x, c.y, r * 2, r * 2);
+      // nucleus
+      p.fill(255, 240);
+      p.ellipse(c.x - r*0.2, c.y - r*0.2, r*0.6, r*0.6);
+    }
+  }
+
+  function drawNutrients() {
+    for (const n of SIM.nutrients) {
+      p.noStroke();
+      p.fill(251, 191, 36, n.life * 180);
+      p.ellipse(n.x, n.y, 6, 6);
+      p.fill(251, 191, 36, n.life * 60);
+      p.ellipse(n.x, n.y, 14, 14);
+    }
+  }
+
+  function drawColonies() {
+    p.noFill();
+    for (const col of SIM.colonies) {
+      if (col.members.length < 2) continue;
+      p.stroke(74, 222, 128, 40);
+      p.strokeWeight(1);
+      p.beginShape();
+      for (const m of col.members) {
+        if (m.alive) p.vertex(m.x, m.y);
+      }
+      p.endShape();
+    }
+  }
+};
+
+new p5(sketch);
+
+// ---------- Simulation step ----------
+function stepSimulation() {
+  SIM.tick++;
+  if (SIM.tick % 60 === 0) SIM.generation++;
+
+  // update nutrients
+  for (const n of SIM.nutrients) n.life -= 0.002;
+  SIM.nutrients = SIM.nutrients.filter(n => n.life > 0);
+
+  // random nutrient spawn
+  if (Math.random() < 0.03 && SIM.nutrients.length < 80) {
+    SIM.nutrients.push(new Nutrient(Math.random() * window.innerWidth, Math.random() * window.innerHeight));
+  }
+
+  // update cells
+  for (const c of SIM.cells) {
+    if (!c.alive) continue;
+    c.age++;
+
+    // brownian motion
+    c.vx += (Math.random() - 0.5) * 0.05;
+    c.vy += (Math.random() - 0.5) * 0.05;
+    c.vx *= 0.96; c.vy *= 0.96;
+    c.x += c.vx * SIM.speed;
+    c.y += c.vy * SIM.speed;
+
+    // bounds
+    if (c.x < 10) { c.x = 10; c.vx *= -1; }
+    if (c.x > window.innerWidth - 10) { c.x = window.innerWidth - 10; c.vx *= -1; }
+    if (c.y < 10) { c.y = 10; c.vy *= -1; }
+    if (c.y > window.innerHeight - 10) { c.y = window.innerHeight - 10; c.vy *= -1; }
+
+    // consume nutrients
+    for (let i = SIM.nutrients.length - 1; i >= 0; i--) {
+      const n = SIM.nutrients[i];
+      const d = Math.hypot(n.x - c.x, n.y - c.y);
+      if (d < c.radius() + 4) {
+        c.energy = Math.min(2, c.energy + n.energy);
+        c.mass = Math.min(5, c.mass + 0.05);
+        SIM.nutrients.splice(i, 1);
+        break;
+      }
+    }
+
+    // metabolism cost
+    c.energy -= SIM.cost * 0.005 * c.mass;
+    if (c.energy < 0) {
+      c.alive = false;
+      continue;
+    }
+
+    // reproduction
+    const pressure = SIM.cells.length / SIM.cap;
+    const repChance = SIM.rep * c.genes.rep * (1 - pressure) * c.energy * 0.5;
+    if (Math.random() < repChance * 0.02 && SIM.cells.length < SIM.cap) {
+      const child = new Cell(
+        c.x + (Math.random() - 0.5) * 20,
+        c.y + (Math.random() - 0.5) * 20,
+        { ...c.genes },
+        c.mass * 0.5
+      );
+      child.mutate();
+      c.mass *= 0.7;
+      c.energy *= 0.7;
+      SIM.cells.push(child);
+    }
+
+    // mortality
+    const mortChance = SIM.mort * c.genes.mort * (1 + pressure * 2) * (1 + ENV.stress);
+    if (Math.random() < mortChance * 0.01 || c.age > 3000 / (1 - c.genes.mort + 0.1)) {
+      c.alive = false;
+    }
+  }
+
+  // colony fusion
+  if (Math.random() < SIM.integ * 0.5) {
+    tryFormColony();
+  }
+
+  // cleanup
+  SIM.cells = SIM.cells.filter(c => c.alive);
+
+  // record history
+  if (SIM.tick % 10 === 0) {
+    SIM.history.pop.push(SIM.cells.length);
+    SIM.history.gen.push(SIM.generation);
+    SIM.history.div.push(computeDiversity());
+    if (SIM.history.pop.length > SIM.maxHistory) {
+      SIM.history.pop.shift();
+      SIM.history.gen.shift();
+      SIM.history.div.shift();
+    }
+    updateChart();
+  }
+
+  // stress decay
+  ENV.stress *= 0.995;
+}
+
+function tryFormColony() {
+  if (SIM.cells.length < 2) return;
+  const a = SIM.cells[Math.floor(Math.random() * SIM.cells.length)];
+  const b = SIM.cells[Math.floor(Math.random() * SIM.cells.length)];
+  if (a === b || !a.alive || !b.alive) return;
+  const d = Math.hypot(a.x - b.x, a.y - b.y);
+  if (d > 30) return;
+  const sim = 1 - (Math.abs(a.genes.rep - b.genes.rep) + Math.abs(a.genes.mort - b.genes.mort) + Math.abs(a.genes.mut - b.genes.mut)) / 3;
+  if (sim > 0.7) {
+    let col = SIM.colonies.find(c => c.members.includes(a) || c.members.includes(b));
+    if (!col) {
+      col = { members: [a, b], id: Math.random().toString(36).slice(2,7) };
+      SIM.colonies.push(col);
+    } else {
+      if (!col.members.includes(a)) col.members.push(a);
+      if (!col.members.includes(b)) col.members.push(b);
+    }
+    a.colony = col.id; b.colony = col.id;
+    // cooperative bonus
+    a.energy = Math.min(2, a.energy + 0.05);
+    b.energy = Math.min(2, b.energy + 0.05);
+  }
+  // cleanup empty colonies
+  SIM.colonies = SIM.colonies.filter(c => c.members.filter(m => m.alive).length >= 2);
+}
+
+function computeDiversity() {
+  if (SIM.cells.length < 2) return 0;
+  const sample = SIM.cells.slice(0, 100);
+  let variance = 0;
+  for (const g of ['rep','mort','mut']) {
+    const mean = sample.reduce((s,c)=>s+c.genes[g],0)/sample.length;
+    variance += sample.reduce((s,c)=>s+(c.genes[g]-mean)**2,0)/sample.length;
+  }
+  return Math.min(1, variance / 0.5);
+}
+
+function seedColony(x, y, n) {
+  const baseGenes = {
+    rep: Math.random(),
+    mort: Math.random(),
+    mut: Math.random()
+  };
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const r = Math.random() * 30;
+    const c = new Cell(
+      x + Math.cos(a) * r,
+      y + Math.sin(a) * r,
+      {
+        rep: Math.max(0, Math.min(1, baseGenes.rep + (Math.random()-0.5)*0.2)),
+        mort: Math.max(0, Math.min(1, baseGenes.mort + (Math.random()-0.5)*0.2)),
+        mut: Math.max(0, Math.min(1, baseGenes.mut + (Math.random()-0.5)*0.2)),
+      }
+    );
+    SIM.cells.push(c);
+  }
+}
+
+function inspectCell(mx, my) {
+  let closest = null, minD = 30;
+  for (const c of SIM.cells) {
+    const d = Math.hypot(c.x - mx, c.y - my);
+    if (d < minD) { minD = d; closest = c; }
+  }
+  const tip = document.getElementById('tooltip');
+  if (closest) {
+    tip.innerHTML = `
+      <div class="text-emerald-400 font-semibold mb-1">Célula #${closest.id}</div>
+      <div>Genotipo: <span class="text-cyan-300">H:${closest.genes.rep.toFixed(2)} S:${closest.genes.mort.toFixed(2)} L:${closest.genes.mut.toFixed(2)}</span></div>
+      <div>Masa: ${closest.mass.toFixed(2)} · Energía: ${closest.energy.toFixed(2)}</div>
+      <div>Edad: ${closest.age} · Fitness: ${closest.fitness(ENV).toFixed(3)}</div>
+      <div>Colonia: ${closest.colony || 'solitaria'}</div>
+    `;
+    tip.style.display = 'block';
+    tip.style.left = (mx + 15) + 'px';
+    tip.style.top = (my + 15) + 'px';
+    setTimeout(() => tip.style.display = 'none', 3500);
+  }
+}
+
+// ---------- Telemetry ----------
+function updateTelemetry() {
+  const pop = SIM.cells.length;
+  const mass = SIM.cells.reduce((s,c)=>s+c.mass,0);
+  const energy = SIM.cells.reduce((s,c)=>s+c.energy,0);
+  const div = computeDiversity();
+  const press = pop / SIM.cap;
+
+  document.getElementById('sPop').textContent = pop;
+  document.getElementById('sGen').textContent = SIM.generation;
+  document.getElementById('sMass').textContent = mass.toFixed(1);
+  document.getElementById('sEnergy').textContent = energy.toFixed(0);
+  document.getElementById('sDiv').textContent = div.toFixed(2);
+  document.getElementById('divBar').style.width = (div * 100) + '%';
+  document.getElementById('sPress').textContent = press.toFixed(2);
+  document.getElementById('pressBar').style.width = Math.min(100, press * 100) + '%';
+
+  document.getElementById('tPop').textContent = pop;
+  document.getElementById('tGen').textContent = SIM.generation;
+  document.getElementById('tState').textContent = SIM.paused ? 'PAUSADO' : 'ACTIVO';
+  document.getElementById('tState').className = 'mono text-sm font-semibold ' + (SIM.paused ? 'text-amber-400' : 'text-emerald-400');
+}
+
+// ---------- Chart ----------
+let popChart;
+function initChart() {
+  const ctx = document.getElementById('popChart').getContext('2d');
+  popChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        { label: 'Población', data: [], borderColor: '#4ade80', backgroundColor: 'rgba(74,222,128,.1)', fill: true, tension: 0.3, borderWidth: 1.5, pointRadius: 0 },
+        { label: 'Diversidad ×100', data: [], borderColor: '#22d3ee', backgroundColor: 'rgba(34,211,238,.05)', fill: false, tension: 0.3, borderWidth: 1.5, pointRadius: 0, yAxisID: 'y1' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      animation: { duration: 0 },
+      plugins: { legend: { display: true, labels: { color: '#94a3b8', font: { size: 9, family: 'JetBrains Mono' }, boxWidth: 8, padding: 6 } } },
+      scales: {
+        x: { display: false },
+        y: { position: 'left', grid: { color: 'rgba(30,42,74,.4)' }, ticks: { color: '#94a3b8', font: { size: 9, family: 'JetBrains Mono' } } },
+        y1: { position: 'right', grid: { display: false }, ticks: { color: '#22d3ee', font: { size: 9, family: 'JetBrains Mono' } }, min: 0, max: 100 }
+      }
+    }
+  });
+}
+function updateChart() {
+  if (!popChart) return;
+  popChart.data.labels = SIM.history.pop.map((_,i)=>i);
+  popChart.data.datasets[0].data = SIM.history.pop;
+  popChart.data.datasets[1].data = SIM.history.div.map(d => d * 100);
+  popChart.update('none');
+}
+
+// ---------- UI ----------
+function bindSlider(id, prop, fmt, mult = 1) {
+  const el = document.getElementById(id);
+  const vEl = document.getElementById('v' + id.charAt(0).toUpperCase() + id.slice(1));
+  const update = () => {
+    const val = parseFloat(el.value);
+    SIM[prop] = val * mult;
+    if (vEl) vEl.textContent = fmt(val);
+    const pct = ((val - el.min) / (el.max - el.min)) * 100;
+    el.style.setProperty('--p', pct + '%');
+  };
+  el.addEventListener('input', update);
+  update();
+}
+
+bindSlider('speed', 'speed', v => v.toFixed(1) + 'x');
+bindSlider('integ', 'integ', v => v + '%', 0.01);
+bindSlider('mort', 'mort', v => v + '%', 0.01);
+bindSlider('rep', 'rep', v => v + '%', 0.01);
+bindSlider('mut', 'mut', v => v + '%', 0.01);
+bindSlider('cost', 'cost', v => v.toFixed(2));
+bindSlider('cap', 'cap', v => v);
+
+// Drawer toggle
+const drawer = document.getElementById('drawer');
+const toggle = document.getElementById('drawerToggle');
+toggle.addEventListener('click', () => {
+  drawer.classList.toggle('closed');
+  toggle.classList.toggle('open');
+});
+
+// Sections accordion
+document.querySelectorAll('.section-title').forEach(t => {
+  t.addEventListener('click', () => t.parentElement.classList.toggle('open'));
+});
+
+// Action buttons
+document.getElementById('btnPause').addEventListener('click', () => {
+  SIM.paused = !SIM.paused;
+  document.getElementById('pauseLabel').textContent = SIM.paused ? 'Reanudar' : 'Pausar';
+});
+document.getElementById('btnClear').addEventListener('click', () => {
+  SIM.cells = []; SIM.colonies = []; SIM.nutrients = [];
+  SIM.generation = 0; SIM.history = { pop: [], gen: [], div: [] };
+});
+document.getElementById('btnCulture').addEventListener('click', () => {
+  seedColony(window.innerWidth/2, window.innerHeight/2, 30);
+});
+document.getElementById('btnNutrients').addEventListener('click', () => {
+  for (let i = 0; i < 40; i++) {
+    SIM.nutrients.push(new Nutrient(Math.random() * window.innerWidth, Math.random() * window.innerHeight));
+  }
+});
+document.getElementById('btnGiant').addEventListener('click', () => {
+  const c = new Cell(window.innerWidth/2, window.innerHeight/2, { rep: 0.8, mort: 0.2, mut: 0.5 }, 8);
+  c.energy = 2;
+  SIM.cells.push(c);
+});
+document.getElementById('btnStress').addEventListener('click', () => {
+  ENV.stress = 1;
+  // kill some cells
+  SIM.cells.forEach(c => { if (Math.random() < 0.3) c.energy -= 0.5; });
+});
+document.getElementById('btnReset').addEventListener('click', () => {
+  const defaults = { speed: 1, integ: 8, mort: 3, rep: 5, mut: 5, cost: 0.5, cap: 600 };
+  for (const k in defaults) {
+    const el = document.getElementById(k);
+    el.value = defaults[k];
+    el.dispatchEvent(new Event('input'));
+  }
+});
+document.getElementById('btnExport').addEventListener('click', () => {
+  let csv = 'tick,generation,population,diversity\n';
+  SIM.history.pop.forEach((p, i) => {
+    csv += `${i*10},${SIM.history.gen[i]},${p},${SIM.history.div[i].toFixed(4)}\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `biolab_data_${Date.now()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// init
+initChart();
+</script>
+</body>
+</html>

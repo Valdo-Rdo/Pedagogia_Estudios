@@ -1,0 +1,1867 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuantumLab · Simulador de Mecánica Cuántica</title>
+<style>
+  :root {
+    --bg-0: #05070d;
+    --bg-1: #0a0e18;
+    --bg-2: #111827;
+    --border: rgba(140, 160, 220, 0.12);
+    --border-strong: rgba(140, 160, 220, 0.25);
+    --text-0: #e6edf7;
+    --text-1: #a8b4c8;
+    --text-2: #6b7891;
+    --accent: #22d3ee;
+    --accent-2: #c084fc;
+    --accent-3: #f472b6;
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --drawer-w: 390px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    height: 100%; overflow: hidden;
+    background: var(--bg-0); color: var(--text-0);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13px; user-select: none;
+  }
+  #canvas { position: fixed; inset: 0; cursor: crosshair; display: block; z-index: 1; image-rendering: pixelated; }
+
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; height: 48px;
+    background: rgba(10, 14, 24, 0.72);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 16px;
+    z-index: 100; gap: 16px;
+  }
+  .topbar .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  .brand-icon {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center; font-size: 14px;
+    box-shadow: 0 0 16px rgba(34, 211, 238, 0.35);
+  }
+  .brand-text {
+    font-size: 14px;
+    background: linear-gradient(135deg, #e6edf7, #c084fc);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .brand-sub {
+    font-size: 10px; color: var(--text-2); letter-spacing: 1.5px;
+    text-transform: uppercase; margin-left: 4px; padding-left: 10px;
+    border-left: 1px solid var(--border-strong);
+  }
+  .topbar-spacer { flex: 1; }
+  .topbar-btn {
+    background: transparent; border: 1px solid transparent; color: var(--text-1);
+    padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;
+    display: flex; align-items: center; gap: 6px; transition: all 0.15s;
+  }
+  .topbar-btn:hover { background: rgba(34, 211, 238, 0.08); color: var(--text-0); border-color: var(--border-strong); }
+  .topbar-btn.active { background: rgba(34, 211, 238, 0.15); color: var(--accent); border-color: rgba(34, 211, 238, 0.3); }
+  .kbd {
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 10px;
+    padding: 1px 5px; background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border); border-radius: 3px; color: var(--text-2);
+  }
+
+  .telemetry {
+    position: fixed; top: 64px; right: 16px;
+    background: rgba(10, 14, 24, 0.78); backdrop-filter: blur(16px);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; z-index: 50; min-width: 240px;
+    font-family: 'JetBrains Mono', Consolas, monospace; font-size: 11px;
+  }
+  .telemetry-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+  .telemetry-title { font-size: 10px; letter-spacing: 1.5px; color: var(--text-2); text-transform: uppercase; }
+  .telemetry-status { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--success); }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--success); box-shadow: 0 0 6px var(--success);
+    animation: pulse 1.5s infinite;
+  }
+  .status-dot.paused { background: var(--warning); box-shadow: 0 0 6px var(--warning); animation: none; }
+  .status-dot.observing { background: var(--accent-3); box-shadow: 0 0 8px var(--accent-3); animation: pulse 0.6s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .tel-row { display: flex; justify-content: space-between; align-items: baseline; padding: 3px 0; }
+  .tel-label { color: var(--text-2); font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; }
+  .tel-value { color: var(--text-0); font-weight: 500; }
+  .tel-value.accent { color: var(--accent); }
+  .tel-value.purple { color: var(--accent-2); }
+  .tel-value.good { color: var(--success); }
+  .tel-value.pink { color: var(--accent-3); }
+  .tel-separator { height: 1px; background: var(--border); margin: 6px 0; }
+
+  .drawer-toggle {
+    position: fixed; top: 64px; left: 16px; width: 40px; height: 40px;
+    background: rgba(10, 14, 24, 0.78); backdrop-filter: blur(16px);
+    border: 1px solid var(--border-strong); border-radius: 10px;
+    cursor: pointer; display: grid; place-items: center; z-index: 90;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); color: var(--text-0);
+  }
+  .drawer-toggle:hover { background: rgba(34, 211, 238, 0.12); border-color: var(--accent); }
+  .drawer-toggle.open { left: calc(var(--drawer-w) + 16px); }
+  .drawer-toggle svg { transition: transform 0.3s; }
+  .drawer-toggle.open svg { transform: rotate(180deg); }
+
+  .drawer {
+    position: fixed; top: 48px; left: 0; bottom: 0; width: var(--drawer-w);
+    background: rgba(10, 14, 24, 0.92); backdrop-filter: blur(24px);
+    border-right: 1px solid var(--border);
+    transform: translateX(-100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 80; display: flex; flex-direction: column; overflow: hidden;
+  }
+  .drawer.open { transform: translateX(0); }
+  .drawer-header { padding: 16px 18px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .drawer-title { font-size: 13px; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 2px; }
+  .drawer-subtitle { font-size: 11px; color: var(--text-2); }
+  .drawer-body { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 8px 0; }
+  .drawer-body::-webkit-scrollbar { width: 6px; }
+  .drawer-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+
+  .section { border-bottom: 1px solid var(--border); }
+  .section-header {
+    padding: 11px 18px; display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .section-header:hover { background: rgba(255,255,255,0.02); }
+  .section-title {
+    display: flex; align-items: center; gap: 9px;
+    font-size: 11px; font-weight: 600; letter-spacing: 1.2px;
+    text-transform: uppercase; color: var(--text-1);
+  }
+  .section-icon { width: 18px; height: 18px; display: grid; place-items: center; color: var(--accent); font-size: 12px; }
+  .section-chevron { transition: transform 0.25s; color: var(--text-2); }
+  .section.collapsed .section-chevron { transform: rotate(-90deg); }
+  .section-content {
+    padding: 4px 18px 16px; max-height: 1500px; overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+  }
+  .section.collapsed .section-content { max-height: 0; padding-top: 0; padding-bottom: 0; }
+
+  .control { margin-bottom: 12px; }
+  .control:last-child { margin-bottom: 0; }
+  .control-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .control-label { font-size: 11.5px; color: var(--text-1); display: flex; align-items: center; gap: 5px; }
+  .control-label .hint { color: var(--text-2); font-size: 10px; font-style: italic; }
+  .control-value {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent);
+    background: rgba(34, 211, 238, 0.08); padding: 2px 7px; border-radius: 4px;
+    border: 1px solid rgba(34, 211, 238, 0.15); min-width: 56px; text-align: right;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 3px;
+    background: rgba(255,255,255,0.08); border-radius: 2px; outline: none; cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px;
+    background: var(--accent); border-radius: 50%; cursor: pointer;
+    box-shadow: 0 0 8px rgba(34, 211, 238, 0.5); border: 2px solid var(--bg-1);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 14px; height: 14px; background: var(--accent); border-radius: 50%;
+    cursor: pointer; border: 2px solid var(--bg-1);
+    box-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
+  }
+
+  select {
+    width: 100%; background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border-strong); color: var(--text-0);
+    padding: 7px 10px; border-radius: 6px; font-size: 12px;
+    font-family: inherit; cursor: pointer; outline: none;
+  }
+  select option { background: var(--bg-2); color: var(--text-0); }
+
+  .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
+  .toggle {
+    position: relative; width: 34px; height: 18px;
+    background: rgba(255,255,255,0.08); border-radius: 10px;
+    cursor: pointer; transition: background 0.2s; flex-shrink: 0;
+  }
+  .toggle::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 14px; height: 14px; background: var(--text-1);
+    border-radius: 50%; transition: all 0.2s;
+  }
+  .toggle.on { background: rgba(34, 211, 238, 0.3); }
+  .toggle.on::after { left: 18px; background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+
+  .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .btn {
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border-strong);
+    color: var(--text-1); padding: 8px 10px; border-radius: 6px;
+    cursor: pointer; font-size: 11.5px; font-family: inherit; transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn:hover { background: rgba(34, 211, 238, 0.08); border-color: var(--accent); color: var(--text-0); }
+  .btn.primary {
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.15), rgba(192, 132, 252, 0.15));
+    border-color: rgba(34, 211, 238, 0.35); color: var(--text-0);
+  }
+  .btn.primary:hover {
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.25), rgba(192, 132, 252, 0.25));
+    box-shadow: 0 0 12px rgba(34, 211, 238, 0.2);
+  }
+  .btn.active {
+    background: rgba(34, 211, 238, 0.18);
+    border-color: var(--accent); color: var(--accent);
+  }
+  .btn.danger:hover { background: rgba(248, 113, 113, 0.1); border-color: var(--danger); color: var(--danger); }
+  .btn.full { grid-column: 1 / -1; }
+
+  .transport {
+    display: flex; gap: 6px; padding: 12px 18px;
+    border-top: 1px solid var(--border); background: rgba(0,0,0,0.2); flex-shrink: 0;
+  }
+  .transport-btn {
+    flex: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--border-strong);
+    color: var(--text-0); padding: 9px; border-radius: 6px; cursor: pointer;
+    font-size: 12px; display: flex; align-items: center; justify-content: center;
+    gap: 6px; transition: all 0.15s; font-family: inherit;
+  }
+  .transport-btn:hover { background: rgba(34, 211, 238, 0.1); border-color: var(--accent); }
+  .transport-btn.playing { background: rgba(74, 222, 128, 0.1); border-color: rgba(74, 222, 128, 0.4); color: var(--success); }
+
+  .chart-container {
+    background: rgba(0,0,0,0.25); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px; margin-top: 8px;
+  }
+  .chart-title { font-size: 10px; color: var(--text-2); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+  #quantumChart { width: 100%; height: 80px; display: block; }
+  .chart-legend { display: flex; gap: 10px; margin-top: 6px; font-size: 10px; font-family: 'JetBrains Mono', monospace; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 4px; color: var(--text-2); }
+  .legend-dot { width: 8px; height: 2px; border-radius: 1px; }
+
+  .info-tip {
+    display: inline-block; width: 13px; height: 13px; border-radius: 50%;
+    background: rgba(255,255,255,0.06); color: var(--text-2);
+    font-size: 9px; text-align: center; line-height: 13px; cursor: help;
+    margin-left: 3px; font-style: italic; font-family: serif;
+  }
+
+  .statusbar {
+    position: fixed; bottom: 0; left: 0; right: 0; height: 26px;
+    background: rgba(10, 14, 24, 0.85); backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border); display: flex; align-items: center;
+    padding: 0 14px; font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; color: var(--text-2); z-index: 50; gap: 18px;
+  }
+  .statusbar-item { display: flex; align-items: center; gap: 5px; }
+  .statusbar-item b { color: var(--text-1); font-weight: 500; }
+  .statusbar-spacer { flex: 1; }
+
+  .toast {
+    position: fixed; bottom: 42px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(10, 14, 24, 0.95); backdrop-filter: blur(16px);
+    border: 1px solid var(--border-strong); padding: 9px 16px; border-radius: 8px;
+    font-size: 12px; color: var(--text-0); opacity: 0; transition: all 0.3s;
+    z-index: 200; pointer-events: none; display: flex; align-items: center; gap: 8px;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast-icon { color: var(--accent); }
+
+  .heisenberg-bar {
+    margin-top: 8px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 8px;
+  }
+  .heisenberg-bar .bar-title {
+    font-size: 9px;
+    color: var(--text-2);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .bar-track {
+    height: 4px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--success), var(--warning), var(--danger));
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+
+  .scenario-note {
+    font-size: 10px; color: var(--text-2); font-style: italic;
+    background: rgba(255,255,255,0.02); padding: 6px 8px; border-radius: 4px;
+    border-left: 2px solid var(--accent); margin-top: 6px; line-height: 1.4;
+  }
+
+  @media (max-width: 768px) {
+    :root { --drawer-w: 320px; }
+    .brand-sub { display: none; }
+    .telemetry { min-width: 180px; font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon">⚛</div>
+    <span class="brand-text">QuantumLab</span>
+    <span class="brand-sub">Schrödinger 2D Solver · v3.0</span>
+  </div>
+  <div class="topbar-spacer"></div>
+  <button class="topbar-btn active" id="btnModeDensity" title="Densidad |ψ|² con fase como color"><span>◐</span> Densidad</button>
+  <button class="topbar-btn" id="btnModePhase" title="Solo fase arg(ψ)"><span>◔</span> Fase</button>
+  <button class="topbar-btn" id="btnModeReal" title="Parte real Re(ψ)"><span>∿</span> Re ψ</button>
+  <button class="topbar-btn" id="btnCenter"><span>◎</span> Centrar</button>
+  <button class="topbar-btn" id="btnHelp"><span>?</span> Ayuda</button>
+</div>
+
+<button class="drawer-toggle" id="drawerToggle" title="Panel de control (Tab)">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="9 18 15 12 9 6"></polyline>
+  </svg>
+</button>
+
+<aside class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div class="drawer-title">Panel de Control Cuántico</div>
+    <div class="drawer-subtitle">Solver split-operator de Schrödinger 2D</div>
+  </div>
+
+  <div class="drawer-body">
+
+    <div class="section" data-section="qm">
+      <div class="section-header">
+        <div class="section-title"><span class="section-icon">⚛</span>Mecánica Cuántica</div>
+        <svg class="section-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="section-content">
+        <div class="control">
+          <div class="control-row">
+            <span class="control-label">Masa m <span class="hint">(u.a.)</span></span>
+            <span class="control-value" id="valMass">1.0</span>
+          </div>
+          <input type="range" id="slMass" min="0.5" max="5" step="0.1" value="1.0">
+        </div>
+        <div class="control">
+          <div class="control-row">
+            <span class="control-label">Δt paso temporal <span class="hint">(u.a.)</span></span>
+            <span class="control-value" id="valDt">0.020</span>
+          </div>
+          <input type="range" id="slDt" min="0.005" max="0.05" step="0.005" value="0.02">
+        </div>
+        <div class="control">
+          <div class="control-row">
+            <span class="control-label">Resolución de grilla</span>
+            <span class="control-value" id="valN">128²</span>
+          </div>
+          <select id="selRes">
+            <option value="64">64 × 64 (rápido)</option>
+            <option value="128" selected>128 × 128 (recomendado)</option>
+            <option value="192">192 × 192 (detalle)</option>
+          </select>
+        </div>
+        <div class="control">
+          <div class="control-row"><span class="control-label">Escenario físico</span></div>
+          <select id="selScenario">
+            <option value="free">Paquete libre (dispersión)</option>
+            <option value="well" selected>Pozo infinito 2D</option>
+            <option value="harmonic">Oscilador armónico 2D</option>
+            <option value="tunnel">Efecto túnel (barrera)</option>
+            <option value="double">Doble rendija</option>
+          </select>
+          <div class="scenario-note" id="scenarioNote"></div>
+        </div>
+        <div class="control">
+          <div class="control-row">
+            <span class="control-label">Estado inicial |ψ₀⟩</span>
+          </div>
+          <select id="selState">
+            <option value="gaussian" selected>Paquete gaussiano con momento</option>
+            <option value="eigen1">Autoestado n=1 (fundamental)</option>
+            <option value="eigen2">Autoestado n=2 (1.º excitado)</option>
+            <option value="superpos">Superposición 1+2 (pozo/oscilador)</option>
+            <option value="coherent">Estado coherente (oscilador)</option>
+          </select>
+        </div>
+        <div class="control">
+          <div class="control-row">
+            <span class="control-label">σ₀ anchura del paquete</span>
+            <span class="control-value" id="valSigma">1.0</span>
+          </div>
+          <input type="range" id="slSigma" min="0.3" max="3" step="0.1" value="1.0">
+        </div>
+        <div class="control">
+          <div class="control-row">
+            <span class="control-label">p₀ momento inicial</span>
+            <span class="control-value" id="valP0">2.0</span>
+          </div>
+          <input type="range" id="slP0" min="0" max="8" step="0.2" value="2.0">
+        </div>
+      </div>
+    </div>
+
+    <div class="section" data-section="measure">
+      <div class="section-header">
+        <div class="section-title"><span class="section-icon">📏</span>Medida y Observación</div>
+        <svg class="section-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="section-content">
+        <div class="scenario-note">
+          En QM, <b>medir</b> significa proyectar |ψ⟩ sobre un autoestado del observable.
+          Aquí: medir la <b>posición</b> muestrea |ψ(x)|² y colapsa el estado a un
+          pico gaussiano estrecho alrededor del resultado (Δx_post ≈ σ_collapse).
+        </div>
+        <div class="control">
+          <div class="control-row">
+            <span class="control-label">σ colapso (resolución del aparato)</span>
+            <span class="control-value" id="valCollSigma">0.30</span>
+          </div>
+          <input type="range" id="slCollSigma" min="0.1" max="1.0" step="0.05" value="0.3">
+        </div>
+        <div class="btn-grid" style="margin-top: 10px;">
+          <button class="btn primary" id="btnMeasure">📏 Medir posición</button>
+          <button class="btn" id="btnMeasureX">↔ Medir x (proy. 1D)</button>
+        </div>
+        <div class="heisenberg-bar" style="margin-top: 10px;">
+          <div class="bar-title">
+            <span>Δx · Δp / (ℏ/2)</span>
+            <span id="heisenbergValue" style="color: var(--accent)">—</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" id="heisenbergFill" style="width: 0%"></div></div>
+          <div style="font-size: 9px; color: var(--text-2); margin-top: 3px;">Límite inferior de Heisenberg: ≥ 1. Verificado numéricamente.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" data-section="bohm">
+      <div class="section-header">
+        <div class="section-title"><span class="section-icon">✦</span>Trayectorias Bohmianas</div>
+        <svg class="section-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="section-content">
+        <div class="scenario-note">
+          La teoría de Bohm/de Broglie calcula una <b>velocidad piloto</b>
+          v(x,t) = (ℏ/m)·Im(∇ψ/ψ). Las trayectorias son deterministas pero
+          reproducen las predicciones estándar de QM.
+        </div>
+        <div class="toggle-row">
+          <span class="control-label">Mostrar trayectorias</span>
+          <div class="toggle" id="togBohm"></div>
+        </div>
+        <div class="control">
+          <div class="control-row">
+            <span class="control-label">Nº de partículas piloto</span>
+            <span class="control-value" id="valBohmN">80</span>
+          </div>
+          <input type="range" id="slBohmN" min="10" max="300" step="10" value="80">
+        </div>
+        <div class="control">
+          <div class="control-row">
+            <span class="control-label">Longitud de rastro</span>
+            <span class="control-value" id="valBohmTrail">60</span>
+          </div>
+          <input type="range" id="slBohmTrail" min="0" max="200" step="10" value="60">
+        </div>
+      </div>
+    </div>
+
+    <div class="section" data-section="vis">
+      <div class="section-header">
+        <div class="section-title"><span class="section-icon">◐</span>Visualización</div>
+        <svg class="section-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="section-content">
+        <div class="toggle-row">
+          <span class="control-label">Superponer potencial V(x,y)</span>
+          <div class="toggle on" id="togPotential"></div>
+        </div>
+        <div class="toggle-row">
+          <span class="control-label">Cuadrícula de referencia</span>
+          <div class="toggle" id="togGrid"></div>
+        </div>
+        <div class="control" style="margin-top: 10px;">
+          <div class="control-row">
+            <span class="control-label">Brillo |ψ|²</span>
+            <span class="control-value" id="valBright">1.0</span>
+          </div>
+          <input type="range" id="slBright" min="0.3" max="3" step="0.1" value="1.0">
+        </div>
+        <div class="control">
+          <div class="control-row">
+            <span class="control-label">Gamma (compresión)</span>
+            <span class="control-value" id="valGamma">0.6</span>
+          </div>
+          <input type="range" id="slGamma" min="0.2" max="1.5" step="0.05" value="0.6">
+        </div>
+      </div>
+    </div>
+
+    <div class="section" data-section="actions">
+      <div class="section-header">
+        <div class="section-title"><span class="section-icon">⚙</span>Acciones</div>
+        <svg class="section-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="section-content">
+        <div class="btn-grid">
+          <button class="btn primary" id="btnApplyScenario">⚙ Aplicar escenario</button>
+          <button class="btn" id="btnNormalize">∫ Normalizar |ψ|²=1</button>
+        </div>
+        <div class="btn-grid" style="margin-top: 6px;">
+          <button class="btn danger full" id="btnReset">⟲ Reiniciar simulación</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" data-section="analysis">
+      <div class="section-header">
+        <div class="section-title"><span class="section-icon">📊</span>Análisis Cuántico</div>
+        <svg class="section-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="section-content">
+        <div class="chart-container">
+          <div class="chart-title">Energía ⟨T⟩, ⟨V⟩, ⟨E⟩ vs tiempo</div>
+          <canvas id="quantumChart"></canvas>
+          <div class="chart-legend">
+            <div class="legend-item"><span class="legend-dot" style="background:#22d3ee"></span>⟨T⟩</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#c084fc"></span>⟨V⟩</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#4ade80"></span>⟨E⟩</div>
+          </div>
+        </div>
+        <div style="margin-top: 10px;">
+          <div class="tel-row"><span class="tel-label">⟨x⟩ posición media</span><span class="tel-value accent" id="valMeanX">—</span></div>
+          <div class="tel-row"><span class="tel-label">⟨y⟩ posición media</span><span class="tel-value accent" id="valMeanY">—</span></div>
+          <div class="tel-row"><span class="tel-label">⟨pₓ⟩ momento medio</span><span class="tel-value purple" id="valMeanPx">—</span></div>
+          <div class="tel-row"><span class="tel-label">⟨p_y⟩ momento medio</span><span class="tel-value purple" id="valMeanPy">—</span></div>
+          <div class="tel-row"><span class="tel-label">Δx dispersión</span><span class="tel-value" id="valDx">—</span></div>
+          <div class="tel-row"><span class="tel-label">Δp dispersión</span><span class="tel-value" id="valDp">—</span></div>
+          <div class="tel-row"><span class="tel-label">⟨E⟩ energía total</span><span class="tel-value good" id="valE">—</span></div>
+          <div class="tel-row"><span class="tel-label">‖ψ‖² norma</span><span class="tel-value" id="valNorm">1.000</span></div>
+          <div class="tel-row"><span class="tel-label">S entropía von Neumann</span><span class="tel-value pink" id="valEntropy">0.000</span></div>
+        </div>
+        <div class="btn-grid" style="margin-top: 10px;">
+          <button class="btn full" id="btnExport">⤓ Exportar |ψ|² (CSV)</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="transport">
+    <button class="transport-btn" id="btnStep" title="Avanzar un paso (S)">⏭ Paso</button>
+    <button class="transport-btn playing" id="btnPlay" title="Play/Pausa (Espacio)">❚❚ Pausa</button>
+    <button class="transport-btn" id="btnClearTrails" title="Limpiar rastros bohmianos">✕ Rastros</button>
+  </div>
+</aside>
+
+<div class="telemetry">
+  <div class="telemetry-header">
+    <div class="telemetry-title">Telemetría Cuántica</div>
+    <div class="telemetry-status">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">RUN</span>
+    </div>
+  </div>
+  <div class="tel-row"><span class="tel-label">t</span><span class="tel-value accent" id="telTime">0.00</span></div>
+  <div class="tel-row"><span class="tel-label">‖ψ‖²</span><span class="tel-value" id="telNorm">1.000</span></div>
+  <div class="tel-row"><span class="tel-label">FPS</span><span class="tel-value good" id="telFps">60</span></div>
+  <div class="tel-separator"></div>
+  <div class="tel-row"><span class="tel-label">⟨E⟩</span><span class="tel-value good" id="telE">0</span></div>
+  <div class="tel-row"><span class="tel-label">Δx·Δp / (ℏ/2)</span><span class="tel-value accent" id="telHeisenberg">—</span></div>
+  <div class="tel-row"><span class="tel-label">S</span><span class="tel-value pink" id="telS">0.000</span></div>
+  <div class="tel-separator"></div>
+  <div class="tel-row"><span class="tel-label">Zoom</span><span class="tel-value" id="telZoom">1.00×</span></div>
+</div>
+
+<div class="statusbar">
+  <div class="statusbar-item">⚛ <b>QuantumLab v3.0</b></div>
+  <div class="statusbar-item">Escenario: <b id="sbScenario">Pozo infinito</b></div>
+  <div class="statusbar-item">m: <b id="sbMass">1.0</b></div>
+  <div class="statusbar-item">Δt: <b id="sbDt">0.020</b></div>
+  <div class="statusbar-item">Grid: <b id="sbGrid">128²</b></div>
+  <div class="statusbar-spacer"></div>
+  <div class="statusbar-item"><span class="kbd">Tab</span> panel · <span class="kbd">Space</span> pausa · <span class="kbd">M</span> medir · <span class="kbd">R</span> reiniciar · <span class="kbd">B</span> bohm</div>
+</div>
+
+<div class="toast" id="toast">
+  <span class="toast-icon">⚛</span>
+  <span id="toastText">Mensaje</span>
+</div>
+
+<script>
+'use strict';
+
+/* ============================================================
+   QuantumLab v3.0 — Solver de Schrödinger 2D (split-operator)
+   --------------------------------------------------------------
+   iℏ ∂ψ/∂t = Ĥψ,  Ĥ = T̂ + V̂ = -ℏ²/(2m) ∇² + V(x,y)
+
+   Integrador unitario (Strang splitting):
+     ψ(t+Δt) = exp(-iVΔt/2ℏ) · F⁻¹[ exp(-i ℏ k² Δt / 2m) · F[ exp(-iVΔt/2ℏ) · ψ(t) ] ]
+
+   Con ℏ=1 (u.a.), m configurable, V sobre una grilla cartesiana.
+   ============================================================ */
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const chartCanvas = document.getElementById('quantumChart');
+const chartCtx = chartCanvas.getContext('2d');
+
+let W = 0, H = 0;
+const offscreen = document.createElement('canvas');
+const offctx = offscreen.getContext('2d');
+
+/* ---- Estado global ---- */
+const state = {
+  // parámetros físicos (u.a., ℏ = 1)
+  hbar: 1,
+  mass: 1.0,
+  dt: 0.02,
+  L: 8.0,          // semi-anchura del dominio físico: [-L, L] × [-L, L]
+
+  // grilla
+  N: 128,
+  psiRe: null, psiIm: null,    // ψ compleja en grilla N×N
+  V: null,                      // potencial V(x,y)
+  expVhalf_re: null, expVhalf_im: null,
+  expT_re: null, expT_im: null,
+  xGrid: null, yGrid: null,     // coordenadas físicas de cada celda
+  kx: null, ky: null,           // frecuencias espaciales
+
+  // estado de simulación
+  scenario: 'well',
+  initialState: 'gaussian',
+  sigma0: 1.0,
+  p0: 2.0,
+  paused: false,
+  simTime: 0,
+  stepsPerFrame: 1,
+
+  // visualización
+  vizMode: 'density',   // 'density' | 'phase' | 'real'
+  showPotential: true,
+  showGrid: false,
+  brightness: 1.0,
+  gamma: 0.6,
+  zoom: 1.0,
+  panX: 0, panY: 0,
+
+  // trayectorias bohmianas
+  showBohm: false,
+  bohmN: 80,
+  bohmTrail: 60,
+  bohm: [],              // [{x, y, trail: [{x,y}]}]
+
+  // medida
+  collapseSigma: 0.3,
+
+  // métricas
+  metrics: {},
+  energyHistory: { T: [], U: [], E: [] },
+  maxHistory: 200,
+
+  // fps
+  fps: 60,
+};
+
+/* ============================================================
+   FFT in-place (radix-2 Cooley-Tukey). n debe ser potencia de 2.
+   re[], im[] son Float64Array de longitud n.
+   inverse=false → FFT directa; true → inversa (con 1/n).
+   ============================================================ */
+function fft(re, im, inverse) {
+  const n = re.length;
+  if (n <= 1) return;
+
+  // Bit reversal
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    while (j & bit) { j ^= bit; bit >>= 1; }
+    j ^= bit;
+    if (i < j) {
+      const tr = re[i]; re[i] = re[j]; re[j] = tr;
+      const ti = im[i]; im[i] = im[j]; im[j] = ti;
+    }
+  }
+
+  // Mariposas
+  for (let len = 2; len <= n; len <<= 1) {
+    const half = len >> 1;
+    const angle = (inverse ? 2 : -2) * Math.PI / len;
+    const wRe0 = Math.cos(angle), wIm0 = Math.sin(angle);
+    for (let i = 0; i < n; i += len) {
+      let wRe = 1, wIm = 0;
+      for (let k = 0; k < half; k++) {
+        const uRe = re[i + k], uIm = im[i + k];
+        const vRe = re[i + k + half] * wRe - im[i + k + half] * wIm;
+        const vIm = re[i + k + half] * wIm + im[i + k + half] * wRe;
+        re[i + k]        = uRe + vRe;
+        im[i + k]        = uIm + vIm;
+        re[i + k + half] = uRe - vRe;
+        im[i + k + half] = uIm - vIm;
+        const nRe = wRe * wRe0 - wIm * wIm0;
+        wIm = wRe * wIm0 + wIm * wRe0;
+        wRe = nRe;
+      }
+    }
+  }
+
+  if (inverse) {
+    const inv = 1 / n;
+    for (let i = 0; i < n; i++) { re[i] *= inv; im[i] *= inv; }
+  }
+}
+
+/* Buffers reutilizables para FFT 2D por filas/columnas */
+let rowBufRe, rowBufIm;
+
+/* ============================================================
+   Setup grilla y operadores
+   ============================================================ */
+function setupGrid() {
+  const N = state.N;
+  const L = state.L;
+  state.dx = (2 * L) / N;
+  state.dk = (2 * Math.PI) / (N * state.dx);
+
+  state.psiRe = new Float64Array(N * N);
+  state.psiIm = new Float64Array(N * N);
+  state.V = new Float64Array(N * N);
+  state.expVhalf_re = new Float64Array(N * N);
+  state.expVhalf_im = new Float64Array(N * N);
+
+  state.xGrid = new Float64Array(N);
+  state.yGrid = new Float64Array(N);
+  for (let i = 0; i < N; i++) {
+    state.xGrid[i] = -L + (i + 0.5) * state.dx;
+    state.yGrid[i] = -L + (i + 0.5) * state.dx;
+  }
+
+  // frecuencias espaciales fftshifted: [-N/2..N/2-1] * dk
+  state.kx = new Float64Array(N);
+  state.ky = new Float64Array(N);
+  const halfN = N >> 1;
+  for (let i = 0; i < N; i++) {
+    const k = (i < halfN ? i : i - N) * state.dk;
+    state.kx[i] = k;
+    state.ky[i] = k;
+  }
+
+  // Operador cinético exp(-i ℏ k² Δt / (2 m)) (en k-espacio)
+  state.expT_re = new Float64Array(N * N);
+  state.expT_im = new Float64Array(N * N);
+  const hb = state.hbar;
+  for (let j = 0; j < N; j++) {
+    const ky = state.ky[j];
+    for (let i = 0; i < N; i++) {
+      const kx = state.kx[i];
+      const k2 = kx * kx + ky * ky;
+      const angle = -hb * k2 * state.dt / (2 * state.mass);
+      state.expT_re[j * N + i] = Math.cos(angle);
+      state.expT_im[j * N + i] = Math.sin(angle);
+    }
+  }
+
+  rowBufRe = new Float64Array(N);
+  rowBufIm = new Float64Array(N);
+
+  // Offscreen para ImageData
+  offscreen.width = N;
+  offscreen.height = N;
+}
+
+/* ============================================================
+   Definición de potenciales por escenario
+   ============================================================ */
+function buildPotential() {
+  const N = state.N, L = state.L, dx = state.dx;
+  const V = state.V;
+  const hb = state.hbar, m = state.mass;
+
+  // Ancho del pozo = 2L_pos con L_pos un poco menor que L (para no tocar el borde)
+  const Lwell = L * 0.75;     // pozo de -6 a 6
+  const Vinf = 1e4;            // aproximación numérica a infinito
+
+  for (let j = 0; j < N; j++) {
+    const y = state.yGrid[j];
+    for (let i = 0; i < N; i++) {
+      const x = state.xGrid[i];
+      let v = 0;
+      switch (state.scenario) {
+        case 'free':
+          v = 0;
+          break;
+        case 'well':
+          if (Math.abs(x) > Lwell || Math.abs(y) > Lwell) v = Vinf;
+          else v = 0;
+          break;
+        case 'harmonic': {
+          const omega = 1.0;
+          v = 0.5 * m * omega * omega * (x * x + y * y);
+          break;
+        }
+        case 'tunnel': {
+          // barrera rectangular vertical en x ∈ [0, 0.8], altura V0
+          const V0 = 6.0;
+          const xb0 = 0.0, xb1 = 0.8;
+          if (x > xb0 && x < xb1) v = V0;
+          else v = 0;
+          break;
+        }
+        case 'double': {
+          // Pared vertical en x=0 con DOS rendijas
+          const wallThk = dx * 1.5;
+          const slitH = 0.8;     // altura de cada rendija
+          const slitSep = 1.6;   // separación centro a centro
+          if (Math.abs(x) < wallThk) {
+            const ay = Math.abs(y);
+            // rendijas centradas en y = ±slitSep/2
+            const inSlit1 = (ay > slitSep/2 - slitH/2) && (ay < slitSep/2 + slitH/2);
+            const inSlit2 = (ay > -slitSep/2 + slitH/2 - 2*slitSep) && false; // placeholder
+            // Mejor: una rendija superior (y>0) y otra inferior (y<0)
+            const topSlitY = slitSep/2;
+            const botSlitY = -slitSep/2;
+            const inTop = Math.abs(y - topSlitY) < slitH/2;
+            const inBot = Math.abs(y - botSlitY) < slitH/2;
+            if (!(inTop || inBot)) v = Vinf;
+            else v = 0;
+          } else v = 0;
+          break;
+        }
+      }
+      V[j * N + i] = v;
+    }
+  }
+
+  // Precomputar exp(-iVΔt/2ℏ)
+  for (let i = 0; i < V.length; i++) {
+    const angle = -V[i] * state.dt / (2 * hb);
+    state.expVhalf_re[i] = Math.cos(angle);
+    state.expVhalf_im[i] = Math.sin(angle);
+  }
+}
+
+/* ============================================================
+   Estados iniciales
+   ============================================================ */
+function setInitialState() {
+  const N = state.N, L = state.L;
+  const re = state.psiRe, im = state.psiIm;
+  const m = state.mass;
+  re.fill(0); im.fill(0);
+
+  switch (state.initialState) {
+    case 'gaussian': {
+      const cx = (state.scenario === 'tunnel' || state.scenario === 'double') ? -4 : 0;
+      const cy = 0;
+      const sigma = state.sigma0;
+      const p = state.p0;
+      const dirX = (state.scenario === 'tunnel' || state.scenario === 'double') ? 1 : 1;
+      for (let j = 0; j < N; j++) {
+        const y = state.yGrid[j];
+        for (let i = 0; i < N; i++) {
+          const x = state.xGrid[i];
+          const dx_ = x - cx, dy_ = y - cy;
+          const env = Math.exp(-(dx_ * dx_ + dy_ * dy_) / (2 * sigma * sigma));
+          const phase = p * (dirX * x) / state.hbar;
+          re[j * N + i] = env * Math.cos(phase);
+          im[j * N + i] = env * Math.sin(phase);
+        }
+      }
+      break;
+    }
+    case 'eigen1': {
+      // Pozo: ψ_11 = (2/L) sin(π(x+L)/2L) sin(π(y+L)/2L)
+      // HO: ψ_00 = (mω/πℏ)^(1/2) exp(-mω(x²+y²)/2ℏ)
+      if (state.scenario === 'well' || state.scenario === 'free') {
+        const Lw = state.L * 0.75;
+        for (let j = 0; j < N; j++) {
+          const y = state.yGrid[j];
+          for (let i = 0; i < N; i++) {
+            const x = state.xGrid[i];
+            if (Math.abs(x) < Lw && Math.abs(y) < Lw) {
+              const sx = Math.sin(Math.PI * (x + Lw) / (2 * Lw));
+              const sy = Math.sin(Math.PI * (y + Lw) / (2 * Lw));
+              re[j * N + i] = sx * sy;
+            }
+          }
+        }
+      } else if (state.scenario === 'harmonic') {
+        const omega = 1.0;
+        const a = m * omega / state.hbar;
+        for (let j = 0; j < N; j++) {
+          const y = state.yGrid[j];
+          for (let i = 0; i < N; i++) {
+            const x = state.xGrid[i];
+            re[j * N + i] = Math.exp(-a * (x * x + y * y) / 2);
+          }
+        }
+      } else {
+        // túnel/doble rendija: paquete gaussiano
+        return setGaussianHelper(-4, 0, state.p0, 0);
+      }
+      break;
+    }
+    case 'eigen2': {
+      if (state.scenario === 'well' || state.scenario === 'free') {
+        const Lw = state.L * 0.75;
+        for (let j = 0; j < N; j++) {
+          const y = state.yGrid[j];
+          for (let i = 0; i < N; i++) {
+            const x = state.xGrid[i];
+            if (Math.abs(x) < Lw && Math.abs(y) < Lw) {
+              const sx = Math.sin(2 * Math.PI * (x + Lw) / (2 * Lw));
+              const sy = Math.sin(Math.PI * (y + Lw) / (2 * Lw));
+              re[j * N + i] = sx * sy;
+            }
+          }
+        }
+      } else if (state.scenario === 'harmonic') {
+        const omega = 1.0;
+        const a = m * omega / state.hbar;
+        for (let j = 0; j < N; j++) {
+          const y = state.yGrid[j];
+          for (let i = 0; i < N; i++) {
+            const x = state.xGrid[i];
+            // ψ_10 ∝ x · exp(-a r²/2)
+            re[j * N + i] = x * Math.exp(-a * (x * x + y * y) / 2);
+          }
+        }
+      } else {
+        return setGaussianHelper(-4, 0, state.p0, 0);
+      }
+      break;
+    }
+    case 'superpos': {
+      // (ψ_1 + ψ_2) / √2 (pozo o armónico)
+      const re1 = new Float64Array(N * N);
+      const im1 = new Float64Array(N * N);
+      const re2 = new Float64Array(N * N);
+      const im2 = new Float64Array(N * N);
+      const savedState = state.psiRe;
+      const savedIm = state.psiIm;
+      state.psiRe = re1; state.psiIm = im1;
+      state.initialState = 'eigen1';
+      setInitialState();
+      state.psiRe = re2; state.psiIm = im2;
+      state.initialState = 'eigen2';
+      setInitialState();
+      state.psiRe = savedState; state.psiIm = savedIm;
+      state.initialState = 'superpos';
+      for (let i = 0; i < N * N; i++) {
+        re[i] = (re1[i] + re2[i]) / Math.SQRT2;
+        im[i] = (im1[i] + im2[i]) / Math.SQRT2;
+      }
+      break;
+    }
+    case 'coherent': {
+      // Estado coherente del oscilador armónico: gaussiano desplazado con momento
+      if (state.scenario === 'harmonic') {
+        const omega = 1.0;
+        const x0 = 2.0;
+        return setGaussianHelper(x0, 0, 0, 0);
+      } else {
+        return setGaussianHelper(0, 0, state.p0, 0);
+      }
+    }
+  }
+
+  normalizePsi();
+}
+
+function setGaussianHelper(cx, cy, px, py) {
+  const N = state.N;
+  const sigma = state.sigma0;
+  const re = state.psiRe, im = state.psiIm;
+  for (let j = 0; j < N; j++) {
+    const y = state.yGrid[j];
+    for (let i = 0; i < N; i++) {
+      const x = state.xGrid[i];
+      const dx_ = x - cx, dy_ = y - cy;
+      const env = Math.exp(-(dx_ * dx_ + dy_ * dy_) / (2 * sigma * sigma));
+      const phase = (px * x + py * y) / state.hbar;
+      re[j * N + i] = env * Math.cos(phase);
+      im[j * N + i] = env * Math.sin(phase);
+    }
+  }
+  normalizePsi();
+}
+
+function normalizePsi() {
+  const re = state.psiRe, im = state.psiIm;
+  let norm = 0;
+  for (let i = 0; i < re.length; i++) norm += re[i] * re[i] + im[i] * im[i];
+  norm = Math.sqrt(norm);
+  if (norm < 1e-12) return;
+  const inv = 1 / norm;
+  for (let i = 0; i < re.length; i++) {
+    re[i] *= inv; im[i] *= inv;
+  }
+}
+
+/* ============================================================
+   Paso temporal: split-operator
+   ψ → e^{-iVΔt/2ℏ} · F⁻¹ · e^{-iℏk²Δt/2m} · F · e^{-iVΔt/2ℏ} · ψ
+   ============================================================ */
+function multiplyInPlace(reA, imA, reB, imB) {
+  const n = reA.length;
+  for (let i = 0; i < n; i++) {
+    const r = reA[i] * reB[i] - imA[i] * imB[i];
+    const j = reA[i] * imB[i] + imA[i] * reB[i];
+    reA[i] = r; imA[i] = j;
+  }
+}
+
+function fft2D(re, im, inverse) {
+  const N = state.N;
+  // Filas
+  for (let j = 0; j < N; j++) {
+    const off = j * N;
+    for (let i = 0; i < N; i++) { rowBufRe[i] = re[off + i]; rowBufIm[i] = im[off + i]; }
+    fft(rowBufRe, rowBufIm, inverse);
+    for (let i = 0; i < N; i++) { re[off + i] = rowBufRe[i]; im[off + i] = rowBufIm[i]; }
+  }
+  // Columnas
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      const off = j * N + i;
+      rowBufRe[j] = re[off]; rowBufIm[j] = im[off];
+    }
+    fft(rowBufRe, rowBufIm, inverse);
+    for (let j = 0; j < N; j++) {
+      const off = j * N + i;
+      re[off] = rowBufRe[j]; im[off] = rowBufIm[j];
+    }
+  }
+}
+
+function step() {
+  if (state.paused) return;
+  const N = state.N;
+  const re = state.psiRe, im = state.psiIm;
+
+  for (let s = 0; s < state.stepsPerFrame; s++) {
+    // 1. Medio paso potencial
+    multiplyInPlace(re, im, state.expVhalf_re, state.expVhalf_im);
+    // 2. FFT directa 2D
+    fft2D(re, im, false);
+    // 3. Paso cinético completo
+    multiplyInPlace(re, im, state.expT_re, state.expT_im);
+    // 4. FFT inversa 2D
+    fft2D(re, im, true);
+    // 5. Medio paso potencial
+    multiplyInPlace(re, im, state.expVhalf_re, state.expVhalf_im);
+
+    state.simTime += state.dt;
+  }
+}
+
+/* ============================================================
+   Métricas observables.
+   Para ⟨p⟩ y ⟨p²⟩ usamos k-espacio (exacto, sin aliasing):
+     ⟨p_x⟩ = ℏ Σ k_x |ψ̃(k)|²  / ‖ψ‖²
+     ⟨p_x²⟩ = ℏ² Σ k_x² |ψ̃(k)|² / ‖ψ‖²
+   La FFT ya está bien definida porque ψ vive en una grilla periódica.
+   ============================================================ */
+let _psiKRe = null, _psiKIm = null;
+function computeMetrics() {
+  const N = state.N, dx = state.dx, hb = state.hbar, m = state.mass;
+  const re = state.psiRe, im = state.psiIm;
+  const V = state.V;
+
+  let norm = 0, sumX = 0, sumY = 0;
+  let T = 0, U = 0;
+  let sumX2 = 0, sumY2 = 0;
+  let S = 0;
+
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      const idx = j * N + i;
+      const rho = re[idx] * re[idx] + im[idx] * im[idx];
+      const x = state.xGrid[i], y = state.yGrid[j];
+      norm += rho;
+      sumX += x * rho; sumY += y * rho;
+      sumX2 += x * x * rho; sumY2 += y * y * rho;
+      U += V[idx] * rho;
+      if (rho > 1e-14) S -= rho * Math.log(rho);
+    }
+  }
+  if (norm < 1e-12) {
+    state.metrics = { norm: 0, meanX: 0, meanY: 0, meanPx: 0, meanPy: 0, dx: 0, dy: 0, dpx: 0, dpy: 0, T: 0, U: 0, E: 0, S: 0 };
+    return;
+  }
+
+  // Copia a buffers k-espacio (no destruir ψ)
+  if (!_psiKRe || _psiKRe.length !== N * N) {
+    _psiKRe = new Float64Array(N * N);
+    _psiKIm = new Float64Array(N * N);
+  }
+  _psiKRe.set(re); _psiKIm.set(im);
+  fft2D(_psiKRe, _psiKIm, false);
+
+  // ⟨p⟩ y ⟨p²⟩ en k-espacio (recordar factor dx² de la cuadratura ↔ 1/N² de la FFT)
+  // |ψ̃(k)|² ya está bien: la FFT no normaliza, así que |ψ̃|² es (N²·dx)² veces |ψ̂|²
+  // Pero como solo usamos razones, los factores se cancelan.
+  let sumKx = 0, sumKy = 0, sumKx2 = 0, sumKy2 = 0, kNorm = 0;
+  for (let j = 0; j < N; j++) {
+    const ky = state.ky[j];
+    for (let i = 0; i < N; i++) {
+      const kx = state.kx[i];
+      const idx = j * N + i;
+      const w = _psiKRe[idx] * _psiKRe[idx] + _psiKIm[idx] * _psiKIm[idx];
+      kNorm += w;
+      sumKx += kx * w; sumKy += ky * w;
+      sumKx2 += kx * kx * w; sumKy2 += ky * ky * w;
+    }
+  }
+  const meanPx = hb * sumKx / kNorm;
+  const meanPy = hb * sumKy / kNorm;
+  const meanPx2 = hb * hb * sumKx2 / kNorm;
+  const meanPy2 = hb * hb * sumKy2 / kNorm;
+  const varPx = Math.max(0, meanPx2 - meanPx * meanPx);
+  const varPy = Math.max(0, meanPy2 - meanPy * meanPy);
+  const dpx = Math.sqrt(varPx);
+  const dpy = Math.sqrt(varPy);
+  // T = ⟨p²⟩/(2m) en u.a.
+  T = (meanPx2 + meanPy2) / (2 * m);
+
+  const meanX = sumX / norm, meanY = sumY / norm;
+  const varX = Math.max(0, sumX2 / norm - meanX * meanX);
+  const varY = Math.max(0, sumY2 / norm - meanY * meanY);
+  const dx_ = Math.sqrt(varX);
+  const dy_ = Math.sqrt(varY);
+  const E = T + U;
+
+  state.metrics = {
+    norm, meanX, meanY, meanPx, meanPy,
+    dx: dx_, dy: dy_, dpx, dpy,
+    T, U, E,
+    S: S / norm + Math.log(norm),
+  };
+}
+
+/* ============================================================
+   Visualización: |ψ|² + fase como color HSV → ImageData
+   ============================================================ */
+let imageData = null;
+
+function hslToRgb(h, s, l) {
+  let r, g, b;
+  if (s === 0) { r = g = b = l; }
+  else {
+    const hue2rgb = (p, q, t) => {
+      if (t < 0) t += 1; if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    };
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1/3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1/3);
+  }
+  return [r * 255 | 0, g * 255 | 0, b * 255 | 0];
+}
+
+function renderPsi() {
+  const N = state.N;
+  const re = state.psiRe, im = state.psiIm;
+  if (!imageData || imageData.width !== N) {
+    imageData = offctx.createImageData(N, N);
+  }
+  const data = imageData.data;
+
+  // Encontrar max |ψ|² para normalizar
+  let maxRho = 0;
+  for (let i = 0; i < re.length; i++) {
+    const rho = re[i] * re[i] + im[i] * im[i];
+    if (rho > maxRho) maxRho = rho;
+  }
+  if (maxRho < 1e-14) maxRho = 1;
+  const invMax = 1 / maxRho;
+  const bright = state.brightness;
+  const gamma = state.gamma;
+  const mode = state.vizMode;
+
+  for (let i = 0; i < re.length; i++) {
+    const r = re[i], im_ = im[i];
+    const rho = r * r + im_ * im_;
+    const rhoN = rho * invMax;  // 0..1
+    let R, G, B;
+
+    if (mode === 'density') {
+      // Brillo ∝ |ψ|² (gamma-compresión), Hue ∝ fase
+      const phase = Math.atan2(im_, r);  // -π..π
+      const hue = (phase / (2 * Math.PI)) + 0.5;  // 0..1
+      const v = Math.pow(rhoN, gamma) * bright;
+      const val = Math.min(1, v);
+      [R, G, B] = hslToRgb(hue, 0.85, val * 0.55);
+    } else if (mode === 'phase') {
+      // Solo fase: brillo constante, hue = fase
+      const phase = Math.atan2(im_, r);
+      const hue = (phase / (2 * Math.PI)) + 0.5;
+      const alpha = Math.pow(rhoN, gamma * 0.5);  // atenúa zonas de muy baja densidad
+      [R, G, B] = hslToRgb(hue, 0.9, 0.5 * alpha + 0.05);
+    } else { // 'real'
+      // Re(ψ): diverging colormap azul-blanco-rojo
+      const val = r * Math.sqrt(invMax) * bright * 3;
+      const v = Math.max(-1, Math.min(1, val));
+      if (v >= 0) {
+        R = 255 * v | 0; G = 200 * v | 0; B = 200 * v | 0;
+      } else {
+        const a = -v; R = 100 * a | 0; G = 150 * a | 0; B = 255 * a | 0;
+      }
+    }
+    const o = i * 4;
+    data[o] = R; data[o + 1] = G; data[o + 2] = B; data[o + 3] = 255;
+  }
+
+  offctx.putImageData(imageData, 0, 0);
+}
+
+function worldToScreen(wx, wy) {
+  const scale = (Math.min(W, H) * 0.42 * state.zoom) / state.L;
+  return {
+    x: W / 2 + wx * scale + state.panX,
+    y: H / 2 + wy * scale + state.panY,
+  };
+}
+function screenToWorld(sx, sy) {
+  const scale = (Math.min(W, H) * 0.42 * state.zoom) / state.L;
+  return {
+    x: (sx - W / 2 - state.panX) / scale,
+    y: (sy - H / 2 - state.panY) / scale,
+  };
+}
+
+function drawPotentialOverlay() {
+  if (!state.showPotential) return;
+  const N = state.N, L = state.L;
+  const V = state.V;
+  // Encontrar max V (no infinito)
+  let vmax = 0;
+  for (let i = 0; i < V.length; i++) if (V[i] < 1e3 && V[i] > vmax) vmax = V[i];
+
+  ctx.save();
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      const v = V[j * N + i];
+      if (v < 1e-6) continue;
+      const s0 = worldToScreen(state.xGrid[i] - state.dx / 2, state.yGrid[j] - state.dx / 2);
+      const s1 = worldToScreen(state.xGrid[i] + state.dx / 2, state.yGrid[j] + state.dx / 2);
+      const cellW = Math.max(1, s1.x - s0.x);
+      const cellH = Math.max(1, s1.y - s0.y);
+      if (v > 1e3) {
+        // Muro "infinito"
+        ctx.fillStyle = 'rgba(248, 113, 113, 0.32)';
+      } else {
+        const t = v / (vmax || 1);
+        ctx.fillStyle = `rgba(192, 132, 252, ${0.12 + 0.35 * t})`;
+      }
+      ctx.fillRect(s0.x, s0.y, cellW + 1, cellH + 1);
+    }
+  }
+  ctx.restore();
+}
+
+function drawGrid() {
+  if (!state.showGrid) return;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  for (let v = -state.L; v <= state.L; v += state.L / 4) {
+    const s0 = worldToScreen(v, -state.L);
+    const s1 = worldToScreen(v, state.L);
+    ctx.beginPath(); ctx.moveTo(s0.x, s0.y); ctx.lineTo(s1.x, s1.y); ctx.stroke();
+    const s2 = worldToScreen(-state.L, v);
+    const s3 = worldToScreen(state.L, v);
+    ctx.beginPath(); ctx.moveTo(s2.x, s2.y); ctx.lineTo(s3.x, s3.y); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/* ============================================================
+   Trayectorias bohmianas: v = (ℏ/m) · Im(∇ψ/ψ)
+   ============================================================ */
+function sampleBohmianParticles() {
+  state.bohm = [];
+  const N = state.N;
+  const re = state.psiRe, im = state.psiIm;
+  // Muestreo por suma acumulada de |ψ|² (1D, luego por columnas)
+  // Simpler: muestreo de rechazo usando maxRho
+  let maxRho = 0;
+  for (let i = 0; i < re.length; i++) {
+    const rho = re[i] * re[i] + im[i] * im[i];
+    if (rho > maxRho) maxRho = rho;
+  }
+  if (maxRho < 1e-14) return;
+  let placed = 0, attempts = 0;
+  while (placed < state.bohmN && attempts < state.bohmN * 200) {
+    attempts++;
+    const i = Math.floor(Math.random() * N);
+    const j = Math.floor(Math.random() * N);
+    const idx = j * N + i;
+    const rho = re[idx] * re[idx] + im[idx] * im[idx];
+    if (Math.random() < rho / maxRho) {
+      // añadir ruido dentro de la celda
+      const x = state.xGrid[i] + (Math.random() - 0.5) * state.dx;
+      const y = state.yGrid[j] + (Math.random() - 0.5) * state.dx;
+      state.bohm.push({ x, y, trail: [] });
+      placed++;
+    }
+  }
+}
+
+function updateBohmian() {
+  const N = state.N, dx = state.dx, hb = state.hbar, m = state.mass;
+  const re = state.psiRe, im = state.psiIm;
+  const dt = state.dt * state.stepsPerFrame;
+  for (const p of state.bohm) {
+    // posición en grilla (continua)
+    const fi = (p.x + state.L) / dx - 0.5;
+    const fj = (p.y + state.L) / dx - 0.5;
+    const i = Math.floor(fi), j = Math.floor(fj);
+    if (i < 1 || i >= N - 1 || j < 1 || j >= N - 1) continue;
+    const idx = j * N + i;
+    const rho = re[idx] * re[idx] + im[idx] * im[idx];
+    if (rho < 1e-10) continue;
+    // ∇ψ centrado
+    const dReDx = (re[idx + 1] - re[idx - 1]) / (2 * dx);
+    const dImDx = (im[idx + 1] - im[idx - 1]) / (2 * dx);
+    const dReDy = (re[idx + N] - re[idx - N]) / (2 * dx);
+    const dImDy = (im[idx + N] - im[idx - N]) / (2 * dx);
+    // v = (ℏ/m) · Im(∇ψ / ψ) = (ℏ/m) · Im(ψ* ∇ψ) / |ψ|²
+    const vx = (hb / m) * (re[idx] * dImDx - im[idx] * dReDx) / rho;
+    const vy = (hb / m) * (re[idx] * dImDy - im[idx] * dReDy) / rho;
+    p.x += vx * dt;
+    p.y += vy * dt;
+    if (state.bohmTrail > 0) {
+      p.trail.push({ x: p.x, y: p.y });
+      if (p.trail.length > state.bohmTrail) p.trail.shift();
+    } else {
+      p.trail.length = 0;
+    }
+  }
+}
+
+function drawBohm() {
+  if (!state.showBohm) return;
+  ctx.save();
+  ctx.lineWidth = 1;
+  for (const p of state.bohm) {
+    if (p.trail.length >= 2) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.beginPath();
+      const s0 = worldToScreen(p.trail[0].x, p.trail[0].y);
+      ctx.moveTo(s0.x, s0.y);
+      for (let k = 1; k < p.trail.length; k++) {
+        const s = worldToScreen(p.trail[k].x, p.trail[k].y);
+        ctx.lineTo(s.x, s.y);
+      }
+      ctx.stroke();
+    }
+    const s = worldToScreen(p.x, p.y);
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+/* ============================================================
+   Medida: colapso proyectivo
+   ============================================================ */
+function measurePosition() {
+  // Muestrea una posición de |ψ|² y colapsa ψ a un gaussiano estrecho en ella
+  const N = state.N, dx = state.dx;
+  const re = state.psiRe, im = state.psiIm;
+  let total = 0;
+  for (let i = 0; i < re.length; i++) total += re[i] * re[i] + im[i] * im[i];
+  if (total < 1e-14) return;
+  const target = Math.random() * total;
+  let acc = 0, chosen = 0;
+  for (let i = 0; i < re.length; i++) {
+    acc += re[i] * re[i] + im[i] * im[i];
+    if (acc >= target) { chosen = i; break; }
+  }
+  const ci = chosen % N, cj = (chosen / N) | 0;
+  const cx = state.xGrid[ci], cy = state.yGrid[cj];
+  collapseToGaussian(cx, cy, state.collapseSigma);
+  // Resamplear bohmianos en el nuevo estado
+  sampleBohmianParticles();
+  toast(`Medida: (${cx.toFixed(2)}, ${cy.toFixed(2)}) · ψ colapsada`);
+}
+
+function measurePositionX() {
+  // Medida de posición en x: proyecta a un autoestado de x (colapso en columna gaussiana)
+  // Calcula |ψ(x)|² marginalizando y, samplea x, colapsa a gaussiana en x (manteniendo y)
+  const N = state.N;
+  const re = state.psiRe, im = state.psiIm;
+  const margin = new Float64Array(N);
+  let total = 0;
+  for (let i = 0; i < N; i++) {
+    let s = 0;
+    for (let j = 0; j < N; j++) {
+      const idx = j * N + i;
+      s += re[idx] * re[idx] + im[idx] * im[idx];
+    }
+    margin[i] = s;
+    total += s;
+  }
+  if (total < 1e-14) return;
+  const target = Math.random() * total;
+  let acc = 0, chosenI = 0;
+  for (let i = 0; i < N; i++) {
+    acc += margin[i];
+    if (acc >= target) { chosenI = i; break; }
+  }
+  const cx = state.xGrid[chosenI];
+  const sigma = state.collapseSigma;
+  // Multiplicar ψ por gaussiana en x centrada en cx
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      const x = state.xGrid[i];
+      const env = Math.exp(-((x - cx) * (x - cx)) / (2 * sigma * sigma));
+      const idx = j * N + i;
+      re[idx] *= env; im[idx] *= env;
+    }
+  }
+  normalizePsi();
+  sampleBohmianParticles();
+  toast(`Medida x: x = ${cx.toFixed(2)} · colapso en columna`);
+}
+
+function collapseToGaussian(cx, cy, sigma) {
+  const N = state.N;
+  const re = state.psiRe, im = state.psiIm;
+  for (let j = 0; j < N; j++) {
+    const y = state.yGrid[j];
+    for (let i = 0; i < N; i++) {
+      const x = state.xGrid[i];
+      const env = Math.exp(-(((x - cx) * (x - cx)) + ((y - cy) * (y - cy))) / (2 * sigma * sigma));
+      const idx = j * N + i;
+      re[idx] *= env; im[idx] *= env;
+    }
+  }
+  normalizePsi();
+}
+
+/* ============================================================
+   Gráfico de energía
+   ============================================================ */
+function drawEnergyChart() {
+  const w = chartCanvas.width / (window.devicePixelRatio || 1);
+  const h = chartCanvas.height / (window.devicePixelRatio || 1);
+  if (w <= 0 || h <= 0) return;
+  chartCtx.clearRect(0, 0, w, h);
+
+  const T = state.energyHistory.T;
+  const U = state.energyHistory.U;
+  const E = state.energyHistory.E;
+  if (T.length < 2) return;
+
+  let min = Infinity, max = -Infinity;
+  for (let i = 0; i < T.length; i++) {
+    min = Math.min(min, T[i], U[i], E[i]);
+    max = Math.max(max, T[i], U[i], E[i]);
+  }
+  const range = max - min || 1;
+  const pad = range * 0.1;
+  min -= pad; max += pad;
+
+  chartCtx.strokeStyle = 'rgba(255,255,255,0.05)';
+  chartCtx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = (i / 4) * h;
+    chartCtx.beginPath(); chartCtx.moveTo(0, y); chartCtx.lineTo(w, y); chartCtx.stroke();
+  }
+  function drawLine(arr, color) {
+    chartCtx.strokeStyle = color; chartCtx.lineWidth = 1.5;
+    chartCtx.beginPath();
+    for (let i = 0; i < arr.length; i++) {
+      const x = (i / (state.maxHistory - 1)) * w;
+      const y = h - ((arr[i] - min) / (max - min)) * h;
+      if (i === 0) chartCtx.moveTo(x, y); else chartCtx.lineTo(x, y);
+    }
+    chartCtx.stroke();
+  }
+  drawLine(U, '#c084fc');
+  drawLine(T, '#22d3ee');
+  drawLine(E, '#4ade80');
+}
+
+/* ============================================================
+   Telemetría / UI
+   ============================================================ */
+const $ = id => document.getElementById(id);
+
+function fmtSci(n) {
+  if (!isFinite(n)) return '—';
+  const a = Math.abs(n);
+  if (a === 0) return '0';
+  if (a >= 1e4 || (a < 1e-2 && a > 0)) return n.toExponential(2);
+  if (a >= 100) return n.toFixed(1);
+  if (a >= 1) return n.toFixed(2);
+  return n.toFixed(3);
+}
+
+function updateTelemetry() {
+  const setTxt = (id, txt) => { const el = $(id); if (el) el.textContent = txt; };
+  const m = state.metrics || {};
+
+  setTxt('telTime', state.simTime.toFixed(2));
+  setTxt('telNorm', (m.norm || 0).toFixed(3));
+  setTxt('telFps', state.fps);
+  setTxt('telE', fmtSci(m.E || 0));
+  setTxt('telS', (m.S || 0).toFixed(3));
+  setTxt('telZoom', state.zoom.toFixed(2) + '×');
+
+  // Heisenberg: Δx·Δp / (ℏ/2)
+  const dx = m.dx || 0, dpx = m.dpx || 0;
+  const hp = (dx * dpx) / (state.hbar / 2);
+  setTxt('telHeisenberg', isFinite(hp) ? hp.toFixed(2) : '—');
+
+  setTxt('valMeanX', fmtSci(m.meanX || 0));
+  setTxt('valMeanY', fmtSci(m.meanY || 0));
+  setTxt('valMeanPx', fmtSci(m.meanPx || 0));
+  setTxt('valMeanPy', fmtSci(m.meanPy || 0));
+  setTxt('valDx', fmtSci(m.dx || 0));
+  setTxt('valDp', fmtSci(m.dpx || 0));
+  setTxt('valE', fmtSci(m.E || 0));
+  setTxt('valNorm', (m.norm || 0).toFixed(3));
+  setTxt('valEntropy', (m.S || 0).toFixed(3));
+
+  setTxt('heisenbergValue', isFinite(hp) ? hp.toFixed(2) : '—');
+  const fillPct = Math.min(100, Math.max(0, (hp - 1) * 50 + 30));
+  const fill = $('heisenbergFill');
+  if (fill) fill.style.width = fillPct + '%';
+
+  const dot = $('statusDot');
+  if (dot) {
+    dot.classList.remove('paused', 'observing');
+    if (state.paused) dot.classList.add('paused');
+  }
+  setTxt('statusText', state.paused ? 'PAUSED' : 'RUN');
+
+  const scenarioNames = {
+    free: 'Paquete libre', well: 'Pozo infinito', harmonic: 'Oscilador armónico',
+    tunnel: 'Efecto túnel', double: 'Doble rendija'
+  };
+  setTxt('sbScenario', scenarioNames[state.scenario] || state.scenario);
+  setTxt('sbMass', state.mass.toFixed(1));
+  setTxt('sbDt', state.dt.toFixed(3));
+  setTxt('sbGrid', state.N + '²');
+}
+
+const scenarioNotes = {
+  free: 'Sin potencial. El paquete gaussiano se dispersa siguiendo Δx(t) = √(σ₀² + (ℏt/2mσ₀)²). Comprobación directa del principio de incertidumbre.',
+  well: 'V = 0 dentro de [-6,6]², V = ∞ fuera. Autoestados ψ_nm = sin(nπx/2L) sin(mπy/2L) con E_nm = (π²ℏ²/8mL²)(n²+m²). Las paredes reflejan sin pérdida.',
+  harmonic: 'V = ½mω²(x²+y²), ω = 1. Autoestados Hermite-Gauss, E_nm = ℏω(n+m+1). Un estado coherente oscila sin dispersarse.',
+  tunnel: 'Barrera rectangular V₀ = 6 en x ∈ [0, 0.8]. La función de onda decae exponencialmente dentro de la barrera y emerge con amplitud T = |t|² < 1.',
+  double: 'Pared con DOS rendijas en y = ±0.8. El paquete incidente produce un patrón de interferencia en la región x > 0 con franjas espaciadas Δy = λd/a.'
+};
+function updateScenarioNote() {
+  const el = $('scenarioNote');
+  if (el) el.textContent = scenarioNotes[state.scenario] || '';
+}
+
+/* ============================================================
+   Toast
+   ============================================================ */
+let toastTimer;
+function toast(msg) {
+  $('toastText').textContent = msg;
+  const t = $('toast');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+/* ============================================================
+   Resize / Loop
+   ============================================================ */
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  const rect = chartCanvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  if (rect.width > 0) {
+    chartCanvas.width = rect.width * dpr;
+    chartCanvas.height = rect.height * dpr;
+    chartCtx.setTransform(1, 0, 0, 1, 0, 0);
+    chartCtx.scale(dpr, dpr);
+  }
+}
+
+let frameCount = 0, lastFpsTime = performance.now();
+let metricsCounter = 0;
+
+function loop() {
+  frameCount++;
+  const now = performance.now();
+  if (now - lastFpsTime > 500) {
+    state.fps = Math.round(frameCount * 1000 / (now - lastFpsTime));
+    frameCount = 0; lastFpsTime = now;
+  }
+
+  step();
+  if (state.showBohm) updateBohmian();
+
+  metricsCounter++;
+  if (metricsCounter >= 2) {
+    computeMetrics();
+    state.energyHistory.T.push(state.metrics.T);
+    state.energyHistory.U.push(state.metrics.U);
+    state.energyHistory.E.push(state.metrics.E);
+    if (state.energyHistory.T.length > state.maxHistory) {
+      state.energyHistory.T.shift();
+      state.energyHistory.U.shift();
+      state.energyHistory.E.shift();
+    }
+    metricsCounter = 0;
+  }
+
+  // Fondo
+  ctx.fillStyle = '#05070d';
+  ctx.fillRect(0, 0, W, H);
+
+  // ψ a ImageData
+  renderPsi();
+  // Escalar al canvas completo manteniendo relación
+  const scale = (Math.min(W, H) * 0.42 * state.zoom) / state.L;
+  const drawSize = 2 * state.L * scale;
+  const dx0 = (W - drawSize) / 2 + state.panX;
+  const dy0 = (H - drawSize) / 2 + state.panY;
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(offscreen, dx0, dy0, drawSize, drawSize);
+
+  drawGrid();
+  drawPotentialOverlay();
+  drawBohm();
+
+  if (metricsCounter === 0) drawEnergyChart();
+  updateTelemetry();
+
+  requestAnimationFrame(loop);
+}
+
+/* ============================================================
+   Inicialización y bindings
+   ============================================================ */
+function reinit() {
+  setupGrid();
+  buildPotential();
+  setInitialState();
+  if (state.showBohm) sampleBohmianParticles();
+  state.simTime = 0;
+  state.energyHistory = { T: [], U: [], E: [] };
+  computeMetrics();
+  updateScenarioNote();
+}
+
+function bindSlider(id, valId, prop, fmt, onChange) {
+  const sl = $(id), vl = $(valId);
+  sl.addEventListener('input', e => {
+    const v = parseFloat(e.target.value);
+    state[prop] = v;
+    vl.textContent = fmt(v);
+    if (onChange) onChange(v);
+  });
+}
+
+function bindToggle(id, prop, onChange) {
+  const el = $(id);
+  el.addEventListener('click', () => {
+    state[prop] = !state[prop];
+    el.classList.toggle('on', state[prop]);
+    if (onChange) onChange(state[prop]);
+  });
+}
+
+const drawer = $('drawer'), drawerToggle = $('drawerToggle');
+drawerToggle.addEventListener('click', () => {
+  drawer.classList.toggle('open');
+  drawerToggle.classList.toggle('open');
+});
+
+document.querySelectorAll('.section-header').forEach(h => {
+  h.addEventListener('click', () => h.parentElement.classList.toggle('collapsed'));
+});
+
+bindSlider('slMass', 'valMass', 'mass', v => v.toFixed(1), () => {
+  setupGrid(); buildPotential(); setInitialState();
+});
+bindSlider('slDt', 'valDt', 'dt', v => v.toFixed(3), () => {
+  setupGrid(); buildPotential();
+});
+bindSlider('slSigma', 'valSigma', 'sigma0', v => v.toFixed(1));
+bindSlider('slP0', 'valP0', 'p0', v => v.toFixed(1));
+bindSlider('slBright', 'valBright', 'brightness', v => v.toFixed(1));
+bindSlider('slGamma', 'valGamma', 'gamma', v => v.toFixed(2));
+bindSlider('slCollSigma', 'valCollSigma', 'collapseSigma', v => v.toFixed(2));
+bindSlider('slBohmN', 'valBohmN', 'bohmN', v => v.toFixed(0), () => {
+  if (state.showBohm) sampleBohmianParticles();
+});
+bindSlider('slBohmTrail', 'valBohmTrail', 'bohmTrail', v => v.toFixed(0));
+
+$('selRes').addEventListener('change', e => {
+  state.N = parseInt(e.target.value);
+  $('valN').textContent = state.N + '²';
+  reinit();
+});
+$('selScenario').addEventListener('change', e => {
+  state.scenario = e.target.value;
+  buildPotential(); setInitialState();
+  if (state.showBohm) sampleBohmianParticles();
+  state.simTime = 0;
+  state.energyHistory = { T: [], U: [], E: [] };
+  updateScenarioNote();
+  toast(`Escenario: ${e.target.options[e.target.selectedIndex].text}`);
+});
+$('selState').addEventListener('change', e => {
+  state.initialState = e.target.value;
+  setInitialState();
+  if (state.showBohm) sampleBohmianParticles();
+});
+
+bindToggle('togPotential', 'showPotential');
+bindToggle('togGrid', 'showGrid');
+bindToggle('togBohm', 'showBohm', on => {
+  if (on) sampleBohmianParticles();
+  else state.bohm = [];
+});
+
+// Modos de visualización
+function setVizMode(mode) {
+  state.vizMode = mode;
+  ['btnModeDensity', 'btnModePhase', 'btnModeReal'].forEach(id => {
+    $(id).classList.toggle('active', id === 'btnMode' + mode.charAt(0).toUpperCase() + mode.slice(1));
+  });
+}
+$('btnModeDensity').addEventListener('click', () => setVizMode('density'));
+$('btnModePhase').addEventListener('click', () => setVizMode('phase'));
+$('btnModeReal').addEventListener('click', () => setVizMode('real'));
+
+$('btnCenter').addEventListener('click', () => {
+  state.zoom = 1; state.panX = 0; state.panY = 0;
+  toast('Vista centrada');
+});
+$('btnHelp').addEventListener('click', () => {
+  toast('Solver split-operator de Schrödinger 2D. M = medir posición · B = trayectorias bohmianas · Tab = panel');
+});
+
+$('btnApplyScenario').addEventListener('click', () => {
+  reinit();
+  toast('Escenario aplicado');
+});
+$('btnNormalize').addEventListener('click', () => {
+  normalizePsi();
+  toast('‖ψ‖² normalizada a 1');
+});
+$('btnMeasure').addEventListener('click', measurePosition);
+$('btnMeasureX').addEventListener('click', measurePositionX);
+$('btnReset').addEventListener('click', () => {
+  reinit();
+  toast('Simulación reiniciada');
+});
+$('btnClearTrails').addEventListener('click', () => {
+  for (const p of state.bohm) p.trail = [];
+  toast('Rastros bohmianos limpiados');
+});
+
+$('btnExport').addEventListener('click', () => {
+  const N = state.N;
+  let csv = 'x,y,psi_re,psi_im,rho,phase,V\n';
+  for (let j = 0; j < N; j += 2) {
+    for (let i = 0; i < N; i += 2) {
+      const idx = j * N + i;
+      const r = state.psiRe[idx], im = state.psiIm[idx];
+      const rho = r * r + im * im;
+      const phase = Math.atan2(im, r);
+      csv += `${state.xGrid[i].toFixed(3)},${state.yGrid[j].toFixed(3)},${r.toFixed(5)},${im.toFixed(5)},${rho.toFixed(6)},${phase.toFixed(4)},${state.V[idx].toFixed(3)}\n`;
+    }
+  }
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `quantumlab_${state.scenario}_t${state.simTime.toFixed(2)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Datos |ψ|² exportados (CSV)');
+});
+
+$('btnPlay').addEventListener('click', () => {
+  state.paused = !state.paused;
+  const b = $('btnPlay');
+  b.textContent = state.paused ? '▶ Play' : '❚❚ Pausa';
+  b.classList.toggle('playing', !state.paused);
+});
+$('btnStep').addEventListener('click', () => {
+  if (!state.paused) {
+    state.paused = true;
+    $('btnPlay').textContent = '▶ Play';
+    $('btnPlay').classList.remove('playing');
+  }
+  step();
+  computeMetrics();
+});
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const f = e.deltaY < 0 ? 1.1 : 0.9;
+  state.zoom = Math.max(0.2, Math.min(5, state.zoom * f));
+}, { passive: false });
+
+let isDragging = false, dragStart = null;
+canvas.addEventListener('mousedown', e => {
+  isDragging = true;
+  dragStart = { x: e.clientX, y: e.clientY, panX: state.panX, panY: state.panY };
+});
+canvas.addEventListener('mouseup', () => { isDragging = false; });
+canvas.addEventListener('mousemove', e => {
+  if (isDragging && dragStart) {
+    state.panX = dragStart.panX + (e.clientX - dragStart.x);
+    state.panY = dragStart.panY + (e.clientY - dragStart.y);
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.code === 'Space') { e.preventDefault(); $('btnPlay').click(); }
+  else if (e.code === 'Tab') { e.preventDefault(); drawerToggle.click(); }
+  else if (e.code === 'KeyR') $('btnReset').click();
+  else if (e.code === 'KeyS') $('btnStep').click();
+  else if (e.code === 'KeyC') $('btnCenter').click();
+  else if (e.code === 'KeyM') $('btnMeasure').click();
+  else if (e.code === 'KeyB') $('togBohm').click();
+});
+
+// Arranque
+resize();
+window.addEventListener('resize', resize);
+reinit();
+loop();
+toast('QuantumLab v3.0 listo · Solver split-operator de Schrödinger 2D');
+</script>
+</body>
+</html>

@@ -1,0 +1,2433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Péndulo Doble Caótico · Simulador Universitario</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-400-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-600-normal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/fonts/jetbrains-mono@latest/latin-400-normal.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root {
+    --bg-0: #05070d;
+    --bg-1: #0a0f1c;
+    --bg-2: #111827;
+    --accent-1: #22d3ee;
+    --accent-2: #f472b6;
+    --accent-3: #a78bfa;
+    --accent-4: #34d399;
+    --accent-5: #fbbf24;
+    --text-0: #e5e7eb;
+    --text-1: #9ca3af;
+    --border: rgba(255,255,255,0.08);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg-0);
+    color: var(--text-0);
+    font-family: 'Inter', system-ui, sans-serif;
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  .grid-bg {
+    background-image:
+      radial-gradient(ellipse at top, rgba(34,211,238,0.08), transparent 60%),
+      radial-gradient(ellipse at bottom, rgba(244,114,182,0.06), transparent 60%),
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: auto, auto, 40px 40px, 40px 40px;
+  }
+
+  #simCanvas { display: block; width: 100%; height: 100%; cursor: default; }
+  #simCanvas.dragging { cursor: grabbing; }
+
+  .drawer {
+    position: fixed;
+    top: 0; left: 0;
+    height: 100vh;
+    width: 380px;
+    background: rgba(10, 15, 28, 0.85);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border-right: 1px solid var(--border);
+    transform: translateX(0);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 4px 0 40px rgba(0,0,0,0.5);
+  }
+  .drawer.closed { transform: translateX(-100%); }
+
+  .drawer-toggle {
+    position: fixed;
+    top: 16px; left: 16px;
+    width: 44px; height: 44px;
+    background: rgba(10, 15, 28, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-0);
+    cursor: pointer;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+  }
+  .drawer-toggle:hover {
+    background: rgba(34,211,238,0.15);
+    border-color: var(--accent-1);
+    transform: scale(1.05);
+  }
+  .drawer.open ~ .drawer-toggle { left: 396px; }
+
+  .section { border-bottom: 1px solid var(--border); }
+  .section-header {
+    padding: 14px 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+    transition: background 0.2s;
+  }
+  .section-header:hover { background: rgba(255,255,255,0.03); }
+  .section-header h3 {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-1);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-header .chevron { transition: transform 0.3s; color: var(--text-1); }
+  .section.collapsed .chevron { transform: rotate(-90deg); }
+  .section-body {
+    padding: 0 20px 16px;
+    max-height: 2000px;
+    overflow: hidden;
+    transition: max-height 0.4s ease, padding 0.3s ease;
+  }
+  .section.collapsed .section-body {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .control-row { margin-bottom: 14px; }
+  .control-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--text-1);
+    margin-bottom: 6px;
+    letter-spacing: 0.04em;
+  }
+  .control-value {
+    color: var(--accent-1);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: rgba(34,211,238,0.08);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(34,211,238,0.15);
+  }
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent-1);
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(34,211,238,0.6);
+    border: 2px solid var(--bg-0);
+  }
+  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+  input[type="range"]::-moz-range-thumb {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent-1);
+    cursor: pointer;
+    border: 2px solid var(--bg-0);
+    box-shadow: 0 0 10px rgba(34,211,238,0.6);
+  }
+
+  .btn {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.03);
+    color: var(--text-0);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: inherit;
+  }
+  .btn:hover { background: rgba(255,255,255,0.08); transform: translateY(-1px); }
+  .btn-primary {
+    background: linear-gradient(135deg, rgba(34,211,238,0.2), rgba(167,139,250,0.2));
+    border-color: rgba(34,211,238,0.3);
+    color: var(--accent-1);
+  }
+  .btn-primary:hover {
+    background: linear-gradient(135deg, rgba(34,211,238,0.3), rgba(167,139,250,0.3));
+    box-shadow: 0 4px 20px rgba(34,211,238,0.2);
+  }
+  .btn-add {
+    width: 100%;
+    justify-content: center;
+    padding: 10px;
+    background: linear-gradient(135deg, rgba(167,139,250,0.15), rgba(244,114,182,0.15));
+    border-color: rgba(167,139,250,0.3);
+    color: var(--accent-3);
+  }
+  .btn-add:hover {
+    background: linear-gradient(135deg, rgba(167,139,250,0.25), rgba(244,114,182,0.25));
+    box-shadow: 0 4px 20px rgba(167,139,250,0.2);
+  }
+  .btn-copy {
+    width: 100%;
+    justify-content: center;
+    padding: 8px 10px;
+    background: linear-gradient(135deg, rgba(52,211,153,0.12), rgba(34,211,238,0.12));
+    border-color: rgba(52,211,153,0.3);
+    color: var(--accent-4);
+    font-size: 11px;
+    margin-top: 8px;
+  }
+  .btn-copy:hover {
+    background: linear-gradient(135deg, rgba(52,211,153,0.22), rgba(34,211,238,0.22));
+    box-shadow: 0 4px 20px rgba(52,211,153,0.2);
+  }
+  .btn-copy.copied {
+    background: rgba(52,211,153,0.25);
+    color: #fff;
+  }
+
+  .toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 12px;
+    color: var(--text-1);
+  }
+  .toggle {
+    position: relative;
+    width: 36px; height: 20px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 16px; height: 16px;
+    background: var(--text-1);
+    border-radius: 50%;
+    transition: all 0.2s;
+  }
+  .toggle.on { background: rgba(34,211,238,0.3); }
+  .toggle.on::after {
+    left: 18px;
+    background: var(--accent-1);
+    box-shadow: 0 0 8px var(--accent-1);
+  }
+  .toggle.on.green { background: rgba(52,211,153,0.3); }
+  .toggle.on.green::after {
+    background: var(--accent-4);
+    box-shadow: 0 0 8px var(--accent-4);
+  }
+
+  .metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+  .metric-label { font-size: 11px; color: var(--text-1); letter-spacing: 0.04em; }
+  .metric-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--accent-1);
+    font-weight: 600;
+  }
+  .metric-value.warn { color: #fbbf24; }
+  .metric-value.danger { color: #f472b6; }
+
+  .info-overlay {
+    position: fixed;
+    top: 16px; right: 16px;
+    padding: 12px 16px;
+    background: rgba(10, 15, 28, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 11px;
+    color: var(--text-1);
+    z-index: 40;
+    max-width: 260px;
+    line-height: 1.5;
+    pointer-events: none;
+  }
+  .info-overlay strong { color: var(--accent-1); }
+
+  .drawer-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(34,211,238,0.05), transparent);
+  }
+  .drawer-header h1 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 4px;
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .drawer-header p {
+    font-size: 11px;
+    color: var(--text-1);
+    margin: 0;
+    letter-spacing: 0.04em;
+  }
+
+  .drawer-content { flex: 1; overflow-y: auto; overflow-x: hidden; }
+  .drawer-content::-webkit-scrollbar { width: 6px; }
+  .drawer-content::-webkit-scrollbar-track { background: transparent; }
+  .drawer-content::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+  }
+
+  .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .preset-btn {
+    padding: 8px;
+    font-size: 10px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-1);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .preset-btn:hover {
+    background: rgba(34,211,238,0.1);
+    border-color: rgba(34,211,238,0.3);
+    color: var(--accent-1);
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 8px #10b981;
+    margin-right: 6px;
+    animation: pulse 2s infinite;
+  }
+  .status-dot.paused {
+    background: #fbbf24;
+    box-shadow: 0 0 8px #fbbf24;
+    animation: none;
+  }
+  .status-dot.dragging {
+    background: #a78bfa;
+    box-shadow: 0 0 8px #a78bfa;
+    animation: none;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .drawer-footer {
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    font-size: 10px;
+    color: var(--text-1);
+    text-align: center;
+    background: rgba(0,0,0,0.2);
+  }
+
+  .pendulum-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s, opacity 0.2s;
+  }
+  .pendulum-card:hover { border-color: rgba(255,255,255,0.15); }
+  .pendulum-card.disabled { opacity: 0.45; }
+  .pendulum-card.copied {
+    border-color: rgba(52,211,153,0.4);
+    box-shadow: inset 0 0 0 1px rgba(52,211,153,0.1);
+  }
+
+  .pendulum-card-header {
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,255,255,0.02);
+    user-select: none;
+  }
+  .pendulum-color-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 8px currentColor;
+  }
+  .pendulum-card-title {
+    flex: 1;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-0);
+  }
+  .pendulum-card-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .icon-btn {
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.03);
+    color: var(--text-1);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    font-size: 11px;
+    padding: 0;
+  }
+  .icon-btn:hover {
+    background: rgba(255,255,255,0.08);
+    color: var(--text-0);
+  }
+  .icon-btn.delete:hover {
+    background: rgba(244,114,182,0.15);
+    border-color: rgba(244,114,182,0.4);
+    color: var(--accent-2);
+  }
+
+  .pendulum-card-body {
+    padding: 10px 12px 14px;
+    max-height: 800px;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+  }
+  .pendulum-card.collapsed .pendulum-card-body {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  .pendulum-card .control-row { margin-bottom: 10px; }
+  .pendulum-card .control-label { font-size: 10px; margin-bottom: 4px; }
+
+  .copy-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: rgba(52,211,153,0.08);
+    border: 1px solid rgba(52,211,153,0.2);
+    border-radius: 6px;
+    margin-bottom: 10px;
+    font-size: 10px;
+    color: var(--accent-4);
+    line-height: 1.4;
+  }
+  .copy-banner.not-copied {
+    background: rgba(251,191,36,0.06);
+    border-color: rgba(251,191,36,0.2);
+    color: #fbbf24;
+  }
+  .copy-banner-icon { font-size: 14px; flex-shrink: 0; }
+
+  .empty-state {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-1);
+    font-size: 11px;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+
+  .global-sync-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: linear-gradient(135deg, rgba(52,211,153,0.08), rgba(34,211,238,0.05));
+    border: 1px solid rgba(52,211,153,0.2);
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+  .global-sync-row .label {
+    font-size: 11px;
+    color: var(--accent-4);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .global-sync-row .sublabel {
+    font-size: 9px;
+    color: var(--text-1);
+    margin-top: 2px;
+  }
+
+  .drag-hint {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 16px;
+    background: rgba(167, 139, 250, 0.15);
+    border: 1px solid rgba(167, 139, 250, 0.3);
+    border-radius: 20px;
+    font-size: 11px;
+    color: var(--accent-3);
+    backdrop-filter: blur(10px);
+    z-index: 40;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .drag-hint.visible { opacity: 1; }
+
+  .pendulum-counter {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 8px 14px;
+    background: rgba(10, 15, 28, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 11px;
+    color: var(--text-1);
+    z-index: 40;
+    pointer-events: none;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .pendulum-counter strong { color: var(--accent-1); }
+
+  @media (max-width: 768px) {
+    .drawer { width: 340px; }
+    .drawer.open ~ .drawer-toggle { left: 356px; }
+  }
+</style>
+</head>
+<body class="grid-bg">
+
+<canvas id="simCanvas"></canvas>
+
+<button class="drawer-toggle" id="drawerToggle" title="Panel de control">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="3" y1="6" x2="21" y2="6"/>
+    <line x1="3" y1="12" x2="21" y2="12"/>
+    <line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+</button>
+
+<aside class="drawer open" id="drawer">
+  <div class="drawer-header">
+    <h1>⚛ Péndulo Doble Caótico</h1>
+    <p>Simulador Universitario · Mecánica Lagrangiana</p>
+  </div>
+
+  <div class="drawer-content">
+
+    <div class="section">
+      <div class="section-header">
+        <h3><span>▶</span> Control de Simulación</h3>
+        <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="section-body">
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-primary" id="btnPlay">▶ Iniciar</button>
+          <button class="btn" id="btnPause">⏸ Pausa</button>
+          <button class="btn" id="btnReset">↻ Reiniciar</button>
+        </div>
+        <div class="control-row" style="margin-top:14px;">
+          <div class="control-label"><span>Velocidad de simulación</span><span class="control-value" id="valSpeed">1.0×</span></div>
+          <input type="range" id="speed" min="0.1" max="3" step="0.1" value="1">
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <h3><span>⚖</span> Parámetros Globales</h3>
+        <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="section-body">
+        <div class="control-row">
+          <div class="control-label"><span>Gravedad (g)</span><span class="control-value" id="valG">9.81 m/s²</span></div>
+          <input type="range" id="gravity" min="0" max="25" step="0.1" value="9.81">
+        </div>
+        <div class="control-row">
+          <div class="control-label"><span>Amortiguamiento</span><span class="control-value" id="valDamp">0.000</span></div>
+          <input type="range" id="damping" min="0" max="0.5" step="0.005" value="0">
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <h3><span>🎯</span> Péndulo Primario</h3>
+        <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="section-body">
+        <div class="control-row">
+          <div class="control-label"><span>Longitud L₁</span><span class="control-value" id="valL1">1.50 m</span></div>
+          <input type="range" id="L1" min="0.3" max="3" step="0.05" value="1.5">
+        </div>
+        <div class="control-row">
+          <div class="control-label"><span>Longitud L₂</span><span class="control-value" id="valL2">1.50 m</span></div>
+          <input type="range" id="L2" min="0.3" max="3" step="0.05" value="1.5">
+        </div>
+        <div class="control-row">
+          <div class="control-label"><span>Masa m₁</span><span class="control-value" id="valM1">1.50 kg</span></div>
+          <input type="range" id="M1" min="0.1" max="5" step="0.1" value="1.5">
+        </div>
+        <div class="control-row">
+          <div class="control-label"><span>Masa m₂</span><span class="control-value" id="valM2">1.50 kg</span></div>
+          <input type="range" id="M2" min="0.1" max="5" step="0.1" value="1.5">
+        </div>
+        <div class="control-row">
+          <div class="control-label"><span>Ángulo θ₁</span><span class="control-value" id="valT1">120.0°</span></div>
+          <input type="range" id="theta1" min="-180" max="180" step="1" value="120">
+        </div>
+        <div class="control-row">
+          <div class="control-label"><span>Ángulo θ₂</span><span class="control-value" id="valT2">120.0°</span></div>
+          <input type="range" id="theta2" min="-180" max="180" step="1" value="120">
+        </div>
+        <div class="control-row">
+          <div class="control-label"><span>Vel. angular ω₁</span><span class="control-value" id="valW1">0.00 rad/s</span></div>
+          <input type="range" id="omega1" min="-10" max="10" step="0.1" value="0">
+        </div>
+        <div class="control-row">
+          <div class="control-label"><span>Vel. angular ω₂</span><span class="control-value" id="valW2">0.00 rad/s</span></div>
+          <input type="range" id="omega2" min="-10" max="10" step="0.1" value="0">
+        </div>
+        <div style="font-size:10px; color:var(--text-1); margin-top:8px; padding:8px; background:rgba(167,139,250,0.05); border-radius:6px; border-left:2px solid var(--accent-3);">
+          💡 <strong style="color:var(--accent-3)">Interacción:</strong> Arrastra las masas <span style="color:#22d3ee">●</span> o <span style="color:#f472b6">●</span> directamente en el canvas.
+        </div>
+      </div>
+    </div>
+
+    <div class="section collapsed">
+      <div class="section-header">
+        <h3><span>🌀</span> Análisis de Caos</h3>
+        <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="section-body">
+        <div class="toggle-row">
+          <span>Activar análisis de sensibilidad</span>
+          <div class="toggle" id="togChaos"></div>
+        </div>
+        <div class="control-row" style="margin-top:8px;">
+          <div class="control-label"><span>Nº de trayectorias adicionales</span><span class="control-value" id="valN">4</span></div>
+          <input type="range" id="nPendulums" min="1" max="20" step="1" value="4">
+        </div>
+        <div class="control-row">
+          <div class="control-label"><span>Perturbación inicial Δθ</span><span class="control-value" id="valDelta">0.001°</span></div>
+          <input type="range" id="delta" min="0.0001" max="0.1" step="0.0001" value="0.001">
+        </div>
+        <div style="font-size:10px; color:var(--text-1); margin-top:8px; padding:8px; background:rgba(244,114,182,0.05); border-radius:6px; border-left:2px solid var(--accent-2);">
+          ⚠️ <strong style="color:var(--accent-2)">Atención:</strong> Al activar, se añadirán <em>N trayectorias adicionales</em> con perturbaciones Δθ. Úsalo para estudiar la sensibilidad a condiciones iniciales.
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <h3><span>➕</span> Péndulos Personalizados</h3>
+        <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="section-body">
+
+        <div class="global-sync-row">
+          <div>
+            <div class="label">📐 Tamaño igual al primario</div>
+            <div class="sublabel">Usa el mismo origen, escala y radios visuales</div>
+          </div>
+          <div class="toggle on green" id="togGlobalSync"></div>
+        </div>
+
+        <div id="pendulumList">
+          <div class="empty-state" id="emptyPendulums">
+            No hay péndulos personalizados.<br>
+            Agrega uno para comparar configuraciones.
+          </div>
+        </div>
+        <button class="btn btn-add" id="btnAddPendulum">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Agregar péndulo
+        </button>
+        <button class="btn btn-copy" id="btnCopyAllFromPrimary" style="margin-top:8px;">
+          📋 Copiar primario a todos los péndulos
+        </button>
+        <div style="font-size:10px; color:var(--text-1); margin-top:10px; padding:8px; background:rgba(52,211,153,0.05); border-radius:6px; border-left:2px solid var(--accent-4);">
+          💡 <strong style="color:var(--accent-4)">Clonar:</strong> Usa <strong>"📋 Copiar del primario"</strong> para replicar exactamente L₁, L₂, m₁, m₂, θ₁, θ₂, ω₁, ω₂.
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <h3><span>🎨</span> Visualización</h3>
+        <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="section-body">
+        <div class="toggle-row">
+          <span>Mostrar rastros</span>
+          <div class="toggle on" id="togTrails"></div>
+        </div>
+        <div class="toggle-row">
+          <span>Mostrar energía</span>
+          <div class="toggle on" id="togEnergy"></div>
+        </div>
+        <div class="toggle-row">
+          <span>Espacio de fases (θ₂, ω₂)</span>
+          <div class="toggle" id="togPhase"></div>
+        </div>
+        <div class="toggle-row">
+          <span>Mostrar vectores velocidad</span>
+          <div class="toggle" id="togVectors"></div>
+        </div>
+        <div class="toggle-row">
+          <span>Etiquetar péndulos</span>
+          <div class="toggle on" id="togLabels"></div>
+        </div>
+        <div class="control-row" style="margin-top:8px;">
+          <div class="control-label"><span>Longitud del rastro</span><span class="control-value" id="valTrail">400</span></div>
+          <input type="range" id="trailLen" min="50" max="1500" step="50" value="400">
+        </div>
+        <!-- ✅ Controles de Pan/Zoom -->
+        <div style="margin-top:14px; padding:10px; background:rgba(167,139,250,0.06); border-radius:8px; border:1px solid rgba(167,139,250,0.2);">
+          <div style="font-size:11px; color:var(--accent-3); font-weight:600; margin-bottom:8px; letter-spacing:0.04em;">🗺️ NAVEGACIÓN DE VISTA</div>
+          <div style="font-size:10px; color:var(--text-1); margin-bottom:10px; line-height:1.5;">
+            <strong style="color:var(--accent-3)">Arrastra el fondo</strong> para mover la vista.<br>
+            <strong style="color:var(--accent-3)">Rueda del mouse</strong> para hacer zoom.
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button class="btn" id="btnZoomOut" style="flex:1; padding:6px;">− Zoom</button>
+            <button class="btn" id="btnZoomReset" style="flex:1; padding:6px;">📏 Reset</button>
+            <button class="btn" id="btnZoomIn" style="flex:1; padding:6px;">+ Zoom</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <h3><span>📚</span> Presets Académicos</h3>
+        <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="section-body">
+        <div class="preset-grid">
+          <button class="preset-btn" data-preset="low">Baja energía</button>
+          <button class="preset-btn" data-preset="chaos">Caos máximo</button>
+          <button class="preset-btn" data-preset="sym">Simétrico</button>
+          <button class="preset-btn" data-preset="asym">Asimétrico</button>
+          <button class="preset-btn" data-preset="moon">Gravedad lunar</button>
+          <button class="preset-btn" data-preset="heavy">Masa pesada</button>
+          <button class="preset-btn" data-preset="compare" style="grid-column: span 2;">Comparar: corto vs largo</button>
+          <button class="preset-btn" data-preset="masses" style="grid-column: span 2;">Comparar: masas distintas</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <h3><span>📊</span> Métricas en Tiempo Real</h3>
+        <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="section-body">
+        <div class="metric">
+          <span class="metric-label">Exponente de Lyapunov λ</span>
+          <span class="metric-value" id="mLyap">0.000</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Energía cinética T</span>
+          <span class="metric-value" id="mKE">0.00 J</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Energía potencial V</span>
+          <span class="metric-value" id="mPE">0.00 J</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Energía total E</span>
+          <span class="metric-value" id="mE">0.00 J</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Tiempo simulado</span>
+          <span class="metric-value" id="mTime">0.00 s</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Péndulos en pantalla</span>
+          <span class="metric-value" id="mCount">1</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Estado del sistema</span>
+          <span class="metric-value" id="mState"><span class="status-dot"></span>Determinista</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="drawer-footer">
+    Integrador RK4 · Ecuaciones de Lagrange · v7.1
+  </div>
+</aside>
+
+<div class="info-overlay" id="infoOverlay">
+  <strong>Sistema no lineal</strong><br>
+  Arrastra las masas en el canvas para posicionar manualmente cualquier péndulo.
+</div>
+
+<div class="drag-hint" id="dragHint">🖱 Arrastrando masa · θ actualizado</div>
+
+<div class="pendulum-counter" id="pendulumCounter">
+  En pantalla: <strong id="counterValue">1</strong> péndulo(s)
+</div>
+
+<script>
+// ============================================================
+// PÉNDULO DOBLE CAÓTICO · Simulador Universitario v7.1
+// FIX: Los péndulos personalizados ahora se muestran correctamente
+// al copiar parámetros sin necesidad de togglear la visibilidad.
+// ============================================================
+
+const canvas = document.getElementById('simCanvas');
+const ctx = canvas.getContext('2d');
+const dragHint = document.getElementById('dragHint');
+
+let W, H, originX, originY, scale;
+
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  originX = W / 2;
+  originY = H * 0.35;
+  scale = Math.min(W, H) * 0.13;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ============================================================
+// ESTADO GLOBAL
+// ============================================================
+const state = {
+  running: false,
+  time: 0,
+  speed: 1.0,
+  g: 9.81,
+  damping: 0.0,
+  L1: 1.5, L2: 1.5,
+  m1: 1.5, m2: 1.5,
+  theta1_0: 120 * Math.PI / 180,
+  theta2_0: 120 * Math.PI / 180,
+  omega1_0: 0,
+  omega2_0: 0,
+  nPendulums: 4,
+  delta: 0.001 * Math.PI / 180,
+  showChaos: false,
+  showTrails: true,
+  showEnergy: true,
+  showPhase: false,
+  showVectors: false,
+  showLabels: true,
+  trailLen: 400,
+  globalSync: true,
+  lyapunov: 0,
+  energyHistory: [],
+  phaseHistory: [],
+  // ✅ Pan & Zoom para navegar la vista
+  panX: 0,
+  panY: 0,
+  zoom: 1,
+};
+
+const COLOR_PALETTE = [
+  { h: 280 }, { h: 140 }, { h: 40 }, { h: 200 }, { h: 320 },
+  { h: 170 }, { h: 20 }, { h: 260 }, { h: 90 }, { h: 0 },
+];
+
+// ============================================================
+// SISTEMA DE PÉNDULOS
+// ============================================================
+let primaryPendulum = null;
+let chaosPendulums = [];
+let customPendulums = [];
+let nextPendulumId = 1;
+
+function createPrimaryPendulum() {
+  primaryPendulum = {
+    type: 'primary',
+    theta1: state.theta1_0,
+    theta2: state.theta2_0,
+    omega1: state.omega1_0,
+    omega2: state.omega2_0,
+    trail: [],
+    energyHistory: [],
+    lastX: null, lastY: null,
+    lastX1: null, lastY1: null,
+  };
+}
+
+function createChaosPendulums() {
+  chaosPendulums = [];
+  if (!state.showChaos) return;
+  const n = state.nPendulums;
+  for (let i = 0; i < n; i++) {
+    const perturbation = state.delta * (i + 1);
+    chaosPendulums.push({
+      type: 'chaos',
+      theta1: state.theta1_0 + perturbation,
+      theta2: state.theta2_0 + perturbation,
+      omega1: state.omega1_0,
+      omega2: state.omega2_0,
+      trail: [],
+      energyHistory: [],
+      lastX: null, lastY: null,
+      lastX1: null, lastY1: null,
+      hue: 200 + (i / n) * 160,
+    });
+  }
+}
+
+function createCustomPendulum(overrides = {}) {
+  const colorIdx = (nextPendulumId - 1) % COLOR_PALETTE.length;
+  const color = COLOR_PALETTE[colorIdx];
+  const p = {
+    id: nextPendulumId++,
+    name: overrides.name || `Péndulo ${nextPendulumId - 1}`,
+    enabled: true, // ✅ SIEMPRE habilitado al crear
+    hue: color.h,
+    L1: overrides.L1 ?? 1.5,
+    L2: overrides.L2 ?? 1.5,
+    m1: overrides.m1 ?? 1.5,
+    m2: overrides.m2 ?? 1.5,
+    theta1: (overrides.theta1 ?? 90) * Math.PI / 180,
+    theta2: (overrides.theta2 ?? 90) * Math.PI / 180,
+    omega1: overrides.omega1 ?? 0,
+    omega2: overrides.omega2 ?? 0,
+    trail: [],
+    energyHistory: [],
+    lastX: null, lastY: null,
+    lastX1: null, lastY1: null,
+    copiedFromPrimary: overrides.copiedFromPrimary ?? false,
+    // ✅ FIX DEFENSIVO: Marca para destello visual al agregar
+    justAdded: performance.now(),
+  };
+  customPendulums.push(p);
+  renderPendulumList();
+  updatePendulumCounter();
+  return p;
+}
+
+function removeCustomPendulum(id) {
+  customPendulums = customPendulums.filter(p => p.id !== id);
+  renderPendulumList();
+  updatePendulumCounter();
+}
+
+function resetAllPendulums() {
+  createPrimaryPendulum();
+  createChaosPendulums();
+  customPendulums.forEach(p => {
+    p.trail = [];
+    p.energyHistory = [];
+    p.lastX = null; p.lastY = null;
+    p.lastX1 = null; p.lastY1 = null;
+  });
+}
+
+// ✅ FIX CRÍTICO: Ahora esta función NO modifica "enabled"
+function copyPrimaryToCustom(p) {
+  p.L1 = state.L1;
+  p.L2 = state.L2;
+  p.m1 = state.m1;
+  p.m2 = state.m2;
+  p.theta1 = state.theta1_0;
+  p.theta2 = state.theta2_0;
+  p.omega1 = state.omega1_0;
+  p.omega2 = state.omega2_0;
+  p.copiedFromPrimary = true;
+  p.trail = [];
+  p.energyHistory = [];
+  p.lastX = null; p.lastY = null;
+  p.lastX1 = null; p.lastY1 = null;
+
+  // ✅ Asegurar que esté habilitado
+  p.enabled = true;
+
+  renderPendulumList();
+  updatePendulumCounter();
+}
+
+createPrimaryPendulum();
+createChaosPendulums();
+
+function countVisiblePendulums() {
+  let count = 1;
+  if (state.showChaos) count += chaosPendulums.length;
+  count += customPendulums.filter(p => p.enabled).length;
+  return count;
+}
+
+function updatePendulumCounter() {
+  const count = countVisiblePendulums();
+  const label = count === 1 ? 'péndulo' : 'péndulos';
+  // ✅ FIX: Preservar id="counterValue" para que la función pueda
+  // llamarse múltiples veces sin lanzar TypeError.
+  document.getElementById('pendulumCounter').innerHTML =
+    `En pantalla: <strong id="counterValue">${count}</strong> ${label}`;
+}
+
+// ============================================================
+// ECUACIONES DEL MOVIMIENTO
+// ============================================================
+function derivatives(th1, th2, w1, w2, params) {
+  const { g, L1, L2, m1, m2, damping } = params;
+  const delta = th1 - th2;
+  const sinD = Math.sin(delta);
+  const cosD = Math.cos(delta);
+  const den = 2*m1 + m2 - m2*Math.cos(2*delta);
+
+  const alpha1 = (-g*(2*m1+m2)*Math.sin(th1)
+                  - m2*g*Math.sin(th1 - 2*th2)
+                  - 2*sinD*m2*(w2*w2*L2 + w1*w1*L1*cosD))
+                 / (L1 * den);
+
+  const alpha2 = (2*sinD*(w1*w1*L1*(m1+m2)
+                  + g*(m1+m2)*Math.cos(th1)
+                  + w2*w2*L2*m2*cosD))
+                 / (L2 * den);
+
+  return [w1, w2, alpha1 - damping*w1, alpha2 - damping*w2];
+}
+
+function rk4Step(p, dt, params) {
+  const s = [p.theta1, p.theta2, p.omega1, p.omega2];
+  const k1 = derivatives(s[0], s[1], s[2], s[3], params);
+  const s2 = s.map((v,i) => v + k1[i]*dt/2);
+  const k2 = derivatives(s2[0], s2[1], s2[2], s2[3], params);
+  const s3 = s.map((v,i) => v + k2[i]*dt/2);
+  const k3 = derivatives(s3[0], s3[1], s3[2], s3[3], params);
+  const s4 = s.map((v,i) => v + k3[i]*dt);
+  const k4 = derivatives(s4[0], s4[1], s4[2], s4[3], params);
+
+  p.theta1 = s[0] + (k1[0] + 2*k2[0] + 2*k3[0] + k4[0]) * dt/6;
+  p.theta2 = s[1] + (k1[1] + 2*k2[1] + 2*k3[1] + k4[1]) * dt/6;
+  p.omega1 = s[2] + (k1[2] + 2*k2[2] + 2*k3[2] + k4[2]) * dt/6;
+  p.omega2 = s[3] + (k1[3] + 2*k2[3] + 2*k3[3] + k4[3]) * dt/6;
+}
+
+function computeEnergy(p, params) {
+  const { g, L1, L2, m1, m2 } = params;
+  const { theta1: t1, theta2: t2, omega1: w1, omega2: w2 } = p;
+  const vx1 = L1 * w1 * Math.cos(t1);
+  const vy1 = L1 * w1 * Math.sin(t1);
+  const vx2 = vx1 + L2 * w2 * Math.cos(t2);
+  const vy2 = vy1 + L2 * w2 * Math.sin(t2);
+  const KE = 0.5 * m1 * (vx1*vx1 + vy1*vy1) + 0.5 * m2 * (vx2*vx2 + vy2*vy2);
+  const PE = -(m1+m2)*g*L1*Math.cos(t1) - m2*g*L2*Math.cos(t2);
+  return { KE, PE, E: KE + PE };
+}
+
+function computeLyapunov() {
+  if (!state.showChaos || chaosPendulums.length === 0) return 0;
+  const p0 = primaryPendulum;
+  const p1 = chaosPendulums[0];
+  const dth1 = p1.theta1 - p0.theta1;
+  const dth2 = p1.theta2 - p0.theta2;
+  const dist = Math.sqrt(dth1*dth1 + dth2*dth2);
+  if (dist < 1e-15 || state.time < 0.1) return 0;
+  return Math.log(dist / state.delta) / state.time;
+}
+
+// ============================================================
+// CÁLCULO DE POSICIONES
+// ============================================================
+function getPositions(p, params) {
+  const { L1, L2 } = params;
+  // ✅ Aplicar pan y zoom al origen y escala
+  const ox = originX + state.panX;
+  const oy = originY + state.panY;
+  const s = scale * state.zoom;
+  const x1 = ox + L1 * s * Math.sin(p.theta1);
+  const y1 = oy + L1 * s * Math.cos(p.theta1);
+  const x2 = x1 + L2 * s * Math.sin(p.theta2);
+  const y2 = y1 + L2 * s * Math.cos(p.theta2);
+  return { x1, y1, x2, y2, ox, oy };
+}
+
+function getMassRadios(params, usePrimarySize) {
+  if (usePrimarySize || state.globalSync) {
+    return {
+      r1: 10 + state.m1 * 2,
+      r2: 10 + state.m2 * 2,
+    };
+  }
+  return {
+    r1: 6 + params.m1 * 1.5,
+    r2: 6 + params.m2 * 1.5,
+  };
+}
+
+// ============================================================
+// RENDERIZADO
+// ============================================================
+function drawPendulum(p, params, options) {
+  const { isPrimary = false, hue = 200, showArms = false, showMass = false, usePrimarySize = false, isDragTarget = false, label = null } = options;
+  const { x1, y1, x2, y2, ox, oy } = getPositions(p, params);
+  const { r1, r2 } = getMassRadios(params, usePrimarySize);
+
+  if (state.showTrails && p.trail.length > 1) {
+    ctx.lineWidth = isPrimary ? 1.8 : 1;
+    // ✅ Transformar coordenadas mundiales (wx, wy) a coordenadas de pantalla
+    // aplicando pan y zoom actuales
+    const trailOriginX = originX + state.panX;
+    const trailOriginY = originY + state.panY;
+    const trailScale = scale * state.zoom;
+    for (let i = 1; i < p.trail.length; i++) {
+      const alpha = (i / p.trail.length) * (isPrimary ? 0.85 : 0.5);
+      ctx.strokeStyle = `hsla(${hue}, 80%, 60%, ${alpha})`;
+      ctx.beginPath();
+      ctx.moveTo(trailOriginX + p.trail[i-1].wx * trailScale,
+                 trailOriginY + p.trail[i-1].wy * trailScale);
+      ctx.lineTo(trailOriginX + p.trail[i].wx * trailScale,
+                 trailOriginY + p.trail[i].wy * trailScale);
+      ctx.stroke();
+    }
+  }
+
+  if (showArms) {
+    ctx.strokeStyle = `hsla(${hue}, 70%, 70%, 0.45)`;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(ox, oy);
+    ctx.lineTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+
+  if (showMass) {
+    const grad1 = ctx.createRadialGradient(x1, y1, 0, x1, y1, r1*1.5);
+    grad1.addColorStop(0, `hsla(${hue}, 90%, 70%, 1)`);
+    grad1.addColorStop(1, `hsla(${hue}, 90%, 50%, 0.2)`);
+    ctx.fillStyle = grad1;
+    ctx.beginPath();
+    ctx.arc(x1, y1, r1, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = `hsla(${hue}, 90%, 70%, 0.9)`;
+    ctx.lineWidth = isDragTarget ? 2.5 : 1.2;
+    ctx.stroke();
+
+    const grad2 = ctx.createRadialGradient(x2, y2, 0, x2, y2, r2*1.5);
+    grad2.addColorStop(0, `hsla(${hue}, 90%, 70%, 1)`);
+    grad2.addColorStop(1, `hsla(${hue}, 90%, 50%, 0.2)`);
+    ctx.fillStyle = grad2;
+    ctx.beginPath();
+    ctx.arc(x2, y2, r2, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = `hsla(${hue}, 90%, 70%, 0.9)`;
+    ctx.lineWidth = isDragTarget ? 2.5 : 1.2;
+    ctx.stroke();
+
+    if (isDragTarget) {
+      ctx.strokeStyle = `hsla(${hue}, 100%, 75%, 0.6)`;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.arc(x1, y1, r1 + 6, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(x2, y2, r2 + 6, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  if (label && state.showLabels) {
+    ctx.font = '10px JetBrains Mono';
+    const textW = ctx.measureText(label).width + 8;
+    const lx = ox - textW/2;
+    const ly = oy - 22;
+    ctx.fillStyle = `hsla(${hue}, 60%, 15%, 0.85)`;
+    ctx.strokeStyle = `hsla(${hue}, 90%, 60%, 0.6)`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(lx, ly, textW, 16, 4);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = `hsla(${hue}, 90%, 75%, 1)`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, ox, ly + 8);
+    ctx.textAlign = 'start';
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  // ✅ FIX DEFENSIVO: Destello pulsante para péndulos recién agregados
+  if (p.justAdded) {
+    const elapsed = (performance.now() - p.justAdded) / 1000;
+    if (elapsed < 1.5) {
+      const pulse = 0.5 + 0.5 * Math.sin(elapsed * 8);
+      const ringR = 30 + elapsed * 30;
+      ctx.strokeStyle = `hsla(${hue}, 100%, 75%, ${(1 - elapsed/1.5) * pulse})`;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(x2, y2, ringR, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(x1, y1, ringR * 0.7, 0, Math.PI*2);
+      ctx.stroke();
+    } else {
+      p.justAdded = null;
+    }
+  }
+
+  p.lastX = x2;
+  p.lastY = y2;
+  p.lastX1 = x1;
+  p.lastY1 = y1;
+}
+
+function drawPrimaryPendulum() {
+  if (!primaryPendulum) return;
+  const params = {
+    g: state.g, L1: state.L1, L2: state.L2,
+    m1: state.m1, m2: state.m2, damping: state.damping
+  };
+  const p0 = primaryPendulum;
+  // ✅ Usar ox, oy de getPositions (con pan/zoom aplicados)
+  const { x1, y1, x2, y2, ox, oy } = getPositions(p0, params);
+  const r1 = 10 + state.m1*2;
+  const r2 = 10 + state.m2*2;
+
+  if (state.showTrails && p0.trail.length > 1) {
+    ctx.lineWidth = 1.8;
+    // ✅ Transformar coordenadas mundiales a pantalla
+    const trailOriginX = originX + state.panX;
+    const trailOriginY = originY + state.panY;
+    const trailScale = scale * state.zoom;
+    for (let i = 1; i < p0.trail.length; i++) {
+      const alpha = (i / p0.trail.length) * 0.85;
+      ctx.strokeStyle = `rgba(244, 114, 182, ${alpha})`;
+      ctx.beginPath();
+      ctx.moveTo(trailOriginX + p0.trail[i-1].wx * trailScale,
+                 trailOriginY + p0.trail[i-1].wy * trailScale);
+      ctx.lineTo(trailOriginX + p0.trail[i].wx * trailScale,
+                 trailOriginY + p0.trail[i].wy * trailScale);
+      ctx.stroke();
+    }
+  }
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(ox, oy);
+  ctx.lineTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(ox, oy, 4, 0, Math.PI*2);
+  ctx.fill();
+
+  const grad1 = ctx.createRadialGradient(x1, y1, 0, x1, y1, r1*1.5);
+  grad1.addColorStop(0, '#22d3ee');
+  grad1.addColorStop(1, 'rgba(34,211,238,0.2)');
+  ctx.fillStyle = grad1;
+  ctx.beginPath();
+  ctx.arc(x1, y1, r1, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#22d3ee';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  const grad2 = ctx.createRadialGradient(x2, y2, 0, x2, y2, r2*1.5);
+  grad2.addColorStop(0, '#f472b6');
+  grad2.addColorStop(1, 'rgba(244,114,182,0.2)');
+  ctx.fillStyle = grad2;
+  ctx.beginPath();
+  ctx.arc(x2, y2, r2, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#f472b6';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  if (state.showVectors) {
+    const vScale = 8;
+    const vx1 = state.L1 * p0.omega1 * Math.cos(p0.theta1) * vScale;
+    const vy1 = state.L1 * p0.omega1 * Math.sin(p0.theta1) * vScale;
+    ctx.strokeStyle = 'rgba(34,211,238,0.8)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x1 + vx1, y1 + vy1);
+    ctx.stroke();
+
+    const vx2a = state.L1 * p0.omega1 * Math.cos(p0.theta1) + state.L2 * p0.omega2 * Math.cos(p0.theta2);
+    const vy2a = state.L1 * p0.omega1 * Math.sin(p0.theta1) + state.L2 * p0.omega2 * Math.sin(p0.theta2);
+    ctx.strokeStyle = 'rgba(244,114,182,0.8)';
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 + vx2a*vScale, y2 + vy2a*vScale);
+    ctx.stroke();
+  }
+
+  if (state.showLabels) {
+    ctx.font = '10px JetBrains Mono';
+    const label = '● Primario';
+    const textW = ctx.measureText(label).width + 8;
+    // ✅ Usar ox, oy (variables locales ya definidas arriba)
+    const lx = ox - textW/2;
+    const ly = oy - 22;
+    ctx.fillStyle = 'rgba(34,211,238,0.15)';
+    ctx.strokeStyle = 'rgba(34,211,238,0.6)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(lx, ly, textW, 16, 4);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#22d3ee';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, ox, ly + 8);
+    ctx.textAlign = 'start';
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  p0.lastX = x2;
+  p0.lastY = y2;
+  p0.lastX1 = x1;
+  p0.lastY1 = y1;
+}
+
+function drawEnergyGraph() {
+  if (!state.showEnergy) return;
+
+  // ✅ FIX: Gráfica más grande para mostrar todos los péndulos
+  const gw = 340, gh = 150;
+  const gx = W - gw - 20;
+  const gy = H - gh - 20;
+
+  // Fondo
+  ctx.fillStyle = 'rgba(10, 15, 28, 0.85)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  roundRect(ctx, gx, gy, gw, gh, 8);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.font = '10px Inter';
+  ctx.fillText('ENERGÍA vs TIEMPO', gx + 10, gy + 14);
+
+  // Recopilar historiales de todos los péndulos habilitados
+  const sources = [];
+  if (primaryPendulum && primaryPendulum.energyHistory && primaryPendulum.energyHistory.length >= 2) {
+    sources.push({
+      history: primaryPendulum.energyHistory,
+      isPrimary: true,
+      hue: 0, // no se usa para primario
+      name: 'Primario'
+    });
+  }
+  customPendulums.forEach(p => {
+    if (!p.enabled) return;
+    if (!p.energyHistory || p.energyHistory.length < 2) return;
+    sources.push({
+      history: p.energyHistory,
+      isPrimary: false,
+      hue: p.hue,
+      name: p.name
+    });
+  });
+
+  if (sources.length === 0) {
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '9px JetBrains Mono';
+    ctx.fillText('Inicia la simulación para ver energía', gx + 10, gy + gh/2);
+    return;
+  }
+
+  // Calcular min/max a través de todos los péndulos
+  let minV = Infinity, maxV = -Infinity;
+  sources.forEach(s => {
+    s.history.forEach(d => {
+      if (s.isPrimary) {
+        minV = Math.min(minV, d.KE, d.PE, d.E);
+        maxV = Math.max(maxV, d.KE, d.PE, d.E);
+      } else {
+        minV = Math.min(minV, d.E);
+        maxV = Math.max(maxV, d.E);
+      }
+    });
+  });
+  const range = maxV - minV || 1;
+
+  const plotX = gx + 10;
+  const plotY = gy + 24;
+  const plotW = gw - 20;
+  const plotH = gh - 60;
+
+  function drawLine(history, key, color, lineWidth) {
+    if (!history || history.length < 2) return;
+    const data = history.slice(-200);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth;
+    ctx.beginPath();
+    data.forEach((d, i) => {
+      const x = plotX + (i / Math.max(data.length - 1, 1)) * plotW;
+      const y = plotY + plotH - ((d[key] - minV) / range) * plotH;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
+
+  // Líneas del primario: KE (cian), PE (rosa), E (violeta)
+  if (primaryPendulum && primaryPendulum.energyHistory) {
+    drawLine(primaryPendulum.energyHistory, 'KE', '#22d3ee', 1.5);
+    drawLine(primaryPendulum.energyHistory, 'PE', '#f472b6', 1.5);
+    drawLine(primaryPendulum.energyHistory, 'E', '#a78bfa', 2);
+  }
+
+  // ✅ FIX: Líneas de energía total (E) para cada péndulo personalizado
+  customPendulums.forEach(p => {
+    if (!p.enabled || !p.energyHistory) return;
+    drawLine(p.energyHistory, 'E', `hsl(${p.hue}, 85%, 65%)`, 1.8);
+  });
+
+  // Leyenda superior (T, V, E del primario)
+  ctx.font = '9px JetBrains Mono';
+  ctx.fillStyle = '#22d3ee'; ctx.fillText('T', gx + gw - 90, gy + 14);
+  ctx.fillStyle = '#f472b6'; ctx.fillText('V', gx + gw - 75, gy + 14);
+  ctx.fillStyle = '#a78bfa'; ctx.fillText('E', gx + gw - 60, gy + 14);
+
+  // ✅ Leyenda inferior: lista de péndulos con su color
+  const legendY = gy + gh - 12;
+  let legendX = gx + 10;
+  ctx.font = '8px JetBrains Mono';
+
+  // Primario
+  ctx.fillStyle = '#a78bfa';
+  ctx.fillRect(legendX, legendY - 6, 8, 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.fillText('Primario', legendX + 12, legendY);
+  legendX += 60;
+
+  // Péndulos personalizados
+  customPendulums.forEach(p => {
+    if (!p.enabled) return;
+    const textW = ctx.measureText(p.name).width + 16;
+    if (legendX + textW > gx + gw - 10) return; // no salir del cuadro
+    ctx.fillStyle = `hsl(${p.hue}, 85%, 65%)`;
+    ctx.fillRect(legendX, legendY - 6, 8, 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.fillText(p.name, legendX + 12, legendY);
+    legendX += textW + 4;
+  });
+}
+
+function drawPhaseSpace() {
+  if (!state.showPhase || state.phaseHistory.length < 2) return;
+  const gw = 200, gh = 200;
+  const gx = W - gw - 20;
+  const gy = 80;
+
+  ctx.fillStyle = 'rgba(10, 15, 28, 0.8)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  roundRect(ctx, gx, gy, gw, gh, 8);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = '10px Inter';
+  ctx.fillText('ESPACIO DE FASES (θ₂, ω₂)', gx + 10, gy + 14);
+
+  const data = state.phaseHistory.slice(-1000);
+  let minTh = Infinity, maxTh = -Infinity, minW = Infinity, maxW = -Infinity;
+  data.forEach(d => {
+    minTh = Math.min(minTh, d.th); maxTh = Math.max(maxTh, d.th);
+    minW = Math.min(minW, d.w); maxW = Math.max(maxW, d.w);
+  });
+  const rTh = maxTh - minTh || 1;
+  const rW = maxW - minW || 1;
+
+  const plotX = gx + 10;
+  const plotY = gy + 22;
+  const plotW = gw - 20;
+  const plotH = gh - 30;
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.beginPath();
+  ctx.moveTo(plotX + plotW/2, plotY);
+  ctx.lineTo(plotX + plotW/2, plotY + plotH);
+  ctx.moveTo(plotX, plotY + plotH/2);
+  ctx.lineTo(plotX + plotW, plotY + plotH/2);
+  ctx.stroke();
+
+  for (let i = 1; i < data.length; i++) {
+    const alpha = i / data.length;
+    ctx.strokeStyle = `rgba(167, 139, 250, ${alpha})`;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    const x1 = plotX + ((data[i-1].th - minTh) / rTh) * plotW;
+    const y1 = plotY + plotH - ((data[i-1].w - minW) / rW) * plotH;
+    const x2 = plotX + ((data[i].th - minTh) / rTh) * plotW;
+    const y2 = plotY + plotH - ((data[i].w - minW) / rW) * plotH;
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+}
+
+// ✅ Indicador visual de pan/zoom en esquina inferior izquierda
+function drawViewIndicator() {
+  const bw = 150, bh = 56;
+  // ✅ Posicionar a la derecha del drawer (380px) para que no quede oculto
+  const drawerWidth = document.getElementById('drawer').classList.contains('open') ? 380 : 0;
+  const bx = drawerWidth + 20;
+  const by = H - bh - 20;
+
+  ctx.fillStyle = 'rgba(10, 15, 28, 0.85)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  roundRect(ctx, bx, by, bw, bh, 8);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.font = '10px Inter';
+  ctx.fillText('VISTA', bx + 10, by + 16);
+
+  ctx.font = '11px JetBrains Mono';
+  ctx.fillStyle = '#22d3ee';
+  ctx.fillText(`Zoom: ${state.zoom.toFixed(2)}×`, bx + 10, by + 34);
+  ctx.fillStyle = '#a78bfa';
+  const panMag = Math.hypot(state.panX, state.panY);
+  ctx.fillText(`Pan: ${panMag.toFixed(0)} px`, bx + 10, by + 50);
+}
+
+function drawGrid() {
+  // ✅ Usar origen y escala con pan/zoom aplicados
+  const ox = originX + state.panX;
+  const oy = originY + state.panY;
+  const s = scale * state.zoom;
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(ox - 40, oy);
+  ctx.lineTo(ox + 40, oy);
+  ctx.moveTo(ox, oy - 40);
+  ctx.lineTo(ox, oy + 40);
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  const maxR = (state.L1 + state.L2) * s;
+  for (let r = maxR * 0.25; r <= maxR; r += maxR * 0.25) {
+    ctx.beginPath();
+    ctx.arc(ox, oy, r, 0, Math.PI*2);
+    ctx.stroke();
+  }
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  if (w < 2*r) r = w/2;
+  if (h < 2*r) r = h/2;
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+
+// ============================================================
+// SISTEMA DE DRAG
+// ============================================================
+let dragTarget = null;
+let hoverTarget = null;
+let panTarget = null; // ✅ Nuevo: para pan de la vista
+
+function getDraggables() {
+  const items = [];
+
+  if (primaryPendulum) {
+    const params = {
+      g: state.g, L1: state.L1, L2: state.L2,
+      m1: state.m1, m2: state.m2, damping: state.damping
+    };
+    const pos = getPositions(primaryPendulum, params);
+    const r1 = 10 + state.m1*2;
+    const r2 = 10 + state.m2*2;
+    items.push({
+      pendulum: primaryPendulum, params, massIndex: 1, isPrimary: true,
+      x: pos.x1, y: pos.y1, r: r1,
+      updateUI: () => {
+        document.getElementById('theta1').value = (primaryPendulum.theta1 * 180 / Math.PI).toFixed(0);
+        document.getElementById('theta1').dispatchEvent(new Event('input'));
+      }
+    });
+    items.push({
+      pendulum: primaryPendulum, params, massIndex: 2, isPrimary: true,
+      x: pos.x2, y: pos.y2, r: r2,
+      updateUI: () => {
+        document.getElementById('theta2').value = (primaryPendulum.theta2 * 180 / Math.PI).toFixed(0);
+        document.getElementById('theta2').dispatchEvent(new Event('input'));
+      }
+    });
+  }
+
+  customPendulums.forEach(p => {
+    if (!p.enabled) return;
+    const params = {
+      g: state.g, L1: p.L1, L2: p.L2,
+      m1: p.m1, m2: p.m2, damping: state.damping
+    };
+    const pos = getPositions(p, params);
+    const { r1, r2 } = getMassRadios(params, true);
+    items.push({
+      pendulum: p, params, massIndex: 1, isPrimary: false,
+      x: pos.x1, y: pos.y1, r: r1,
+      updateUI: () => {
+        const card = document.querySelector(`.pendulum-card[data-id="${p.id}"]`);
+        if (card) {
+          const sl = card.querySelector('.sl-t1');
+          const val = card.querySelector('.val-t1');
+          if (sl && val) {
+            sl.value = (p.theta1 * 180 / Math.PI).toFixed(0);
+            val.textContent = (p.theta1 * 180 / Math.PI).toFixed(1) + '°';
+          }
+        }
+      }
+    });
+    items.push({
+      pendulum: p, params, massIndex: 2, isPrimary: false,
+      x: pos.x2, y: pos.y2, r: r2,
+      updateUI: () => {
+        const card = document.querySelector(`.pendulum-card[data-id="${p.id}"]`);
+        if (card) {
+          const sl = card.querySelector('.sl-t2');
+          const val = card.querySelector('.val-t2');
+          if (sl && val) {
+            sl.value = (p.theta2 * 180 / Math.PI).toFixed(0);
+            val.textContent = (p.theta2 * 180 / Math.PI).toFixed(1) + '°';
+          }
+        }
+      }
+    });
+  });
+
+  return items;
+}
+
+function findNearestMass(mx, my, threshold = 20) {
+  const items = getDraggables();
+  let best = null;
+  let bestDist = threshold;
+  for (const it of items) {
+    const d = Math.hypot(mx - it.x, my - it.y);
+    if (d < bestDist) {
+      bestDist = d;
+      best = it;
+    }
+  }
+  return best;
+}
+
+function updateDrag(mx, my) {
+  if (!dragTarget) return;
+  const { pendulum, params, massIndex, isPrimary } = dragTarget;
+
+  // ✅ Usar origen y escala con pan/zoom aplicados
+  const ox = originX + state.panX;
+  const oy = originY + state.panY;
+  const s = scale * state.zoom;
+
+  if (massIndex === 1) {
+    const dx = mx - ox;
+    const dy = my - oy;
+    const angle = Math.atan2(dx, dy);
+    pendulum.theta1 = angle;
+    pendulum.omega1 = 0;
+    pendulum.trail = [];
+    pendulum.lastX = null; pendulum.lastY = null;
+  } else {
+    const x1 = ox + params.L1 * s * Math.sin(pendulum.theta1);
+    const y1 = oy + params.L1 * s * Math.cos(pendulum.theta1);
+    const dx = mx - x1;
+    const dy = my - y1;
+    const angle = Math.atan2(dx, dy);
+    pendulum.theta2 = angle;
+    pendulum.omega2 = 0;
+    pendulum.trail = [];
+    pendulum.lastX = null; pendulum.lastY = null;
+  }
+
+  if (isPrimary) {
+    state.theta1_0 = pendulum.theta1;
+    state.theta2_0 = pendulum.theta2;
+    state.omega1_0 = 0;
+    state.omega2_0 = 0;
+    if (state.showChaos) createChaosPendulums();
+  }
+
+  dragTarget.updateUI();
+  dragHint.classList.add('visible');
+}
+
+canvas.addEventListener('mousedown', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  const target = findNearestMass(mx, my, 25);
+  if (target) {
+    // Arrastrar masa (comportamiento existente)
+    dragTarget = target;
+    state.running = false;
+    canvas.classList.add('dragging');
+    updateDrag(mx, my);
+  } else {
+    // ✅ No hay masa cerca: iniciar pan de la vista
+    panTarget = { startX: mx, startY: my, panX0: state.panX, panY0: state.panY };
+    canvas.style.cursor = 'grabbing';
+  }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  if (dragTarget) {
+    updateDrag(mx, my);
+  } else if (panTarget) {
+    // ✅ Actualizar pan de la vista
+    state.panX = panTarget.panX0 + (mx - panTarget.startX);
+    state.panY = panTarget.panY0 + (my - panTarget.startY);
+  } else {
+    const target = findNearestMass(mx, my, 20);
+    if (target !== hoverTarget) {
+      hoverTarget = target;
+      canvas.style.cursor = target ? 'grab' : 'move';
+    }
+  }
+});
+
+canvas.addEventListener('mouseup', () => {
+  if (dragTarget) {
+    dragTarget = null;
+    canvas.classList.remove('dragging');
+    dragHint.classList.remove('visible');
+  }
+  if (panTarget) {
+    panTarget = null;
+    canvas.style.cursor = 'default';
+  }
+});
+
+canvas.addEventListener('mouseleave', () => {
+  if (dragTarget) {
+    dragTarget = null;
+    canvas.classList.remove('dragging');
+    dragHint.classList.remove('visible');
+  }
+  if (panTarget) {
+    panTarget = null;
+  }
+  hoverTarget = null;
+  canvas.style.cursor = 'default';
+});
+
+// ✅ Zoom con rueda del mouse, centrado en la posición del cursor
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  const oldZoom = state.zoom;
+  // deltaY > 0 = scroll abajo = zoom out; deltaY < 0 = scroll arriba = zoom in
+  const factor = e.deltaY > 0 ? 0.9 : 1.1;
+  state.zoom = Math.max(0.2, Math.min(5, state.zoom * factor));
+
+  // ✅ Ajustar pan para que el zoom sea centrado en el mouse
+  // Posición mundial bajo el mouse antes del zoom:
+  const worldX = (mx - originX - state.panX) / oldZoom;
+  const worldY = (my - originY - state.panY) / oldZoom;
+  // Después del zoom, queremos la misma posición mundial bajo el mouse:
+  state.panX = mx - originX - worldX * state.zoom;
+  state.panY = my - originY - worldY * state.zoom;
+}, { passive: false });
+
+canvas.addEventListener('touchstart', (e) => {
+  if (e.touches.length !== 1) return;
+  const t = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const mx = t.clientX - rect.left;
+  const my = t.clientY - rect.top;
+  const target = findNearestMass(mx, my, 35);
+  if (target) {
+    e.preventDefault();
+    dragTarget = target;
+    state.running = false;
+    updateDrag(mx, my);
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+  if (!dragTarget || e.touches.length !== 1) return;
+  e.preventDefault();
+  const t = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const mx = t.clientX - rect.left;
+  const my = t.clientY - rect.top;
+  updateDrag(mx, my);
+}, { passive: false });
+
+canvas.addEventListener('touchend', () => {
+  if (dragTarget) {
+    dragTarget = null;
+    dragHint.classList.remove('visible');
+  }
+});
+
+// ============================================================
+// LOOP PRINCIPAL
+// ============================================================
+let lastTime = performance.now();
+let frameCount = 0;
+
+function loop(now) {
+  const dtReal = Math.min((now - lastTime) / 1000, 0.05);
+  lastTime = now;
+
+  // ✅ FIX: Limpiar completamente el canvas cada frame para evitar
+  // fantasmas/marcas en el fondo. Las trails se dibujan desde el array.
+  ctx.clearRect(0, 0, W, H);
+
+  drawGrid();
+
+  if (state.running && !dragTarget) {
+    const dt = dtReal * state.speed;
+    const substeps = 4;
+    const subDt = dt / substeps;
+
+    const primaryParams = {
+      g: state.g, L1: state.L1, L2: state.L2,
+      m1: state.m1, m2: state.m2, damping: state.damping
+    };
+
+    for (let s = 0; s < substeps; s++) {
+      if (primaryPendulum) rk4Step(primaryPendulum, subDt, primaryParams);
+
+      if (state.showChaos) {
+        chaosPendulums.forEach(p => rk4Step(p, subDt, primaryParams));
+      }
+
+      customPendulums.forEach(p => {
+        // ✅ FIX: Siempre actualizar física, incluso si está deshabilitado.
+        // La deshabilitación solo debe afectar el renderizado, no la física.
+        const params = {
+          g: state.g, L1: p.L1, L2: p.L2,
+          m1: p.m1, m2: p.m2, damping: state.damping
+        };
+        rk4Step(p, subDt, params);
+      });
+      state.time += subDt;
+    }
+
+    if (primaryPendulum && primaryPendulum.lastX !== null) {
+      // ✅ FIX CRÍTICO: Coordenadas mundiales en METROS.
+      // lastX es pixel de pantalla = originX + panX + L*scale*zoom*sin(theta)
+      // Para obtener metros (L*sin(theta)): dividir por (scale * zoom)
+      const wx = (primaryPendulum.lastX - originX - state.panX) / (scale * state.zoom);
+      const wy = (primaryPendulum.lastY - originY - state.panY) / (scale * state.zoom);
+      primaryPendulum.trail.push({ wx, wy });
+      if (primaryPendulum.trail.length > state.trailLen) primaryPendulum.trail.shift();
+    }
+    if (state.showChaos) {
+      chaosPendulums.forEach(p => {
+        if (p.lastX !== null) {
+          // ✅ FIX CRÍTICO: Coordenadas mundiales en metros
+          const wx = (p.lastX - originX - state.panX) / (scale * state.zoom);
+          const wy = (p.lastY - originY - state.panY) / (scale * state.zoom);
+          p.trail.push({ wx, wy });
+          if (p.trail.length > state.trailLen) p.trail.shift();
+        }
+      });
+    }
+    customPendulums.forEach(p => {
+      // ✅ Trackear trail siempre (incluso si está deshabilitado)
+      if (p.lastX !== null) {
+        // ✅ FIX CRÍTICO: Coordenadas mundiales en metros
+        const wx = (p.lastX - originX - state.panX) / (scale * state.zoom);
+        const wy = (p.lastY - originY - state.panY) / (scale * state.zoom);
+        p.trail.push({ wx, wy });
+        if (p.trail.length > state.trailLen) p.trail.shift();
+      }
+    });
+
+    if (frameCount % 3 === 0 && primaryPendulum) {
+      const energy = computeEnergy(primaryPendulum, primaryParams);
+      primaryPendulum.energyHistory.push(energy);
+      if (primaryPendulum.energyHistory.length > 500) primaryPendulum.energyHistory.shift();
+      state.energyHistory = primaryPendulum.energyHistory;
+
+      // ✅ Trackear energía de todos los péndulos personalizados
+      // (incluso deshabilitados, para gráfica continua al reactivar)
+      customPendulums.forEach(p => {
+        const cp = {
+          g: state.g, L1: p.L1, L2: p.L2,
+          m1: p.m1, m2: p.m2, damping: state.damping
+        };
+        const e = computeEnergy(p, cp);
+        p.energyHistory.push(e);
+        if (p.energyHistory.length > 500) p.energyHistory.shift();
+      });
+
+      state.phaseHistory.push({ th: primaryPendulum.theta2, w: primaryPendulum.omega2 });
+      if (state.phaseHistory.length > 2000) state.phaseHistory.shift();
+
+      state.lyapunov = computeLyapunov();
+      updateMetrics(energy);
+    }
+  }
+
+  if (state.showChaos) {
+    chaosPendulums.forEach(p => {
+      const params = {
+        g: state.g, L1: state.L1, L2: state.L2,
+        m1: state.m1, m2: state.m2, damping: state.damping
+      };
+      drawPendulum(p, params, {
+        hue: p.hue,
+        isPrimary: false,
+        showArms: true,
+        showMass: true,
+        usePrimarySize: true,
+      });
+    });
+  }
+
+  customPendulums.forEach(p => {
+    if (!p.enabled) return; // ✅ Solo dibujar si está habilitado
+    const params = {
+      g: state.g, L1: p.L1, L2: p.L2,
+      m1: p.m1, m2: p.m2, damping: state.damping
+    };
+    const isDrag = dragTarget && dragTarget.pendulum === p;
+    drawPendulum(p, params, {
+      hue: p.hue,
+      isPrimary: false,
+      showArms: true,
+      showMass: true,
+      usePrimarySize: state.globalSync,
+      isDragTarget: isDrag,
+      label: p.name,
+    });
+  });
+
+  if (primaryPendulum) {
+    const isDrag = dragTarget && dragTarget.isPrimary;
+    drawPrimaryPendulum();
+    if (isDrag) {
+      const params = { L1: state.L1, L2: state.L2, m1: state.m1, m2: state.m2 };
+      const pos = getPositions(primaryPendulum, params);
+      ctx.strokeStyle = 'rgba(167, 139, 250, 0.6)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.arc(pos.x1, pos.y1, 10 + state.m1*2 + 6, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(pos.x2, pos.y2, 10 + state.m2*2 + 6, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  // ✅ Dibujar indicador de pan/zoom (esquina inferior izquierda)
+  drawViewIndicator();
+
+  drawEnergyGraph();
+  drawPhaseSpace();
+
+  frameCount++;
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// ============================================================
+// UI: MÉTRICAS
+// ============================================================
+function updateMetrics(energy) {
+  const lyapEl = document.getElementById('mLyap');
+  lyapEl.textContent = state.lyapunov.toFixed(3);
+  lyapEl.className = 'metric-value' + (state.lyapunov > 0.5 ? ' danger' : state.lyapunov > 0.1 ? ' warn' : '');
+
+  document.getElementById('mKE').textContent = energy.KE.toFixed(2) + ' J';
+  document.getElementById('mPE').textContent = energy.PE.toFixed(2) + ' J';
+  document.getElementById('mE').textContent = energy.E.toFixed(2) + ' J';
+  document.getElementById('mTime').textContent = state.time.toFixed(2) + ' s';
+
+  document.getElementById('mCount').textContent = countVisiblePendulums();
+
+  const stateEl = document.getElementById('mState');
+  if (dragTarget) {
+    stateEl.innerHTML = '<span class="status-dot dragging"></span>Arrastrando masa';
+  } else if (state.running) {
+    stateEl.innerHTML = '<span class="status-dot"></span>Integrando RK4';
+  } else {
+    stateEl.innerHTML = '<span class="status-dot paused"></span>En pausa';
+  }
+}
+
+// ============================================================
+// UI: LISTA DE PÉNDULOS PERSONALIZADOS
+// ============================================================
+function renderPendulumList() {
+  const list = document.getElementById('pendulumList');
+  const empty = document.getElementById('emptyPendulums');
+
+  list.querySelectorAll('.pendulum-card').forEach(c => c.remove());
+
+  if (customPendulums.length === 0) {
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  customPendulums.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'pendulum-card' + (p.copiedFromPrimary ? ' copied' : '') + (!p.enabled ? ' disabled' : '');
+    card.dataset.id = p.id;
+
+    card.innerHTML = `
+      <div class="pendulum-card-header">
+        <div class="pendulum-color-dot" style="background: hsl(${p.hue}, 80%, 60%); color: hsl(${p.hue}, 80%, 60%);"></div>
+        <div class="pendulum-card-title">${p.name}</div>
+        <div class="pendulum-card-actions">
+          <button class="icon-btn toggle-vis" title="Activar/Desactivar">${p.enabled ? '👁' : '🚫'}</button>
+          <button class="icon-btn chevron-toggle" title="Colapsar">▾</button>
+          <button class="icon-btn delete" title="Eliminar">✕</button>
+        </div>
+      </div>
+      <div class="pendulum-card-body">
+        <div class="copy-banner ${p.copiedFromPrimary ? '' : 'not-copied'}">
+          <span class="copy-banner-icon">${p.copiedFromPrimary ? '✅' : '📋'}</span>
+          <span>${p.copiedFromPrimary
+            ? '<strong>Parámetros copiados del primario.</strong> Mismo tamaño y condiciones iniciales.'
+            : '<strong>Parámetros independientes.</strong> Usa "Copiar del primario" para igualar.'}</span>
+        </div>
+        <button class="btn btn-copy" data-action="copy-primary">
+          📋 Copiar parámetros del primario
+        </button>
+        <div class="control-row" style="margin-top:12px;">
+          <div class="control-label"><span>Longitud L₁</span><span class="control-value val-L1">${p.L1.toFixed(2)} m</span></div>
+          <input type="range" class="sl-L1" min="0.3" max="3" step="0.05" value="${p.L1}">
+        </div>
+        <div class="control-row">
+          <div class="control-label"><span>Longitud L₂</span><span class="control-value val-L2">${p.L2.toFixed(2)} m</span></div>
+          <input type="range" class="sl-L2" min="0.3" max="3" step="0.05" value="${p.L2}">
+        </div>
+        <div class="control-row">
+          <div class="control-label"><span>Masa m₁</span><span class="control-value val-m1">${p.m1.toFixed(2)} kg</span></div>
+          <input type="range" class="sl-m1" min="0.1" max="5" step="0.1" value="${p.m1}">
+        </div>
+        <div class="control-row">
+          <div class="control-label"><span>Masa m₂</span><span class="control-value val-m2">${p.m2.toFixed(2)} kg</span></div>
+          <input type="range" class="sl-m2" min="0.1" max="5" step="0.1" value="${p.m2}">
+        </div>
+        <div class="control-row">
+          <div class="control-label"><span>Ángulo θ₁</span><span class="control-value val-t1">${(p.theta1 * 180 / Math.PI).toFixed(1)}°</span></div>
+          <input type="range" class="sl-t1" min="-180" max="180" step="1" value="${(p.theta1 * 180 / Math.PI).toFixed(0)}">
+        </div>
+        <div class="control-row">
+          <div class="control-label"><span>Ángulo θ₂</span><span class="control-value val-t2">${(p.theta2 * 180 / Math.PI).toFixed(1)}°</span></div>
+          <input type="range" class="sl-t2" min="-180" max="180" step="1" value="${(p.theta2 * 180 / Math.PI).toFixed(0)}">
+        </div>
+      </div>
+    `;
+
+    list.appendChild(card);
+
+    const chevron = card.querySelector('.chevron-toggle');
+
+    card.querySelector('.pendulum-card-header').addEventListener('click', (e) => {
+      if (e.target.closest('.icon-btn')) return;
+      card.classList.toggle('collapsed');
+      chevron.textContent = card.classList.contains('collapsed') ? '▸' : '▾';
+    });
+
+    card.querySelector('[data-action="copy-primary"]').addEventListener('click', (e) => {
+      e.stopPropagation();
+      copyPrimaryToCustom(p); // ✅ Esta función ahora asegura enabled=true
+      const btn = e.currentTarget;
+      btn.classList.add('copied');
+      btn.textContent = '✓ Parámetros copiados';
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.textContent = '📋 Copiar parámetros del primario';
+      }, 1500);
+    });
+
+    card.querySelector('.delete').addEventListener('click', (e) => {
+      e.stopPropagation();
+      removeCustomPendulum(p.id);
+    });
+
+    card.querySelector('.toggle-vis').addEventListener('click', (e) => {
+      e.stopPropagation();
+      p.enabled = !p.enabled;
+      e.currentTarget.textContent = p.enabled ? '👁' : '🚫';
+      card.classList.toggle('disabled', !p.enabled);
+      updatePendulumCounter();
+    });
+
+    const bind = (cls, valCls, fmt, apply) => {
+      const sl = card.querySelector(cls);
+      const val = card.querySelector(valCls);
+      sl.addEventListener('input', () => {
+        const v = parseFloat(sl.value);
+        val.textContent = fmt(v);
+        apply(v);
+      });
+    };
+
+    bind('.sl-L1', '.val-L1', v => v.toFixed(2) + ' m', v => {
+      p.L1 = v;
+      p.copiedFromPrimary = false;
+      updateCopyBanner(card, p);
+    });
+    bind('.sl-L2', '.val-L2', v => v.toFixed(2) + ' m', v => {
+      p.L2 = v;
+      p.copiedFromPrimary = false;
+      updateCopyBanner(card, p);
+    });
+    bind('.sl-m1', '.val-m1', v => v.toFixed(2) + ' kg', v => {
+      p.m1 = v;
+      p.copiedFromPrimary = false;
+      updateCopyBanner(card, p);
+    });
+    bind('.sl-m2', '.val-m2', v => v.toFixed(2) + ' kg', v => {
+      p.m2 = v;
+      p.copiedFromPrimary = false;
+      updateCopyBanner(card, p);
+    });
+    bind('.sl-t1', '.val-t1', v => v.toFixed(1) + '°', v => {
+      p.theta1 = v * Math.PI / 180;
+      p.trail = [];
+      p.lastX = null; p.lastY = null;
+      p.copiedFromPrimary = false;
+      updateCopyBanner(card, p);
+    });
+    bind('.sl-t2', '.val-t2', v => v.toFixed(1) + '°', v => {
+      p.theta2 = v * Math.PI / 180;
+      p.trail = [];
+      p.lastX = null; p.lastY = null;
+      p.copiedFromPrimary = false;
+      updateCopyBanner(card, p);
+    });
+  });
+}
+
+function updateCopyBanner(card, p) {
+  const banner = card.querySelector('.copy-banner');
+  if (!banner) return;
+  if (p.copiedFromPrimary) {
+    banner.classList.remove('not-copied');
+    banner.innerHTML = `<span class="copy-banner-icon">✅</span><span><strong>Parámetros copiados del primario.</strong> Mismo tamaño y condiciones iniciales.</span>`;
+    card.classList.add('copied');
+  } else {
+    banner.classList.add('not-copied');
+    banner.innerHTML = `<span class="copy-banner-icon">📋</span><span><strong>Parámetros independientes.</strong> Usa "Copiar del primario" para igualar.</span>`;
+    card.classList.remove('copied');
+  }
+}
+
+// ============================================================
+// UI: CONTROLES
+// ============================================================
+const drawer = document.getElementById('drawer');
+const drawerToggle = document.getElementById('drawerToggle');
+drawerToggle.addEventListener('click', () => {
+  // ✅ FIX: El CSS usa .drawer.closed para ocultar, no .drawer.open
+  drawer.classList.toggle('closed');
+  // Mover el botón toggle según estado del drawer
+  drawerToggle.style.left = drawer.classList.contains('closed') ? '16px' : '396px';
+});
+
+document.querySelectorAll('.section-header').forEach(h => {
+  h.addEventListener('click', () => {
+    h.parentElement.classList.toggle('collapsed');
+  });
+});
+
+document.getElementById('btnPlay').addEventListener('click', () => { state.running = true; });
+document.getElementById('btnPause').addEventListener('click', () => { state.running = false; });
+document.getElementById('btnReset').addEventListener('click', () => {
+  state.running = false;
+  state.time = 0;
+  state.energyHistory = [];
+  state.phaseHistory = [];
+  state.lyapunov = 0;
+  // ✅ Resetear pan/zoom al reiniciar
+  state.panX = 0;
+  state.panY = 0;
+  state.zoom = 1;
+  resetAllPendulums();
+  // ✅ Resetear historiales de energía de todos los péndulos
+  if (primaryPendulum) primaryPendulum.energyHistory = [];
+  customPendulums.forEach(p => { p.energyHistory = []; });
+  chaosPendulums.forEach(p => { p.energyHistory = []; });
+  updateMetrics({ KE: 0, PE: 0, E: 0 });
+  updatePendulumCounter();
+});
+
+document.getElementById('togGlobalSync').addEventListener('click', (e) => {
+  state.globalSync = !state.globalSync;
+  e.currentTarget.classList.toggle('on', state.globalSync);
+});
+
+// ✅ Controles de Pan/Zoom
+document.getElementById('btnZoomIn').addEventListener('click', () => {
+  // Zoom centrado en el centro de la pantalla
+  const mx = W / 2, my = H / 2;
+  const oldZoom = state.zoom;
+  state.zoom = Math.min(5, state.zoom * 1.2);
+  const worldX = (mx - originX - state.panX) / oldZoom;
+  const worldY = (my - originY - state.panY) / oldZoom;
+  state.panX = mx - originX - worldX * state.zoom;
+  state.panY = my - originY - worldY * state.zoom;
+});
+
+document.getElementById('btnZoomOut').addEventListener('click', () => {
+  const mx = W / 2, my = H / 2;
+  const oldZoom = state.zoom;
+  state.zoom = Math.max(0.2, state.zoom / 1.2);
+  const worldX = (mx - originX - state.panX) / oldZoom;
+  const worldY = (my - originY - state.panY) / oldZoom;
+  state.panX = mx - originX - worldX * state.zoom;
+  state.panY = my - originY - worldY * state.zoom;
+});
+
+document.getElementById('btnZoomReset').addEventListener('click', () => {
+  state.panX = 0;
+  state.panY = 0;
+  state.zoom = 1;
+});
+
+document.getElementById('btnAddPendulum').addEventListener('click', () => {
+  if (customPendulums.length >= 10) {
+    alert('Máximo 10 péndulos personalizados.');
+    return;
+  }
+  const t1 = (Math.random() * 240 - 120);
+  const t2 = (Math.random() * 240 - 120);
+  createCustomPendulum({
+    theta1: t1,
+    theta2: t2,
+    L1: 1.0 + Math.random() * 1.0,
+    L2: 1.0 + Math.random() * 1.0,
+    m1: 1.0 + Math.random() * 1.5,
+    m2: 1.0 + Math.random() * 1.5,
+  });
+  updatePendulumCounter();
+});
+
+document.getElementById('btnCopyAllFromPrimary').addEventListener('click', () => {
+  if (customPendulums.length === 0) {
+    alert('No hay péndulos personalizados para copiar.');
+    return;
+  }
+  customPendulums.forEach(p => copyPrimaryToCustom(p));
+  const btn = document.getElementById('btnCopyAllFromPrimary');
+  const originalText = btn.textContent;
+  btn.classList.add('copied');
+  btn.textContent = '✓ Copiado a todos los péndulos';
+  setTimeout(() => {
+    btn.classList.remove('copied');
+    btn.textContent = originalText;
+  }, 1500);
+});
+
+function bindSlider(id, valId, format, apply) {
+  const slider = document.getElementById(id);
+  const valEl = document.getElementById(valId);
+  slider.addEventListener('input', () => {
+    const v = parseFloat(slider.value);
+    valEl.textContent = format(v);
+    apply(v);
+  });
+}
+
+bindSlider('speed', 'valSpeed', v => v.toFixed(1) + '×', v => state.speed = v);
+bindSlider('gravity', 'valG', v => v.toFixed(2) + ' m/s²', v => state.g = v);
+bindSlider('L1', 'valL1', v => v.toFixed(2) + ' m', v => state.L1 = v);
+bindSlider('L2', 'valL2', v => v.toFixed(2) + ' m', v => state.L2 = v);
+bindSlider('M1', 'valM1', v => v.toFixed(2) + ' kg', v => state.m1 = v);
+bindSlider('M2', 'valM2', v => v.toFixed(2) + ' kg', v => state.m2 = v);
+bindSlider('damping', 'valDamp', v => v.toFixed(3), v => state.damping = v);
+bindSlider('theta1', 'valT1', v => v.toFixed(1) + '°', v => {
+  state.theta1_0 = v * Math.PI / 180;
+});
+bindSlider('theta2', 'valT2', v => v.toFixed(1) + '°', v => {
+  state.theta2_0 = v * Math.PI / 180;
+});
+bindSlider('omega1', 'valW1', v => v.toFixed(2) + ' rad/s', v => state.omega1_0 = v);
+bindSlider('omega2', 'valW2', v => v.toFixed(2) + ' rad/s', v => state.omega2_0 = v);
+bindSlider('nPendulums', 'valN', v => v.toFixed(0), v => {
+  state.nPendulums = v;
+  if (state.showChaos) createChaosPendulums();
+  updatePendulumCounter();
+});
+bindSlider('delta', 'valDelta', v => v.toFixed(4) + '°', v => {
+  state.delta = v * Math.PI / 180;
+  if (state.showChaos) createChaosPendulums();
+});
+bindSlider('trailLen', 'valTrail', v => v.toFixed(0), v => state.trailLen = v);
+
+function bindToggle(id, key) {
+  const el = document.getElementById(id);
+  el.addEventListener('click', () => {
+    state[key] = !state[key];
+    el.classList.toggle('on', state[key]);
+    if (key === 'showChaos') {
+      createChaosPendulums();
+      updatePendulumCounter();
+    }
+  });
+}
+bindToggle('togTrails', 'showTrails');
+bindToggle('togEnergy', 'showEnergy');
+bindToggle('togPhase', 'showPhase');
+bindToggle('togVectors', 'showVectors');
+bindToggle('togChaos', 'showChaos');
+bindToggle('togLabels', 'showLabels');
+
+const presets = {
+  low:   { theta1: 30, theta2: 30, g: 9.81, L1: 1.5, L2: 1.5, m1: 1, m2: 1 },
+  chaos: { theta1: 150, theta2: 170, g: 9.81, L1: 1.5, L2: 1.5, m1: 1.5, m2: 1.5 },
+  sym:   { theta1: 90, theta2: 90, g: 9.81, L1: 1.5, L2: 1.5, m1: 1.5, m2: 1.5 },
+  asym:  { theta1: 120, theta2: -60, g: 9.81, L1: 2, L2: 1, m1: 2, m2: 0.5 },
+  moon:  { theta1: 120, theta2: 120, g: 1.62, L1: 1.5, L2: 1.5, m1: 1.5, m2: 1.5 },
+  heavy: { theta1: 100, theta2: 100, g: 9.81, L1: 1.5, L2: 1.5, m1: 4, m2: 4 },
+};
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const preset = btn.dataset.preset;
+
+    if (preset === 'compare') {
+      customPendulums = [];
+      nextPendulumId = 1;
+      createCustomPendulum({
+        name: 'Corto (L=1.0)',
+        L1: 1.0, L2: 1.0, m1: 1.5, m2: 1.5,
+        theta1: 120, theta2: 120,
+      });
+      createCustomPendulum({
+        name: 'Largo (L=2.0)',
+        L1: 2.0, L2: 2.0, m1: 1.5, m2: 1.5,
+        theta1: 120, theta2: 120,
+      });
+      updatePendulumCounter();
+      return;
+    }
+
+    if (preset === 'masses') {
+      customPendulums = [];
+      nextPendulumId = 1;
+      createCustomPendulum({
+        name: 'Masa ligera (0.5 kg)',
+        L1: 1.5, L2: 1.5, m1: 0.5, m2: 0.5,
+        theta1: 120, theta2: 120,
+      });
+      createCustomPendulum({
+        name: 'Masa pesada (4.0 kg)',
+        L1: 1.5, L2: 1.5, m1: 4.0, m2: 4.0,
+        theta1: 120, theta2: 120,
+      });
+      updatePendulumCounter();
+      return;
+    }
+
+    const p = presets[preset];
+    if (!p) return;
+    document.getElementById('theta1').value = p.theta1;
+    document.getElementById('theta2').value = p.theta2;
+    document.getElementById('gravity').value = p.g;
+    document.getElementById('L1').value = p.L1;
+    document.getElementById('L2').value = p.L2;
+    document.getElementById('M1').value = p.m1;
+    document.getElementById('M2').value = p.m2;
+    ['theta1','theta2','gravity','L1','L2','M1','M2'].forEach(id => {
+      document.getElementById(id).dispatchEvent(new Event('input'));
+    });
+    document.getElementById('btnReset').click();
+  });
+});
+
+renderPendulumList();
+updateMetrics({ KE: 0, PE: 0, E: 0 });
+updatePendulumCounter();
+</script>
+</body>
+</html>

@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synapse Lab v3 · Simulador de Transmisión Sináptica</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: #0a0e1a;
+  color: #e2e8f0;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+#mainCanvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  cursor: crosshair;
+}
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 52px;
+  background: linear-gradient(180deg, rgba(17,24,39,0.97), rgba(10,14,26,0.92));
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(99,102,241,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 100;
+}
+.topbar-title {
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 700; font-size: 15px;
+  letter-spacing: 0.5px;
+}
+.topbar-title span.icon { font-size: 22px; }
+.topbar-title .ver {
+  font-size: 10px;
+  background: #6366f1;
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.topbar-actions {
+  display: flex; gap: 8px; align-items: center;
+}
+.topbar-btn {
+  background: #1a2236;
+  border: 1px solid rgba(99,102,241,0.2);
+  color: #e2e8f0;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex; align-items: center; gap: 5px;
+  font-family: 'Inter', sans-serif;
+}
+.topbar-btn:hover { background: #6366f1; border-color: #6366f1; }
+.topbar-btn.active { background: #6366f1; border-color: #818cf8; }
+
+.drawer {
+  position: fixed;
+  top: 52px;
+  height: calc(100vh - 52px);
+  background: linear-gradient(180deg, rgba(17,24,39,0.96), rgba(10,14,26,0.98));
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(99,102,241,0.2);
+  z-index: 90;
+  transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.3s;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.drawer-left {
+  left: 0; width: 320px;
+  transform: translateX(-100%);
+}
+.drawer-left.open { transform: translateX(0); }
+.drawer-right {
+  right: 0; width: 300px;
+  transform: translateX(100%);
+}
+.drawer-right.open { transform: translateX(0); }
+
+.drawer-section {
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(99,102,241,0.1);
+}
+.section-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #a5b4fc;
+  margin-bottom: 14px;
+}
+.ctrl-group { margin-bottom: 14px; }
+.ctrl-label {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-bottom: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.ctrl-value {
+  font-family: 'JetBrains Mono', monospace;
+  color: #22d3ee;
+  font-size: 11px;
+  font-weight: 600;
+}
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: #0a0e1a;
+  outline: none;
+  border: 1px solid rgba(99,102,241,0.2);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: #6366f1;
+  cursor: pointer;
+  border: 2px solid #818cf8;
+}
+
+.btn {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(99,102,241,0.2);
+  background: #1a2236;
+  color: #e2e8f0;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.btn:hover { background: #6366f1; border-color: #6366f1; }
+.btn-fire { background: linear-gradient(135deg, #ef4444, #dc2626); border-color: #ef4444; }
+.btn-train { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.btn-reset { background: linear-gradient(135deg, #059669, #047857); }
+
+.stat-card {
+  background: #0a0e1a;
+  border: 1px solid rgba(99,102,241,0.2);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.stat-header {
+  font-size: 10px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+.stat-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px;
+  font-weight: 700;
+}
+.stat-bar {
+  height: 4px;
+  background: #1a2236;
+  border-radius: 2px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+.stat-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+.info-overlay {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(17,24,39,0.9);
+  border: 1px solid rgba(99,102,241,0.2);
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-size: 11px;
+  color: #94a3b8;
+  z-index: 80;
+}
+
+.exc-flash {
+  position: fixed;
+  top: 52px; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #34d399, transparent);
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 95;
+}
+.exc-flash.active { opacity: 1; }
+
+.phase-indicator {
+  position: fixed;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(17,24,39,0.85);
+  border: 1px solid rgba(99,102,241,0.2);
+  border-radius: 20px;
+  padding: 4px 16px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #a5b4fc;
+  z-index: 85;
+}
+</style>
+</head>
+<body>
+
+<canvas id="mainCanvas"></canvas>
+
+<div class="topbar">
+  <div class="topbar-title">
+    <span class="icon">🧠</span>
+    SYNAPSE LAB
+    <span class="ver">v3</span>
+  </div>
+  <div class="topbar-actions">
+    <button class="topbar-btn" id="btnDrawerLeft" onclick="toggleDrawer('left')">🎛️ Controles</button>
+    <button class="topbar-btn" id="btnDrawerRight" onclick="toggleDrawer('right')">📊 Datos</button>
+    <button class="topbar-btn" id="btnPause" onclick="togglePause()">⏸️ Pausa</button>
+  </div>
+</div>
+
+<div class="exc-flash" id="excFlash"></div>
+<div class="phase-indicator" id="phaseIndicator">REPOSO · Potencial de membrana: -70 mV</div>
+
+<div class="drawer drawer-left" id="drawerLeft">
+  <div class="drawer-section">
+    <div class="section-title">Estimulación</div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">
+        <span>Frecuencia automática</span>
+        <span class="ctrl-value" id="freqVal">0.5 Hz</span>
+      </div>
+      <input type="range" id="freqSlider" min="0" max="5" step="0.1" value="0.5" oninput="updateFreq()">
+    </div>
+    <button class="btn btn-fire" onclick="manualFire()">🔫 Disparo manual</button>
+    <button class="btn btn-train" onclick="trainFire()">🚂 Tren de pulsos (5)</button>
+  </div>
+  <div class="drawer-section">
+    <div class="section-title">Farmacología</div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">
+        <span>🧴 Toxina (bloqueo)</span>
+        <span class="ctrl-value" id="toxinVal">0%</span>
+      </div>
+      <input type="range" id="toxinSlider" min="0" max="100" step="1" value="0" oninput="updatePharma()">
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">
+        <span>💊 SSRI (recaptación)</span>
+        <span class="ctrl-value" id="ssriVal">0%</span>
+      </div>
+      <input type="range" id="ssriSlider" min="0" max="100" step="1" value="0" oninput="updatePharma()">
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">
+        <span> Agonista</span>
+        <span class="ctrl-value" id="agonistVal">0%</span>
+      </div>
+      <input type="range" id="agonistSlider" min="0" max="100" step="1" value="0" oninput="updatePharma()">
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">
+        <span>🛡️ Antagonista</span>
+        <span class="ctrl-value" id="antagonistVal">0%</span>
+      </div>
+      <input type="range" id="antagonistSlider" min="0" max="100" step="1" value="0" oninput="updatePharma()">
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">
+        <span>🕷️ α-latrotoxina</span>
+        <span class="ctrl-value" id="latroVal">0%</span>
+      </div>
+      <input type="range" id="latroSlider" min="0" max="100" step="1" value="0" oninput="updatePharma()">
+    </div>
+    <button class="btn btn-reset" onclick="resetCulture()">🧫 Reiniciar cultivo</button>
+  </div>
+</div>
+
+<div class="drawer drawer-right" id="drawerRight">
+  <div class="drawer-section">
+    <div class="section-title">Estado de la sinapsis</div>
+    <div class="stat-card">
+      <div class="stat-header">🧪 NT en hendidura</div>
+      <div class="stat-value" id="statNT" style="color:#22d3ee">0</div>
+      <div class="stat-bar"><div class="stat-bar-fill" id="barNT" style="width:0%;background:#22d3ee"></div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-header">🧬 Receptores libres</div>
+      <div class="stat-value" id="statReceptors" style="color:#34d399">0</div>
+      <div class="stat-bar"><div class="stat-bar-fill" id="barReceptors" style="width:0%;background:#34d399"></div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-header">📊 Excitación</div>
+      <div class="stat-value" id="statExcitation" style="color:#fb923c">0%</div>
+      <div class="stat-bar"><div class="stat-bar-fill" id="barExcitation" style="width:0%;background:linear-gradient(90deg,#34d399,#fb923c,#f87171)"></div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-header">⚡ Tasa disparo post</div>
+      <div class="stat-value" id="statPostRate" style="color:#fbbf24">0 Hz</div>
+      <div class="stat-bar"><div class="stat-bar-fill" id="barPostRate" style="width:0%;background:#fbbf24"></div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-header">📦 Vesículas liberadas</div>
+      <div class="stat-value" id="statVesicles" style="color:#f472b6">0</div>
+    </div>
+  </div>
+</div>
+
+<div class="info-overlay">
+  Clic en hendidura: inyecta NT · Trenes muestran plasticidad
+</div>
+
+<script>
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+let sim = {
+  freq: 0.5,
+  intensity: 1.0,
+  toxin: 0,
+  ssri: 0,
+  agonist: 0,
+  antagonist: 0,
+  latrotoxina: 0,
+  maxVesicles: 20,
+  receptorDensity: 12,
+  paused: false,
+  time: 0,
+  totalVesiclesReleased: 0,
+  ntInCleft: 0,
+  freeReceptors: 12,
+  excitation: 0,
+  postRate: 0,
+  membranePotential: -70,
+  trainActive: false,
+};
+
+let vesicles = [];
+let ntMolecules = [];
+let receptors = [];
+
+function getSynapseGeometry() {
+  const cx = W / 2;
+  const cy = H / 2;
+  const scale = Math.min(W, H) / 800;
+  return {
+    cx, cy, scale,
+    preX: cx - 180 * scale,
+    preY: cy,
+    preW: 140 * scale,
+    preH: 200 * scale,
+    cleftX: cx - 20 * scale,
+    cleftY: cy - 100 * scale,
+    cleftW: 40 * scale,
+    cleftH: 200 * scale,
+    postX: cx + 40 * scale,
+    postY: cy,
+    postW: 140 * scale,
+    postH: 200 * scale,
+  };
+}
+
+function initVesicles() {
+  vesicles = [];
+  const g = getSynapseGeometry();
+  for (let i = 0; i < sim.maxVesicles; i++) {
+    const margin = 20 * g.scale;
+    vesicles.push({
+      x: g.preX - g.preW/2 + margin + Math.random() * (g.preW - margin*2),
+      y: g.preY - g.preH/2 + margin + Math.random() * (g.preH - margin*2),
+      r: (6 + Math.random() * 4) * g.scale,
+      nt: 5 + Math.floor(Math.random() * 6),
+      alpha: 0.8 + Math.random() * 0.2,
+      releasing: false,
+    });
+  }
+}
+
+function initReceptors() {
+  receptors = [];
+  const g = getSynapseGeometry();
+  const count = sim.receptorDensity;
+  for (let i = 0; i < count; i++) {
+    const t = (i + 0.5) / count;
+    receptors.push({
+      x: g.postX - g.postW/2 - 4 * g.scale,
+      y: g.postY - g.postH/2 + 20*g.scale + t * (g.postH - 40*g.scale),
+      w: 12 * g.scale,
+      h: 16 * g.scale,
+      bound: false,
+      glow: 0,
+    });
+  }
+  sim.freeReceptors = count;
+}
+
+function resetCulture() {
+  sim.ntInCleft = 0;
+  sim.excitation = 0;
+  sim.postRate = 0;
+  sim.membranePotential = -70;
+  sim.totalVesiclesReleased = 0;
+  sim.trainActive = false;
+  ntMolecules = [];
+  initVesicles();
+  initReceptors();
+}
+
+function fireSynapse() {
+  const g = getSynapseGeometry();
+  const releaseProb = (1 - sim.toxin / 100) * sim.intensity;
+  const latroMult = 1 + (sim.latrotoxina / 100) * 8;
+  
+  let released = 0;
+  
+  for (let v of vesicles) {
+    if (v.releasing) continue;
+    if (Math.random() < releaseProb * latroMult * 0.4) {
+      v.releasing = true;
+      released++;
+      sim.totalVesiclesReleased++;
+      
+      const ntCount = Math.floor(v.nt * sim.intensity);
+      for (let j = 0; j < ntCount; j++) {
+        ntMolecules.push({
+          x: g.cleftX + Math.random() * g.cleftW,
+          y: v.y + (Math.random() - 0.5) * 20 * g.scale,
+          vx: (1 + Math.random() * 2) * g.scale,
+          vy: (Math.random() - 0.5) * 1.5 * g.scale,
+          life: 1.0,
+          decay: 0.003 + (sim.ssri / 100) * (-0.002),
+          bound: false,
+          r: 3 * g.scale,
+          color: `hsl(${180 + Math.random()*40}, 80%, 65%)`,
+        });
+      }
+    }
+  }
+  
+  if (released > 0) {
+    document.getElementById('excFlash').classList.add('active');
+    setTimeout(() => document.getElementById('excFlash').classList.remove('active'), 200);
+  }
+  
+  setTimeout(() => {
+    vesicles = vesicles.filter(v => !v.releasing);
+    const g2 = getSynapseGeometry();
+    while (vesicles.length < sim.maxVesicles) {
+      const margin = 20 * g2.scale;
+      vesicles.push({
+        x: g2.preX - g2.preW/2 + margin + Math.random() * (g2.preW - margin*2),
+        y: g2.preY - g2.preH/2 + margin + Math.random() * (g2.preH - margin*2),
+        r: (6 + Math.random() * 4) * g2.scale,
+        nt: 5 + Math.floor(Math.random() * 6),
+        alpha: 0.8 + Math.random() * 0.2,
+        releasing: false,
+      });
+    }
+  }, 800);
+}
+
+function updateNTBinding() {
+  const g = getSynapseGeometry();
+  const agonistBonus = sim.agonist / 100;
+  const antagonistBlock = sim.antagonist / 100;
+  
+  for (let nt of ntMolecules) {
+    if (nt.bound) continue;
+    for (let rec of receptors) {
+      if (rec.bound) continue;
+      const dx = nt.x - (rec.x + rec.w/2);
+      const dy = nt.y - (rec.y + rec.h/2);
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 20 * g.scale && Math.random() < 0.05 * (1 + agonistBonus) * (1 - antagonistBlock)) {
+        rec.bound = true;
+        rec.glow = 1.0;
+        nt.bound = true;
+        nt.life = 0;
+        break;
+      }
+    }
+  }
+  
+  for (let rec of receptors) {
+    if (rec.bound) {
+      rec.glow = Math.max(0.3, rec.glow - 0.005);
+      if (Math.random() < 0.02) {
+        rec.bound = false;
+        rec.glow = 0;
+      }
+    }
+  }
+  
+  const activeReceptors = receptors.filter(r => r.bound).length;
+  const totalReceptors = receptors.length;
+  sim.freeReceptors = totalReceptors - activeReceptors;
+  sim.excitation = Math.min(100, (activeReceptors / totalReceptors) * 100 * (1 + agonistBonus));
+  
+  const basePotential = -70;
+  const maxDepol = 50;
+  sim.membranePotential = basePotential + (sim.excitation / 100) * maxDepol;
+}
+
+function updateNTMolecules() {
+  const g = getSynapseGeometry();
+  const reuptakeRate = 0.005 * (1 - sim.ssri / 100 * 0.9);
+  
+  ntMolecules = ntMolecules.filter(nt => {
+    if (nt.bound) return false;
+    nt.x += nt.vx;
+    nt.y += nt.vy;
+    nt.vy += (Math.random() - 0.5) * 0.3;
+    nt.vx *= 0.98;
+    nt.life -= nt.decay;
+    if (nt.y < g.cleftY) { nt.y = g.cleftY; nt.vy *= -0.5; }
+    if (nt.y > g.cleftY + g.cleftH) { nt.y = g.cleftY + g.cleftH; nt.vy *= -0.5; }
+    if (nt.x > g.postX - g.postW/2 - 10*g.scale) {
+      nt.life -= reuptakeRate * 3;
+    }
+    return nt.life > 0 && nt.x < g.postX + g.postW;
+  });
+  
+  sim.ntInCleft = ntMolecules.length;
+}
+
+function drawLabelStacked(texts, colors, x, y, spacing, fontSize) {
+  const g = getSynapseGeometry();
+  const totalHeight = texts.length * spacing;
+  const startY = y - totalHeight / 2;
+  
+  for (let i = 0; i < texts.length; i++) {
+    const text = texts[i];
+    const color = colors[i];
+    const labelY = startY + i * spacing + spacing / 2;
+    
+    ctx.font = `bold ${fontSize * g.scale}px Inter`;
+    const metrics = ctx.measureText(text);
+    const textWidth = metrics.width;
+    const padding = 16 * g.scale;
+    const labelHeight = 28 * g.scale;
+    
+    // Shadow
+    ctx.shadowColor = 'rgba(0,0,0,0.9)';
+    ctx.shadowBlur = 15;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 4;
+    
+    // Background with border
+    ctx.fillStyle = 'rgba(10,14,26,0.99)';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.roundRect(x - textWidth/2 - padding, labelY - labelHeight/2, textWidth + padding*2, labelHeight, 12);
+    ctx.fill();
+    ctx.stroke();
+    
+    // Clear shadow
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    
+    // Text
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x, labelY);
+  }
+}
+
+function drawSynapse() {
+  const g = getSynapseGeometry();
+  
+  // Background
+  const bgGrad = ctx.createRadialGradient(g.cx, g.cy, 0, g.cx, g.cy, Math.max(W,H)*0.6);
+  bgGrad.addColorStop(0, '#0f1729');
+  bgGrad.addColorStop(1, '#0a0e1a');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+  
+  // Grid
+  ctx.strokeStyle = 'rgba(99,102,241,0.04)';
+  ctx.lineWidth = 1;
+  const gridSize = 40 * g.scale;
+  for (let x = 0; x < W; x += gridSize) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = 0; y < H; y += gridSize) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  
+  // Presynaptic terminal
+  const preGrad = ctx.createLinearGradient(g.preX - g.preW/2, 0, g.preX + g.preW/2, 0);
+  preGrad.addColorStop(0, 'rgba(79,70,229,0.15)');
+  preGrad.addColorStop(1, 'rgba(99,102,241,0.25)');
+  ctx.fillStyle = preGrad;
+  ctx.strokeStyle = 'rgba(129,140,248,0.5)';
+  ctx.lineWidth = 2 * g.scale;
+  ctx.beginPath();
+  ctx.roundRect(g.preX - g.preW/2, g.preY - g.preH/2, g.preW, g.preH, 20*g.scale);
+  ctx.fill();
+  ctx.stroke();
+  
+  // Synaptic cleft
+  const cleftGrad = ctx.createLinearGradient(g.cleftX, 0, g.cleftX + g.cleftW, 0);
+  cleftGrad.addColorStop(0, 'rgba(34,211,238,0.05)');
+  cleftGrad.addColorStop(0.5, 'rgba(34,211,238,0.1)');
+  cleftGrad.addColorStop(1, 'rgba(34,211,238,0.05)');
+  ctx.fillStyle = cleftGrad;
+  ctx.fillRect(g.cleftX, g.cleftY, g.cleftW, g.cleftH);
+  ctx.strokeStyle = 'rgba(34,211,238,0.3)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.strokeRect(g.cleftX, g.cleftY, g.cleftW, g.cleftH);
+  ctx.setLineDash([]);
+  
+  // Postsynaptic membrane
+  const excColor = sim.excitation > 50 ? 
+    `rgba(251,146,60,${0.15 + sim.excitation/100*0.3})` : 
+    'rgba(52,211,153,0.12)';
+  const postGrad = ctx.createLinearGradient(g.postX - g.postW/2, 0, g.postX + g.postW/2, 0);
+  postGrad.addColorStop(0, excColor);
+  postGrad.addColorStop(1, 'rgba(52,211,153,0.08)');
+  ctx.fillStyle = postGrad;
+  ctx.strokeStyle = sim.excitation > 30 ? 
+    `rgba(251,146,60,${0.4 + sim.excitation/100*0.4})` : 
+    'rgba(52,211,153,0.4)';
+  ctx.lineWidth = 2 * g.scale;
+  ctx.beginPath();
+  ctx.roundRect(g.postX - g.postW/2, g.postY - g.postH/2, g.postW, g.postH, 20*g.scale);
+  ctx.fill();
+  ctx.stroke();
+  
+  // Vesicles
+  for (let v of vesicles) {
+    if (v.releasing) {
+      const alpha = Math.max(0, 1 - Math.random());
+      ctx.fillStyle = `rgba(167,139,250,${alpha * 0.6})`;
+      ctx.beginPath();
+      ctx.arc(v.x, v.y, v.r * 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      const vGrad = ctx.createRadialGradient(v.x, v.y, 0, v.x, v.y, v.r * 2);
+      vGrad.addColorStop(0, 'rgba(167,139,250,0.4)');
+      vGrad.addColorStop(1, 'rgba(167,139,250,0)');
+      ctx.fillStyle = vGrad;
+      ctx.beginPath();
+      ctx.arc(v.x, v.y, v.r * 2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = `rgba(139,92,246,${v.alpha})`;
+      ctx.strokeStyle = 'rgba(167,139,250,0.6)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(v.x, v.y, v.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
+  
+  // NT molecules
+  for (let nt of ntMolecules) {
+    if (nt.bound) continue;
+    const alpha = nt.life;
+    ctx.fillStyle = nt.color.replace('65%', `${65 * alpha}%`);
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.arc(nt.x, nt.y, nt.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = `rgba(34,211,238,${alpha * 0.3})`;
+    ctx.beginPath();
+    ctx.arc(nt.x, nt.y, nt.r * 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  
+  // Receptors
+  for (let rec of receptors) {
+    const glowIntensity = rec.glow;
+    ctx.save();
+    ctx.translate(rec.x, rec.y);
+    
+    if (rec.bound) {
+      const rGrad = ctx.createRadialGradient(rec.w/2, rec.h/2, 0, rec.w/2, rec.h/2, rec.w * 3);
+      rGrad.addColorStop(0, `rgba(251,191,36,${glowIntensity * 0.5})`);
+      rGrad.addColorStop(1, 'rgba(251,191,36,0)');
+      ctx.fillStyle = rGrad;
+      ctx.beginPath();
+      ctx.arc(rec.w/2, rec.h/2, rec.w * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    ctx.fillStyle = rec.bound ? 
+      `rgba(251,191,36,${0.6 + glowIntensity * 0.4})` : 
+      'rgba(52,211,153,0.5)';
+    ctx.strokeStyle = rec.bound ? 
+      `rgba(251,191,36,0.8)` : 
+      'rgba(52,211,153,0.6)';
+    ctx.lineWidth = 1.5;
+    
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, rec.h * 0.6);
+    ctx.quadraticCurveTo(0, rec.h, rec.w/2, rec.h);
+    ctx.quadraticCurveTo(rec.w, rec.h, rec.w, rec.h * 0.6);
+    ctx.lineTo(rec.w, 0);
+    ctx.stroke();
+    
+    ctx.fillStyle = rec.bound ? 'rgba(251,191,36,0.9)' : 'rgba(52,211,153,0.4)';
+    ctx.beginPath();
+    ctx.arc(rec.w/2, rec.h * 0.3, 3*g.scale, 0, Math.PI*2);
+    ctx.fill();
+    
+    ctx.restore();
+  }
+  
+  // === LABELS CON MEJOR ESPACIADO ===
+  const labelSpacing = 55 * g.scale; // Aumentado de 40 a 55
+  
+  // Labels del lado PRESINÁPTICO (izquierda)
+  const preLabelX = g.preX;
+  const preLabelY = g.preY - g.preH/2 - 50*g.scale; // Más arriba
+  drawLabelStacked(
+    ['TERMINAL PRESINÁPTICO', 'Vesículas sinápticas'],
+    ['rgba(165,180,252,0.95)', 'rgba(167,139,250,0.85)'],
+    preLabelX, preLabelY, labelSpacing, 10
+  );
+  
+  // Label de la HENDIDURA (centro) - más arriba para evitar solapamiento
+  const cleftLabelX = g.cleftX + g.cleftW/2;
+  const cleftLabelY = g.cleftY - 60*g.scale; // Más arriba
+  drawLabelStacked(
+    ['HENDIDURA SINÁPTICA'],
+    ['rgba(34,211,238,0.95)'],
+    cleftLabelX, cleftLabelY, labelSpacing, 9
+  );
+  
+  // Labels del lado POSTSINÁPTICO (derecha) - más a la derecha
+  const postLabelX = g.postX + 20*g.scale; // Desplazado a la derecha
+  const postLabelY = g.postY - g.postH/2 - 50*g.scale; // Más arriba
+  drawLabelStacked(
+    ['NEURONA POSTSINÁPTICA', 'Receptores'],
+    [
+      sim.excitation > 30 ? 'rgba(251,191,36,0.95)' : 'rgba(52,211,153,0.95)',
+      'rgba(52,211,153,0.85)'
+    ],
+    postLabelX, postLabelY, labelSpacing, 10
+  );
+  
+  // Membrane potential indicator
+  const mpX = g.postX + g.postW/2 + 30*g.scale;
+  const mpY = g.postY;
+  const mpH = 100 * g.scale;
+  const mpW = 8 * g.scale;
+  
+  ctx.fillStyle = 'rgba(30,41,59,0.8)';
+  ctx.strokeStyle = 'rgba(99,102,241,0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(mpX - mpW/2, mpY - mpH/2, mpW, mpH, 4);
+  ctx.fill();
+  ctx.stroke();
+  
+  const mpLevel = (sim.membranePotential + 90) / 80;
+  const fillH = mpH * Math.max(0, Math.min(1, mpLevel));
+  const mpColor = mpLevel > 0.7 ? '#fb923c' : mpLevel > 0.5 ? '#fbbf24' : '#34d399';
+  
+  ctx.fillStyle = mpColor;
+  ctx.beginPath();
+  ctx.roundRect(mpX - mpW/2 + 1, mpY + mpH/2 - fillH - 1, mpW - 2, fillH, 3);
+  ctx.fill();
+  
+  const threshY = mpY - mpH/2 + mpH * 0.3;
+  ctx.strokeStyle = 'rgba(248,113,113,0.6)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  ctx.moveTo(mpX - mpW, threshY);
+  ctx.lineTo(mpX + mpW, threshY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  
+  ctx.fillStyle = 'rgba(248,113,113,0.6)';
+  ctx.font = `${8*g.scale}px Inter`;
+  ctx.textAlign = 'left';
+  ctx.fillText('Umbral', mpX + mpW + 4, threshY + 3);
+}
+
+function updateStats() {
+  document.getElementById('statNT').textContent = sim.ntInCleft;
+  document.getElementById('barNT').style.width = Math.min(100, sim.ntInCleft * 2) + '%';
+  document.getElementById('statReceptors').textContent = sim.freeReceptors;
+  document.getElementById('barReceptors').style.width = (sim.freeReceptors / sim.receptorDensity * 100) + '%';
+  document.getElementById('statExcitation').textContent = sim.excitation.toFixed(1) + '%';
+  document.getElementById('barExcitation').style.width = sim.excitation + '%';
+  document.getElementById('statPostRate').textContent = sim.postRate.toFixed(1) + ' Hz';
+  document.getElementById('barPostRate').style.width = Math.min(100, sim.postRate * 10) + '%';
+  document.getElementById('statVesicles').textContent = sim.totalVesiclesReleased;
+  
+  let phase = 'REPOSO';
+  let phaseDetail = `Potencial de membrana: ${sim.membranePotential.toFixed(0)} mV`;
+  if (sim.excitation > 60) { phase = 'DESPOLARIZACIÓN'; }
+  else if (sim.excitation > 30) { phase = 'POTENCIAL POSTSINÁPTICO'; }
+  else if (sim.ntInCleft > 5) { phase = 'TRANSMISIÓN'; }
+  document.getElementById('phaseIndicator').textContent = `${phase} · ${phaseDetail}`;
+}
+
+function updateFreq() {
+  sim.freq = parseFloat(document.getElementById('freqSlider').value);
+  document.getElementById('freqVal').textContent = sim.freq.toFixed(1) + ' Hz';
+}
+
+function updatePharma() {
+  sim.toxin = parseInt(document.getElementById('toxinSlider').value);
+  sim.ssri = parseInt(document.getElementById('ssriSlider').value);
+  sim.agonist = parseInt(document.getElementById('agonistSlider').value);
+  sim.antagonist = parseInt(document.getElementById('antagonistSlider').value);
+  sim.latrotoxina = parseInt(document.getElementById('latroSlider').value);
+  document.getElementById('toxinVal').textContent = sim.toxin + '%';
+  document.getElementById('ssriVal').textContent = sim.ssri + '%';
+  document.getElementById('agonistVal').textContent = sim.agonist + '%';
+  document.getElementById('antagonistVal').textContent = sim.antagonist + '%';
+  document.getElementById('latroVal').textContent = sim.latrotoxina + '%';
+}
+
+function toggleDrawer(side) {
+  const drawer = document.getElementById(side === 'left' ? 'drawerLeft' : 'drawerRight');
+  const btn = document.getElementById(side === 'left' ? 'btnDrawerLeft' : 'btnDrawerRight');
+  drawer.classList.toggle('open');
+  btn.classList.toggle('active');
+}
+
+function togglePause() {
+  sim.paused = !sim.paused;
+  const btn = document.getElementById('btnPause');
+  btn.textContent = sim.paused ? '▶️ Reanudar' : '⏸️ Pausa';
+  btn.classList.toggle('active', sim.paused);
+}
+
+function manualFire() {
+  if (!sim.paused) fireSynapse();
+}
+
+function trainFire() {
+  if (sim.paused || sim.trainActive) return;
+  sim.trainActive = true;
+  let pulses = 0;
+  const interval = setInterval(() => {
+    if (pulses < 5 && !sim.paused) {
+      fireSynapse();
+      pulses++;
+    } else {
+      clearInterval(interval);
+      sim.trainActive = false;
+    }
+  }, 200);
+}
+
+let lastTime = 0;
+let autoFireAccum = 0;
+
+function gameLoop(timestamp) {
+  const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+  lastTime = timestamp;
+  
+  if (!sim.paused) {
+    sim.time += dt;
+    if (sim.freq > 0) {
+      autoFireAccum += dt;
+      const interval = 1 / sim.freq;
+      if (autoFireAccum >= interval) {
+        autoFireAccum -= interval;
+        fireSynapse();
+      }
+    }
+    updateNTMolecules();
+    updateNTBinding();
+  }
+  
+  drawSynapse();
+  updateStats();
+  requestAnimationFrame(gameLoop);
+}
+
+canvas.addEventListener('click', (e) => {
+  const g = getSynapseGeometry();
+  const mx = e.clientX;
+  const my = e.clientY;
+  if (mx > g.cleftX - 20 && mx < g.cleftX + g.cleftW + 20 &&
+      my > g.cleftY && my < g.cleftY + g.cleftH) {
+    for (let i = 0; i < 8; i++) {
+      ntMolecules.push({
+        x: mx + (Math.random() - 0.5) * 20,
+        y: my + (Math.random() - 0.5) * 20,
+        vx: (Math.random() - 0.5) * 2 * g.scale,
+        vy: (Math.random() - 0.5) * 2 * g.scale,
+        life: 1.0,
+        decay: 0.004,
+        bound: false,
+        r: 3 * g.scale,
+        color: `hsl(${180 + Math.random()*40}, 80%, 65%)`,
+      });
+    }
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    manualFire();
+  }
+  if (e.code === 'KeyT') {
+    trainFire();
+  }
+});
+
+initVesicles();
+initReceptors();
+
+if (window.innerWidth > 900) {
+  setTimeout(() => {
+    toggleDrawer('left');
+    toggleDrawer('right');
+  }, 500);
+}
+
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>

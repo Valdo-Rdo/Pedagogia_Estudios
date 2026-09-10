@@ -1,0 +1,2013 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Síntesis Prebiótica · Química Computacional</title>
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.8/index.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.6/index.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-tertiary: #1f2937;
+            --border: #2d3748;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.3);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --magenta: #d946ef;
+            --drawer-width: 380px;
+            --topbar-height: 48px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--topbar-height);
+            background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            z-index: 200;
+            gap: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+        }
+
+        .top-bar .title { font-size: 14px; font-weight: 600; white-space: nowrap; }
+        .top-bar .subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .top-bar .time-display {
+            margin-left: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--accent);
+            background: rgba(59, 130, 246, 0.1);
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        /* Drawer Toggle */
+        .drawer-toggle {
+            width: 36px;
+            height: 36px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .drawer-toggle:hover { background: var(--accent); color: white; border-color: var(--accent); }
+        .drawer-toggle.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+        /* Drawer */
+        .drawer {
+            position: fixed;
+            top: var(--topbar-height);
+            left: 0;
+            bottom: 0;
+            width: var(--drawer-width);
+            background: linear-gradient(180deg, #111827 0%, #0d1424 100%);
+            border-right: 1px solid var(--border);
+            z-index: 100;
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+            overflow-x: hidden;
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+        }
+
+        .drawer.open { transform: translateX(0); }
+
+        .drawer::-webkit-scrollbar { width: 6px; }
+        .drawer::-webkit-scrollbar-track { background: var(--bg-secondary); }
+        .drawer::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        .drawer-section { border-bottom: 1px solid var(--border); }
+
+        .drawer-section-header {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.15s;
+            gap: 10px;
+        }
+
+        .drawer-section-header:hover { background: var(--bg-tertiary); }
+        .drawer-section-header .icon { font-size: 16px; width: 24px; text-align: center; }
+        .drawer-section-header .label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            flex: 1;
+        }
+        .drawer-section-header .chevron {
+            font-size: 10px;
+            color: var(--text-muted);
+            transition: transform 0.2s;
+        }
+        .drawer-section-header.collapsed .chevron { transform: rotate(-90deg); }
+
+        .drawer-section-content {
+            padding: 0 16px 16px;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+            max-height: 1000px;
+        }
+
+        .drawer-section-content.collapsed {
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
+        .control-group { margin-bottom: 12px; }
+
+        .control-label {
+            display: flex;
+            align-items: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .control-label span:first-child { flex: 1; }
+        .control-value { color: var(--accent); font-weight: 600; }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            box-shadow: 0 0 6px var(--accent-glow);
+        }
+
+        .element-toggles {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .element-toggle {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 4px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .element-toggle:hover { border-color: var(--accent); }
+        .element-toggle.active { border-color: var(--accent); background: rgba(59, 130, 246, 0.1); }
+        .element-toggle .symbol { font-size: 18px; font-weight: 700; }
+        .element-toggle .valence {
+            font-size: 9px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 2px;
+        }
+        .element-toggle .count-input {
+            width: 100%;
+            margin-top: 4px;
+            text-align: center;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 11px;
+            padding: 2px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .element-toggle .count-input:focus { outline: none; border-color: var(--accent); }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .action-btn {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .action-btn:hover { background: var(--accent); border-color: var(--accent); color: white; }
+        .action-btn.danger:hover { background: var(--danger); border-color: var(--danger); }
+        .action-btn.success:hover { background: var(--success); border-color: var(--success); }
+        .action-btn.warning:hover { background: var(--warning); border-color: var(--warning); }
+        .action-btn:active { transform: scale(0.96); }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .stat-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px;
+        }
+
+        .stat-card .stat-label {
+            font-size: 9px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .stat-card .stat-value {
+            font-size: 16px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-primary);
+        }
+
+        .stat-card.full { grid-column: 1 / -1; }
+
+        /* Canvas SIEMPRE full-screen */
+        #simCanvas {
+            position: fixed;
+            top: var(--topbar-height);
+            left: 0;
+            width: 100vw;
+            height: calc(100vh - var(--topbar-height));
+            display: block;
+            z-index: 1;
+        }
+
+        .overlay-info {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 50;
+            pointer-events: none;
+        }
+
+        .overlay-badge {
+            background: rgba(17, 24, 39, 0.9);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-secondary);
+        }
+
+        .molecule-legend {
+            position: fixed;
+            bottom: 16px;
+            left: 16px;
+            z-index: 50;
+            pointer-events: none;
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-height: calc(100vh - 120px);
+        }
+
+        body.drawer-open .molecule-legend {
+            left: calc(var(--drawer-width) + 16px);
+        }
+
+        .legend-content {
+            background: rgba(17, 24, 39, 0.92);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            overflow-y: auto;
+            min-width: 220px;
+            max-height: 360px;
+        }
+
+        .legend-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 3px 0;
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .legend-item .legend-name {
+            color: var(--text-secondary);
+            font-size: 10px;
+            margin-left: 4px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            box-shadow: 0 0 4px currentColor;
+        }
+
+        .footer-info {
+            position: fixed;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 50;
+            pointer-events: none;
+        }
+
+        .footer-info p {
+            font-size: 9px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        @media (max-width: 768px) {
+            :root { --drawer-width: 300px; }
+        }
+
+        .speed-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .speed-indicator button {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .speed-indicator button:hover { background: var(--accent); color: white; }
+
+        #speedLabel {
+            min-width: 36px;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent);
+        }
+
+        /* Mini chart for free energy */
+        #energyChart {
+            width: 100%;
+            height: 60px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+
+        .pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            max-height: 160px;
+            overflow-y: auto;
+        }
+
+        .pill {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 3px 8px;
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-secondary);
+        }
+
+        .pill .pill-name {
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 9px;
+        }
+
+        .pill.known { border-color: var(--success); color: var(--success); }
+        .pill.rare  { border-color: var(--warning); color: var(--warning); }
+        .pill.big   { border-color: var(--magenta); color: var(--magenta); }
+
+        .info-line {
+            font-size: 11px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-top: 8px;
+        }
+
+        .hint {
+            position: fixed;
+            top: 56px;
+            right: 16px;
+            z-index: 60;
+            background: rgba(217, 70, 239, 0.15);
+            border: 1px solid rgba(217, 70, 239, 0.4);
+            color: #f0abfc;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .hint.show { opacity: 1; }
+
+        /* Brush selector grid */
+        .brush-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            max-height: 240px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .brush-grid::-webkit-scrollbar { width: 5px; }
+        .brush-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        .brush-cell {
+            border: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            padding: 6px 4px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        .brush-cell:hover { border-color: var(--accent); background: rgba(59,130,246,0.08); }
+        .brush-cell.active {
+            border-color: var(--accent);
+            background: rgba(59,130,246,0.18);
+            box-shadow: 0 0 0 1px var(--accent) inset;
+        }
+        .brush-cell .bc-formula {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.1;
+        }
+        .brush-cell .bc-name {
+            font-size: 9px;
+            color: var(--text-muted);
+            line-height: 1.1;
+            min-height: 10px;
+        }
+        .brush-cell .bc-tag {
+            font-size: 8px;
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 1px;
+        }
+        .brush-cell.atom-H .bc-formula { color: #f8fafc; }
+        .brush-cell.atom-C .bc-formula { color: #9ca3af; }
+        .brush-cell.atom-N .bc-formula { color: #60a5fa; }
+        .brush-cell.atom-O .bc-formula { color: #f87171; }
+
+        /* Brush preview cursor */
+        #brushCursor {
+            position: fixed;
+            pointer-events: none;
+            z-index: 150;
+            border: 1.5px dashed rgba(59,130,246,0.6);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            transition: width 0.12s, height 0.12s;
+        }
+        #brushCursor.show { display: block; }
+        #brushCursor .bc-label {
+            position: absolute;
+            top: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--accent);
+            background: rgba(17,24,39,0.85);
+            padding: 1px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(59,130,246,0.3);
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="drawer-toggle" id="drawerToggle" title="Panel de controles">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        </div>
+        <div>
+            <div class="title">Síntesis Prebiótica</div>
+            <div class="subtitle">Modelo cinético-molecular · Arrhenius · LJ + resortes</div>
+        </div>
+        <div class="speed-indicator">
+            <button id="speedDown" title="Más lento">◀</button>
+            <span id="speedLabel">1×</span>
+            <button id="speedUp" title="Más rápido">▶</button>
+        </div>
+        <div class="time-display" id="timeDisplay">t = 0.00 s</div>
+    </div>
+
+    <div class="hint" id="hint"></div>
+    <div id="brushCursor"><div class="bc-label" id="brushCursorLabel">C</div></div>
+
+    <div class="drawer" id="drawer">
+        <div class="drawer-section">
+            <div class="drawer-section-header" data-section="elements">
+                <span class="icon">⚛</span>
+                <span class="label">Elementos</span>
+                <span class="chevron">▼</span>
+            </div>
+            <div class="drawer-section-content" id="sec-elements">
+                <div class="element-toggles" id="elementToggles">
+                    <div class="element-toggle active" data-element="H">
+                        <span class="symbol" style="color:#f8fafc">H</span>
+                        <span class="valence">v=1</span>
+                        <input type="number" class="count-input" id="countH" value="140" min="0" max="600">
+                    </div>
+                    <div class="element-toggle active" data-element="C">
+                        <span class="symbol" style="color:#9ca3af">C</span>
+                        <span class="valence">v=4</span>
+                        <input type="number" class="count-input" id="countC" value="70" min="0" max="600">
+                    </div>
+                    <div class="element-toggle active" data-element="N">
+                        <span class="symbol" style="color:#60a5fa">N</span>
+                        <span class="valence">v=3</span>
+                        <input type="number" class="count-input" id="countN" value="45" min="0" max="600">
+                    </div>
+                    <div class="element-toggle active" data-element="O">
+                        <span class="symbol" style="color:#f87171">O</span>
+                        <span class="valence">v=2</span>
+                        <input type="number" class="count-input" id="countO" value="95" min="0" max="600">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="drawer-section">
+            <div class="drawer-section-header" data-section="thermo">
+                <span class="icon">🌡</span>
+                <span class="label">Parámetros Termodinámicos</span>
+                <span class="chevron">▼</span>
+            </div>
+            <div class="drawer-section-content" id="sec-thermo">
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Temperatura (kT)</span>
+                        <span class="control-value" id="tempValue">1.00</span>
+                    </div>
+                    <input type="range" id="temperature" min="0.1" max="5.0" step="0.05" value="1.0">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Energía de activación (Eₐ)</span>
+                        <span class="control-value" id="eaValue">0.150</span>
+                    </div>
+                    <input type="range" id="activationEnergy" min="0.01" max="1.0" step="0.01" value="0.15">
+                </div>
+            </div>
+        </div>
+
+        <div class="drawer-section">
+            <div class="drawer-section-header" data-section="kinetics">
+                <span class="icon">⚡</span>
+                <span class="label">Cinética de Enlaces</span>
+                <span class="chevron">▼</span>
+            </div>
+            <div class="drawer-section-content" id="sec-kinetics">
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Tasa de ruptura base</span>
+                        <span class="control-value" id="breakRateValue">0.020</span>
+                    </div>
+                    <input type="range" id="breakRate" min="0.001" max="0.1" step="0.001" value="0.02">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Fuerza de enlace (k)</span>
+                        <span class="control-value" id="bondStrengthValue">0.80</span>
+                    </div>
+                    <input type="range" id="bondStrength" min="0.1" max="2.0" step="0.05" value="0.8">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Radio de enlace (σ)</span>
+                        <span class="control-value" id="bondRadiusValue">28</span>
+                    </div>
+                    <input type="range" id="bondRadius" min="16" max="60" step="1" value="28">
+                </div>
+            </div>
+        </div>
+
+        <div class="drawer-section">
+            <div class="drawer-section-header" data-section="medium">
+                <span class="icon">🧪</span>
+                <span class="label">Composición del Medio</span>
+                <span class="chevron">▼</span>
+            </div>
+            <div class="drawer-section-content" id="sec-medium">
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Concentración inicial</span>
+                        <span class="control-value" id="concValue">350 átomos</span>
+                    </div>
+                    <input type="range" id="concentration" min="50" max="900" step="10" value="350">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Viscosidad del medio</span>
+                        <span class="control-value" id="viscValue">0.95</span>
+                    </div>
+                    <input type="range" id="viscosity" min="0.80" max="0.995" step="0.005" value="0.95">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Dispersión inicial (σ px)</span>
+                        <span class="control-value" id="spreadValue">180</span>
+                    </div>
+                    <input type="range" id="spread" min="40" max="400" step="10" value="180">
+                </div>
+            </div>
+        </div>
+
+        <div class="drawer-section">
+            <div class="drawer-section-header" data-section="brush">
+                <span class="icon">🖌</span>
+                <span class="label">Pincel (click en canvas)</span>
+                <span class="chevron">▼</span>
+            </div>
+            <div class="drawer-section-content" id="sec-brush">
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Seleccionado</span>
+                        <span class="control-value" id="brushLabel">C (átomo)</span>
+                    </div>
+                </div>
+                <div class="brush-grid" id="brushGrid"></div>
+                <p style="font-size:10px;color:var(--text-muted);margin-top:10px;line-height:1.5;">
+                    Haz <strong>click</strong> en el canvas para colocar lo que tengas seleccionado.
+                    Las moléculas se insertan con su geometría típica y enlaces ya formados.
+                </p>
+            </div>
+        </div>
+
+        <div class="drawer-section">
+            <div class="drawer-section-header" data-section="actions">
+                <span class="icon">🎮</span>
+                <span class="label">Acciones</span>
+                <span class="chevron">▼</span>
+            </div>
+            <div class="drawer-section-content" id="sec-actions">
+                <div class="action-buttons">
+                    <button class="action-btn" id="btnPause">⏸ Pausar</button>
+                    <button class="action-btn" id="btnClearTrail">🧹 Limpiar rastro</button>
+                    <button class="action-btn danger" id="btnNewBroth">🌋 Nuevo caldo</button>
+                    <button class="action-btn success" id="btnSeedPolymer">🧬 Sembrar polímero</button>
+                    <button class="action-btn warning" id="btnCatalyst">⚡ Inyectar catalizador</button>
+                    <button class="action-btn" id="btnResetTime">🔄 Reiniciar t</button>
+                    <button class="action-btn" id="btnTrails">✨ Rastros: Off</button>
+                    <button class="action-btn" id="btnLabels">🏷 Etiquetas: On</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="drawer-section">
+            <div class="drawer-section-header" data-section="state">
+                <span class="icon">📊</span>
+                <span class="label">Estado del Sistema</span>
+                <span class="chevron">▼</span>
+            </div>
+            <div class="drawer-section-content" id="sec-state">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Átomos totales</div>
+                        <div class="stat-value" id="statAtoms">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Enlaces activos</div>
+                        <div class="stat-value" id="statBonds">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Molécula más grande</div>
+                        <div class="stat-value" id="statLargest">1</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Cadenas lineales</div>
+                        <div class="stat-value" id="statChains">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Complejidad ⟨n⟩</div>
+                        <div class="stat-value" id="statComplexity">0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Energía libre ΔG</div>
+                        <div class="stat-value" id="statEnergy">0.00</div>
+                    </div>
+                    <div class="stat-card full">
+                        <div class="stat-label">Especies únicas (≥2 átomos)</div>
+                        <div class="stat-value" id="statUnique">0</div>
+                    </div>
+                </div>
+                <canvas id="energyChart"></canvas>
+            </div>
+        </div>
+
+        <div class="drawer-section">
+            <div class="drawer-section-header" data-section="species">
+                <span class="icon">🧫</span>
+                <span class="label">Especies detectadas</span>
+                <span class="chevron">▼</span>
+            </div>
+            <div class="drawer-section-content" id="sec-species">
+                <div class="pills" id="speciesPills">
+                    <span style="font-size:10px;color:var(--text-muted)">Sin especies aún…</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="drawer-section">
+            <div class="drawer-section-header" data-section="info">
+                <span class="icon">ℹ️</span>
+                <span class="label">Información</span>
+                <span class="chevron">▼</span>
+            </div>
+            <div class="drawer-section-content" id="sec-info">
+                <p class="info-line">
+                    Los átomos respetan su valencia máxima. El modelo de formación/ruptura de enlaces
+                    se basa en la ecuación de Arrhenius: <em>k = A·exp(−Eₐ/kT)</em>.
+                </p>
+                <p class="info-line">
+                    Se añade <strong>potencial de Lennard-Jones suave</strong> entre átomos no enlazados
+                    y <strong>resorte armónico</strong> entre enlazados, con longitud objetivo σ.
+                </p>
+                <p class="info-line">
+                    Inspirado en los experimentos de Miller-Urey (1953) sobre síntesis prebiótica
+                    y autoorganización molecular en caldos primordiales.
+                </p>
+                <p class="info-line" style="font-style:italic">
+                    Simulador para uso académico universitario. Química Computacional.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="simCanvas"></canvas>
+
+    <div class="overlay-info">
+        <div class="overlay-badge" id="fpsDisplay">FPS: 60</div>
+        <div class="overlay-badge" id="molCount">Moléculas: 0</div>
+        <div class="overlay-badge" id="knownCount">Especies conocidas: 0</div>
+    </div>
+
+    <div class="molecule-legend" id="moleculeLegend">
+        <div class="legend-content">
+            <div class="legend-title">Especies detectadas</div>
+            <div id="legendItems"></div>
+        </div>
+    </div>
+
+    <div class="footer-info">
+        <p>Síntesis prebiótica · Autoorganización molecular<br>Inspirado en Miller-Urey (1953)</p>
+    </div>
+
+    <script>
+    // ============================================
+    // SIMULADOR DE SÍNTESIS PREBIÓTICA · v2
+    // - Átomos con distribución Gaussiana centrada
+    // - Resortes entre átomos enlazados (longitud σ)
+    // - Repulsión LJ suave entre átomos no enlazados
+    // - Spatial hashing O(n) para formar enlaces
+    // - Reconocimiento de moléculas prebióticas
+    // - Etiquetas, rastros, catalizador visible
+    // ============================================
+
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+    const eChart = document.getElementById('energyChart');
+    const eCtx = eChart.getContext('2d');
+
+    let paused = false;
+    let simTime = 0;
+    let speedMultiplier = 1;
+    let atoms = [];
+    let bonds = [];
+    let frameCount = 0;
+    let lastFpsTime = performance.now();
+    let fps = 60;
+    let showTrails = false;
+    let showLabels = true;
+    let catalystTimer = 0;
+    let energyHistory = [];
+
+    const params = {
+        temperature: 1.0,
+        activationEnergy: 0.15,
+        breakRate: 0.02,
+        bondStrength: 0.8,
+        bondRadius: 28,
+        concentration: 350,
+        viscosity: 0.95,
+        spread: 180,
+        elementCounts: { H: 140, C: 70, N: 45, O: 95 }
+    };
+
+    const elements = {
+        H: { valence: 1, color: '#cbd5e1', radius: 5,  mass: 1,  glow: '#ffffff' },
+        C: { valence: 4, color: '#374151', radius: 8,  mass: 12, glow: '#9ca3af' },
+        N: { valence: 3, color: '#1e40af', radius: 7,  mass: 14, glow: '#60a5fa' },
+        O: { valence: 2, color: '#991b1b', radius: 7,  mass: 16, glow: '#f87171' }
+    };
+
+    // Moléculas prebióticas conocidas (Hill, 1992; Miller-Urey)
+    const knownMolecules = {
+        'H2':     { name: 'Hidrógeno mol.' , cat: 'known' },
+        'O2':     { name: 'Oxígeno mol.'   , cat: 'known' },
+        'N2':     { name: 'Nitrógeno mol.', cat: 'known' },
+        'H2O':    { name: 'Agua'           , cat: 'known' },
+        'OH':     { name: 'Radical hidroxilo', cat: 'known' },
+        'HO2':    { name: 'Radical perhidroxilo', cat: 'known' },
+        'H2O2':   { name: 'Peróxido de hidrógeno', cat: 'known' },
+        'NH3':    { name: 'Amoníaco'      , cat: 'known' },
+        'CH4':    { name: 'Metano'        , cat: 'known' },
+        'CO':     { name: 'Monóxido de carbono', cat: 'known' },
+        'CO2':    { name: 'Dióxido de carbono', cat: 'known' },
+        'NO':     { name: 'Óxido nítrico' , cat: 'known' },
+        'NO2':    { name: 'Dióxido de nitrógeno', cat: 'known' },
+        'N2O':    { name: 'Óxido nitroso' , cat: 'known' },
+        'HCN':    { name: 'Cianuro de hidrógeno', cat: 'known' },
+        'CH2O':   { name: 'Formaldehído'  , cat: 'known' },
+        'CH2O2':  { name: 'Ácido fórmico' , cat: 'known' },
+        'CH3OH':  { name: 'Metanol'       , cat: 'known' },
+        'C2H4':   { name: 'Eteno'         , cat: 'known' },
+        'C2H6':   { name: 'Etano'         , cat: 'known' },
+        'C2H2':   { name: 'Acetileno'     , cat: 'known' },
+        'C2H4O':  { name: 'Acetaldehído'  , cat: 'known' },
+        'C2H6O':  { name: 'Etanol'        , cat: 'known' },
+        'HCNO':   { name: 'Ácido isociánico', cat: 'known' },
+        'HOCN':   { name: 'Ácido ciánico' , cat: 'known' },
+        'NH2CHO': { name: 'Formamida ★'   , cat: 'rare' },  // prebiótica clave
+        'CH2N2':  { name: 'Diazometano'   , cat: 'rare' },
+        'C2H4N2': { name: 'Diaminomaleonitrilo', cat: 'rare' }, // DAMN prebiótico
+        'CHNO':   { name: 'Isocianato'    , cat: 'rare' },
+        'C3HN':   { name: 'Cianoacetileno', cat: 'rare' },
+        'C2H3N':  { name: 'Acetonitrilo'  , cat: 'rare' },
+        'CH3NH2': { name: 'Metilamina'    , cat: 'known' },
+        'H2NNH2': { name: 'Hidracina'     , cat: 'rare' }
+    };
+
+    const TOPBAR_H = 48;
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight - TOPBAR_H;
+        eChart.width = eChart.clientWidth;
+        eChart.height = eChart.clientHeight;
+    }
+
+    window.addEventListener('resize', resize);
+
+    // Box-Muller para distribución Gaussiana
+    function gaussianRand() {
+        const u = Math.max(1e-9, Math.random());
+        const v = Math.random();
+        return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+
+    // --- Atom Class ---
+    class Atom {
+        constructor(element, x, y) {
+            this.element = element;
+            this.x = x;
+            this.y = y;
+            // Velocidad inicial con distribución Maxwell-Boltzmann
+            const v = Math.sqrt(params.temperature) * (1 + Math.random() * 0.5);
+            const a = Math.random() * Math.PI * 2;
+            this.vx = Math.cos(a) * v;
+            this.vy = Math.sin(a) * v;
+            this.fx = 0;
+            this.fy = 0;
+            this.prop = elements[element];
+            this.bonds = []; // {partner, order}
+            this.trail = [];
+            this.flashBond = 0; // brillo al formar enlace
+        }
+
+        get availableValence() {
+            let used = 0;
+            for (const b of this.bonds) used += b.order;
+            return this.prop.valence - used;
+        }
+
+        get bondOrderWith() {
+            // map partner -> order
+            const m = new Map();
+            for (const b of this.bonds) m.set(b.partner, b.order);
+            return m;
+        }
+
+        update(dt) {
+            // Ruido térmico (Browniano)
+            const thermalForce = params.temperature * 0.6;
+            this.vx += (Math.random() - 0.5) * thermalForce * dt * 60;
+            this.vy += (Math.random() - 0.5) * thermalForce * dt * 60;
+
+            // Viscosidad
+            this.vx *= params.viscosity;
+            this.vy *= params.viscosity;
+
+            // Velocidad máxima (limite soft)
+            const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+            const maxSpeed = 3.5 * params.temperature;
+            if (speed > maxSpeed) {
+                this.vx = (this.vx / speed) * maxSpeed;
+                this.vy = (this.vy / speed) * maxSpeed;
+            }
+
+            this.x += this.vx * dt * 60;
+            this.y += this.vy * dt * 60;
+
+            // Trail
+            if (showTrails) {
+                this.trail.push({ x: this.x, y: this.y });
+                if (this.trail.length > 18) this.trail.shift();
+            } else if (this.trail.length) {
+                this.trail.length = 0;
+            }
+
+            // Bounce en bordes del canvas
+            const margin = this.prop.radius;
+            const w = canvas.width;
+            const h = canvas.height;
+            if (this.x < margin) { this.x = margin; this.vx = Math.abs(this.vx) * 0.8; }
+            if (this.x > w - margin) { this.x = w - margin; this.vx = -Math.abs(this.vx) * 0.8; }
+            if (this.y < margin) { this.y = margin; this.vy = Math.abs(this.vy) * 0.8; }
+            if (this.y > h - margin) { this.y = h - margin; this.vy = -Math.abs(this.vy) * 0.8; }
+
+            // Decae el flash
+            if (this.flashBond > 0) this.flashBond *= 0.92;
+        }
+
+        draw() {
+            const r = this.prop.radius;
+
+            // Glow exterior
+            const glowR = r * 2.8 + this.flashBond * 8;
+            ctx.beginPath();
+            const g1 = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, glowR);
+            g1.addColorStop(0, this.prop.glow + '40');
+            g1.addColorStop(1, 'transparent');
+            ctx.fillStyle = g1;
+            ctx.arc(this.x, this.y, glowR, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cuerpo con gradiente
+            ctx.beginPath();
+            const g2 = ctx.createRadialGradient(this.x - r*0.3, this.y - r*0.3, 0, this.x, this.y, r);
+            g2.addColorStop(0, this.prop.glow);
+            g2.addColorStop(1, this.prop.color);
+            ctx.fillStyle = g2;
+            ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Borde sutil
+            ctx.strokeStyle = this.prop.glow + '60';
+            ctx.lineWidth = 0.6;
+            ctx.stroke();
+
+            // Símbolo del elemento
+            if (r >= 6) {
+                ctx.fillStyle = (this.element === 'H' || this.element === 'O' || this.element === 'N') ? '#0a0e1a' : '#e2e8f0';
+                ctx.font = `bold ${Math.max(8, r)}px Inter`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.element, this.x, this.y + 0.5);
+            }
+        }
+    }
+
+    // --- Spatial Hash Grid (O(n) vecindad) ---
+    class SpatialGrid {
+        constructor(cellSize) {
+            this.cellSize = cellSize;
+            this.cells = new Map();
+        }
+        clear() { this.cells.clear(); }
+        key(cx, cy) { return cx * 100000 + cy; }
+        insert(atom) {
+            const cx = Math.floor(atom.x / this.cellSize);
+            const cy = Math.floor(atom.y / this.cellSize);
+            const k = this.key(cx, cy);
+            if (!this.cells.has(k)) this.cells.set(k, []);
+            this.cells.get(k).push(atom);
+        }
+        forEachNeighbor(atom, cb) {
+            const cx = Math.floor(atom.x / this.cellSize);
+            const cy = Math.floor(atom.y / this.cellSize);
+            for (let dx = -1; dx <= 1; dx++) {
+                for (let dy = -1; dy <= 1; dy++) {
+                    const k = this.key(cx + dx, cy + dy);
+                    const cell = this.cells.get(k);
+                    if (cell) for (const a of cell) cb(a);
+                }
+            }
+        }
+    }
+
+    let grid = new SpatialGrid(params.bondRadius * 2);
+
+    // --- Init: átomos con campana de Gauss centrada ---
+    function initAtoms() {
+        atoms = [];
+        bonds = [];
+        simTime = 0;
+        energyHistory = [];
+
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const sigma = Math.min(params.spread, Math.min(canvas.width, canvas.height) * 0.45);
+        const margin = 30;
+
+        const total = params.concentration;
+        const totalRequested = params.elementCounts.H + params.elementCounts.C +
+                               params.elementCounts.N + params.elementCounts.O;
+        if (totalRequested <= 0) return;
+
+        for (const [elem, count] of Object.entries(params.elementCounts)) {
+            if (!elements[elem]) continue;
+            const scaledCount = Math.round(count * total / totalRequested);
+            for (let i = 0; i < scaledCount; i++) {
+                let x, y;
+                // 90% Gaussian en el centro, 10% uniforme para dispersión periférica
+                if (Math.random() < 0.9) {
+                    x = cx + gaussianRand() * sigma;
+                    y = cy + gaussianRand() * sigma;
+                } else {
+                    x = margin + Math.random() * (canvas.width - margin * 2);
+                    y = margin + Math.random() * (canvas.height - margin * 2);
+                }
+                // Clamp al canvas
+                x = Math.max(margin, Math.min(canvas.width - margin, x));
+                y = Math.max(margin, Math.min(canvas.height - margin, y));
+                atoms.push(new Atom(elem, x, y));
+            }
+        }
+    }
+
+    // --- Bond Management ---
+    function formBond(a, b) {
+        // Verifica si ya existe
+        let existing = a.bonds.find(x => x.partner === b);
+        if (existing) {
+            // Subir de orden si ambos tienen valencia disponible
+            if (existing.order < 3 && a.availableValence >= 1 && b.availableValence >= 1) {
+                existing.order += 1;
+                const mirror = b.bonds.find(x => x.partner === a);
+                if (mirror) mirror.order = existing.order;
+                a.flashBond = 1; b.flashBond = 1;
+            }
+            return;
+        }
+        if (a.availableValence <= 0 || b.availableValence <= 0) return;
+        const order = 1;
+        a.bonds.push({ partner: b, order });
+        b.bonds.push({ partner: a, order });
+        bonds.push({ a, b, order, age: 0, strength: params.bondStrength });
+        a.flashBond = 1; b.flashBond = 1;
+    }
+
+    function breakBond(bond) {
+        const idxA = bond.a.bonds.findIndex(x => x.partner === bond.b);
+        const idxB = bond.b.bonds.findIndex(x => x.partner === bond.a);
+        if (idxA >= 0) bond.a.bonds.splice(idxA, 1);
+        if (idxB >= 0) bond.b.bonds.splice(idxB, 1);
+    }
+
+    function tryFormBonds() {
+        const bondR = params.bondRadius;
+        const bondR2 = bondR * bondR;
+        grid.cellSize = bondR * 2;
+        grid.clear();
+        for (const a of atoms) grid.insert(a);
+
+        const arrheniusFactor = Math.exp(-params.activationEnergy / Math.max(0.05, params.temperature));
+        const formationRate = arrheniusFactor * params.bondStrength * 0.18;
+        // El catalizador aumenta temporalmente la tasa
+        const catBoost = catalystTimer > 0 ? 6.0 : 1.0;
+
+        for (const a of atoms) {
+            if (a.availableValence <= 0) continue;
+            grid.forEachNeighbor(a, (b) => {
+                if (b === a) return;
+                if (b.availableValence <= 0) return;
+                if (b.x < a.x) return; // evita duplicar (a<b)
+                const dx = a.x - b.x;
+                const dy = a.y - b.y;
+                const d2 = dx * dx + dy * dy;
+                if (d2 > bondR2 || d2 < 16) return;
+                if (Math.random() < formationRate * catBoost) {
+                    formBond(a, b);
+                }
+            });
+        }
+    }
+
+    function tryBreakBonds() {
+        const toRemove = [];
+        for (let i = 0; i < bonds.length; i++) {
+            const bond = bonds[i];
+            bond.age++;
+            const dx = bond.a.x - bond.b.x;
+            const dy = bond.a.y - bond.b.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist > params.bondRadius * 2.6) {
+                toRemove.push(i);
+                continue;
+            }
+            // Arrhenius inversa: a mayor T, más rupturas
+            const breakProb = params.breakRate * Math.exp(-bond.strength / Math.max(0.05, params.temperature * 0.5));
+            if (Math.random() < breakProb) {
+                toRemove.push(i);
+            }
+        }
+        for (let i = toRemove.length - 1; i >= 0; i--) {
+            breakBond(bonds[toRemove[i]]);
+            bonds.splice(toRemove[i], 1);
+        }
+    }
+
+    // --- Fuerzas: resortes entre enlazados, repulsión LJ ---
+    function applyForces(dt) {
+        // Reset forces
+        for (const a of atoms) { a.fx = 0; a.fy = 0; }
+
+        // Repulsión suave entre todos los pares cercanos (O(n) con grid)
+        grid.cellSize = Math.max(params.bondRadius, 24) * 2;
+        grid.clear();
+        for (const a of atoms) grid.insert(a);
+        const repulsionRange = grid.cellSize;
+
+        for (const a of atoms) {
+            grid.forEachNeighbor(a, (b) => {
+                if (b === a) return;
+                if (b.x < a.x) return; // evita duplicar
+                const dx = b.x - a.x;
+                const dy = b.y - a.y;
+                const d2 = dx*dx + dy*dy;
+                if (d2 < 1) return;
+                const minDist = a.prop.radius + b.prop.radius + 2;
+                if (d2 < (minDist * 2.5) * (minDist * 2.5)) {
+                    const d = Math.sqrt(d2);
+                    // Si están enlazados, no repeler (lo maneja el resorte)
+                    if (a.bonds.some(x => x.partner === b)) return;
+                    // Repulsión soft 1/r^2 + componente LJ
+                    let f = 0;
+                    if (d < minDist) {
+                        f = (minDist - d) * 0.6;
+                    } else if (d < minDist * 2.5) {
+                        // Pequeña atracción/repulsión LJ-suave
+                        const eps = 0.04;
+                        const r6 = Math.pow(minDist / d, 6);
+                        f = -eps * 12 * (r6 * r6 - r6) / d * 0.02;
+                    }
+                    if (Math.abs(f) > 1e-6) {
+                        const fx = (dx / d) * f;
+                        const fy = (dy / d) * f;
+                        a.fx -= fx; a.fy -= fy;
+                        b.fx += fx; b.fy += fy;
+                    }
+                }
+            });
+        }
+
+        // Resortes entre enlazados
+        const targetLen = params.bondRadius * 0.95;
+        const k = params.bondStrength * 4.0;
+        for (const bond of bonds) {
+            const dx = bond.b.x - bond.a.x;
+            const dy = bond.b.y - bond.a.y;
+            const d = Math.sqrt(dx * dx + dy * dy);
+            if (d < 0.001) continue;
+            const stretch = d - targetLen;
+            const fMag = stretch * k;
+            const fx = (dx / d) * fMag;
+            const fy = (dy / d) * fMag;
+            // Aplica inversamente proporcional a masa
+            const ma = bond.a.prop.mass, mb = bond.b.prop.mass;
+            const total = ma + mb;
+            bond.a.fx += fx * (mb / total);
+            bond.a.fy += fy * (mb / total);
+            bond.b.fx -= fx * (ma / total);
+            bond.b.fy -= fy * (ma / total);
+        }
+
+        // Integración (semi-implícita Euler)
+        for (const a of atoms) {
+            a.vx += (a.fx / a.prop.mass) * dt * 60;
+            a.vy += (a.fy / a.prop.mass) * dt * 60;
+        }
+    }
+
+    // --- Molecule Analysis (Union-Find) ---
+    function findMolecules() {
+        const parent = new Map();
+        function find(x) {
+            if (!parent.has(x)) parent.set(x, x);
+            if (parent.get(x) === x) return x;
+            const root = find(parent.get(x));
+            parent.set(x, root);
+            return root;
+        }
+        function union(a, b) {
+            const ra = find(a);
+            const rb = find(b);
+            if (ra !== rb) parent.set(ra, rb);
+        }
+        for (const bond of bonds) union(bond.a, bond.b);
+        const molecules = new Map();
+        for (const atom of atoms) {
+            const root = find(atom);
+            if (!molecules.has(root)) molecules.set(root, []);
+            molecules.get(root).push(atom);
+        }
+        return Array.from(molecules.values());
+    }
+
+    function getMoleculeFormula(mol) {
+        const counts = {};
+        for (const atom of mol) counts[atom.element] = (counts[atom.element] || 0) + 1;
+        const order = ['C', 'H', 'N', 'O'];
+        let f = '';
+        for (const el of order) {
+            if (counts[el]) { f += el; if (counts[el] > 1) f += counts[el]; }
+        }
+        return f || '?';
+    }
+
+    function getMoleculeColor(mol) {
+        const counts = {};
+        for (const atom of mol) counts[atom.element] = (counts[atom.element] || 0) + 1;
+        let dom = 'H', mx = 0;
+        for (const [el, c] of Object.entries(counts)) if (c > mx) { mx = c; dom = el; }
+        return elements[dom].glow;
+    }
+
+    // --- Stats + Legend + Pills + Energy chart ---
+    function updateStats() {
+        const molecules = findMolecules();
+        const sizes = molecules.map(m => m.length).sort((a, b) => b - a);
+
+        const totalAtoms = atoms.length;
+        const activeBonds = bonds.length;
+        const largest = sizes.length > 0 ? sizes[0] : 1;
+
+        let chains = 0;
+        for (const mol of molecules) {
+            if (mol.length < 2) continue;
+            const isLinear = mol.every(atom => atom.bonds.length <= 2);
+            if (isLinear) chains++;
+        }
+        const complexity = molecules.length > 0
+            ? molecules.reduce((s, m) => s + m.length * m.length, 0) / molecules.reduce((s, m) => s + m.length, 0)
+            : 0;
+        const freeEnergy = -activeBonds * params.bondStrength + totalAtoms * params.temperature * Math.log(params.temperature + 0.01);
+
+        document.getElementById('statAtoms').textContent = totalAtoms;
+        document.getElementById('statBonds').textContent = activeBonds;
+        document.getElementById('statLargest').textContent = largest;
+        document.getElementById('statChains').textContent = chains;
+        document.getElementById('statComplexity').textContent = complexity.toFixed(2);
+        document.getElementById('statEnergy').textContent = freeEnergy.toFixed(2);
+        const realMols = molecules.filter(m => m.length >= 2).length;
+        document.getElementById('statUnique').textContent = realMols;
+        document.getElementById('molCount').textContent = `Moléculas: ${realMols}`;
+
+        energyHistory.push(freeEnergy);
+        if (energyHistory.length > 200) energyHistory.shift();
+        drawEnergyChart();
+
+        updateLegend(molecules);
+        updateSpeciesPills(molecules);
+    }
+
+    function drawEnergyChart() {
+        const w = eChart.width, h = eChart.height;
+        eCtx.clearRect(0, 0, w, h);
+        if (energyHistory.length < 2) return;
+        const min = Math.min(...energyHistory);
+        const max = Math.max(...energyHistory);
+        const range = max - min || 1;
+        // Eje cero
+        eCtx.strokeStyle = 'rgba(148,163,184,0.15)';
+        eCtx.lineWidth = 0.5;
+        eCtx.beginPath();
+        eCtx.moveTo(0, h/2); eCtx.lineTo(w, h/2);
+        eCtx.stroke();
+
+        eCtx.strokeStyle = '#3b82f6';
+        eCtx.lineWidth = 1.2;
+        eCtx.beginPath();
+        for (let i = 0; i < energyHistory.length; i++) {
+            const x = (i / (energyHistory.length - 1)) * w;
+            const y = h - ((energyHistory[i] - min) / range) * h * 0.9 - h * 0.05;
+            if (i === 0) eCtx.moveTo(x, y); else eCtx.lineTo(x, y);
+        }
+        eCtx.stroke();
+        // Fill
+        eCtx.lineTo(w, h);
+        eCtx.lineTo(0, h);
+        eCtx.closePath();
+        eCtx.fillStyle = 'rgba(59,130,246,0.12)';
+        eCtx.fill();
+    }
+
+    function updateLegend(molecules) {
+        const formulaCounts = {};
+        for (const mol of molecules) {
+            if (mol.length < 2) continue;
+            const f = getMoleculeFormula(mol);
+            formulaCounts[f] = (formulaCounts[f] || 0) + 1;
+        }
+        const sorted = Object.entries(formulaCounts).sort((a, b) => b[1] - a[1]).slice(0, 14);
+        const container = document.getElementById('legendItems');
+        if (sorted.length === 0) {
+            container.innerHTML = '<div style="font-size:10px;color:var(--text-muted);font-style:italic;">Sin moléculas formadas</div>';
+            return;
+        }
+        let knownTotal = 0;
+        container.innerHTML = sorted.map(([f, c]) => {
+            let color = '#94a3b8';
+            if (f.includes('C')) color = elements.C.glow;
+            else if (f.includes('N')) color = elements.N.glow;
+            else if (f.includes('O')) color = elements.O.glow;
+            else color = elements.H.glow;
+            const known = knownMolecules[f];
+            if (known) knownTotal++;
+            const nameTag = known ? `<span class="legend-name">· ${known.name}</span>` : '';
+            return `<div class="legend-item">
+                <div class="legend-dot" style="background:${color};color:${color}"></div>
+                <span>${f}</span>${nameTag}
+                <span style="margin-left:auto;color:var(--text-muted)">×${c}</span>
+            </div>`;
+        }).join('');
+        document.getElementById('knownCount').textContent = `Especies conocidas: ${knownTotal}`;
+    }
+
+    function updateSpeciesPills(molecules) {
+        const formulaCounts = {};
+        for (const mol of molecules) {
+            if (mol.length < 2) continue;
+            const f = getMoleculeFormula(mol);
+            formulaCounts[f] = (formulaCounts[f] || 0) + 1;
+        }
+        const sorted = Object.entries(formulaCounts).sort((a, b) => b[1] - a[1]).slice(0, 40);
+        const cont = document.getElementById('speciesPills');
+        if (sorted.length === 0) {
+            cont.innerHTML = '<span style="font-size:10px;color:var(--text-muted)">Sin especies aún…</span>';
+            return;
+        }
+        cont.innerHTML = sorted.map(([f, c]) => {
+            const known = knownMolecules[f];
+            let cls = '';
+            let name = '';
+            if (known) { cls = known.cat === 'rare' ? 'rare' : 'known'; name = known.name; }
+            else if (c >= 4) cls = 'big';
+            return `<span class="pill ${cls}" title="${name}">
+                ${f} ×${c}${name ? `<span class="pill-name">· ${name}</span>` : ''}
+            </span>`;
+        }).join('');
+    }
+
+    // --- Render ---
+    function drawBonds() {
+        for (const bond of bonds) {
+            const dx = bond.b.x - bond.a.x;
+            const dy = bond.b.y - bond.a.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const stretch = dist / params.bondRadius;
+            let alpha = Math.max(0.2, 1 - (stretch - 1) * 0.5);
+            let color;
+            if (stretch > 2) color = `rgba(239, 68, 68, ${alpha})`;
+            else if (stretch > 1.5) color = `rgba(245, 158, 11, ${alpha})`;
+            else color = `rgba(96, 165, 250, ${alpha * 0.7})`;
+
+            // Render order: simple/double/triple
+            const order = bond.order || 1;
+            if (order === 1) {
+                ctx.beginPath();
+                ctx.moveTo(bond.a.x, bond.a.y);
+                ctx.lineTo(bond.b.x, bond.b.y);
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1.6;
+                ctx.stroke();
+            } else {
+                // Líneas paralelas
+                const nx = -dy / dist;
+                const ny = dx / dist;
+                const off = 2.5;
+                for (let k2 = -(order - 1) / 2; k2 <= (order - 1) / 2; k2 += 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(bond.a.x + nx * off * k2, bond.a.y + ny * off * k2);
+                    ctx.lineTo(bond.b.x + nx * off * k2, bond.b.y + ny * off * k2);
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 1.4;
+                    ctx.stroke();
+                }
+            }
+        }
+    }
+
+    function drawTrails() {
+        if (!showTrails) return;
+        ctx.lineWidth = 1;
+        for (const a of atoms) {
+            if (a.trail.length < 2) continue;
+            ctx.beginPath();
+            ctx.moveTo(a.trail[0].x, a.trail[0].y);
+            for (let i = 1; i < a.trail.length; i++) ctx.lineTo(a.trail[i].x, a.trail[i].y);
+            ctx.strokeStyle = a.prop.glow + '40';
+            ctx.stroke();
+        }
+    }
+
+    function drawMoleculeHighlights() {
+        if (!showLabels) return;
+        const molecules = findMolecules();
+        ctx.font = 'bold 11px JetBrains Mono';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        for (const mol of molecules) {
+            if (mol.length < 2) continue;
+            let cx = 0, cy = 0;
+            for (const atom of mol) { cx += atom.x; cy += atom.y; }
+            cx /= mol.length; cy /= mol.length;
+
+            let maxDist = 0;
+            for (const atom of mol) {
+                const d = Math.sqrt((atom.x - cx) ** 2 + (atom.y - cy) ** 2);
+                if (d > maxDist) maxDist = d;
+            }
+
+            const color = getMoleculeColor(mol);
+            // halo
+            if (maxDist > 12 && mol.length >= 3) {
+                ctx.beginPath();
+                ctx.arc(cx, cy, maxDist + 10, 0, Math.PI * 2);
+                ctx.strokeStyle = color + '14';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+            // etiqueta de fórmula
+            const formula = getMoleculeFormula(mol);
+            const known = knownMolecules[formula];
+            if (mol.length >= 3 || known) {
+                ctx.fillStyle = 'rgba(10,14,26,0.75)';
+                const label = known ? `${formula} · ${known.name}` : formula;
+                const w = ctx.measureText(label).width + 8;
+                const labelY = cy - maxDist - 12;
+                ctx.fillRect(cx - w / 2, labelY - 7, w, 14);
+                ctx.fillStyle = known
+                    ? (known.cat === 'rare' ? '#fbbf24' : '#34d399')
+                    : color;
+                ctx.fillText(label, cx, labelY);
+            }
+        }
+        ctx.textAlign = 'start';
+        ctx.textBaseline = 'alphabetic';
+    }
+
+    function drawCatalystFx() {
+        if (catalystTimer <= 0) return;
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const t = catalystTimer;
+        const r = (1 - t / 3) * Math.min(canvas.width, canvas.height) * 0.5;
+        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        grad.addColorStop(0, `rgba(217, 70, 239, ${0.15 * t / 3})`);
+        grad.addColorStop(0.7, `rgba(217, 70, 239, ${0.04 * t / 3})`);
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // --- Main Loop ---
+    let lastTime = performance.now();
+    let statsTimer = 0;
+
+    function update() {
+        const now = performance.now();
+        let dt = (now - lastTime) / 1000;
+        lastTime = now;
+        dt = Math.min(dt, 0.05) * speedMultiplier;
+
+        frameCount++;
+        if (now - lastFpsTime > 500) {
+            fps = Math.round(frameCount / ((now - lastFpsTime) / 1000));
+            document.getElementById('fpsDisplay').textContent = `FPS: ${fps}`;
+            frameCount = 0;
+            lastFpsTime = now;
+        }
+
+        if (!paused) {
+            simTime += dt;
+            document.getElementById('timeDisplay').textContent = `t = ${simTime.toFixed(2)} s`;
+
+            applyForces(dt);
+            for (const atom of atoms) atom.update(dt);
+            tryFormBonds();
+            tryBreakBonds();
+
+            if (catalystTimer > 0) catalystTimer = Math.max(0, catalystTimer - dt);
+
+            statsTimer += dt;
+            if (statsTimer > 0.5) { updateStats(); statsTimer = 0; }
+        }
+
+        // --- Render ---
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const bgGrad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, Math.max(canvas.width, canvas.height) * 0.7);
+        bgGrad.addColorStop(0, '#0f172a');
+        bgGrad.addColorStop(1, '#020617');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Grid sutil
+        ctx.strokeStyle = 'rgba(59, 130, 246, 0.04)';
+        ctx.lineWidth = 0.5;
+        const gridSize = 50;
+        for (let x = 0; x < canvas.width; x += gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+        }
+        for (let y = 0; y < canvas.height; y += gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+        }
+
+        drawCatalystFx();
+        drawTrails();
+        drawMoleculeHighlights();
+        drawBonds();
+
+        for (const atom of atoms) atom.draw();
+
+        if (paused) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+            ctx.font = 'bold 24px Inter';
+            ctx.textAlign = 'center';
+            ctx.fillText('⏸ PAUSADO', canvas.width / 2, canvas.height / 2);
+            ctx.textAlign = 'start';
+        }
+
+        requestAnimationFrame(update);
+    }
+
+    // --- Hint toast ---
+    function showHint(msg, ms = 2200) {
+        const h = document.getElementById('hint');
+        h.textContent = msg;
+        h.classList.add('show');
+        clearTimeout(showHint._t);
+        showHint._t = setTimeout(() => h.classList.remove('show'), ms);
+    }
+
+    // --- UI Controls ---
+    const drawerEl = document.getElementById('drawer');
+    const drawerToggle = document.getElementById('drawerToggle');
+
+    drawerToggle.addEventListener('click', () => {
+        const isOpen = drawerEl.classList.toggle('open');
+        drawerToggle.classList.toggle('active', isOpen);
+        document.body.classList.toggle('drawer-open', isOpen);
+    });
+
+    // Abrir el drawer por defecto la primera vez
+    drawerEl.classList.add('open');
+    drawerToggle.classList.add('active');
+    document.body.classList.add('drawer-open');
+
+    document.querySelectorAll('.drawer-section-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const sectionId = 'sec-' + header.dataset.section;
+            const content = document.getElementById(sectionId);
+            header.classList.toggle('collapsed');
+            content.classList.toggle('collapsed');
+        });
+    });
+
+    function setupSlider(id, paramKey, displayId, formatter) {
+        const slider = document.getElementById(id);
+        slider.addEventListener('input', () => {
+            params[paramKey] = parseFloat(slider.value);
+            document.getElementById(displayId).textContent = formatter(params[paramKey]);
+        });
+    }
+
+    setupSlider('temperature', 'temperature', 'tempValue', v => v.toFixed(2));
+    setupSlider('activationEnergy', 'activationEnergy', 'eaValue', v => v.toFixed(3));
+    setupSlider('breakRate', 'breakRate', 'breakRateValue', v => v.toFixed(3));
+    setupSlider('bondStrength', 'bondStrength', 'bondStrengthValue', v => v.toFixed(2));
+    setupSlider('bondRadius', 'bondRadius', 'bondRadiusValue', v => v.toFixed(0));
+    setupSlider('viscosity', 'viscosity', 'viscValue', v => v.toFixed(2));
+    setupSlider('spread', 'spread', 'spreadValue', v => v.toFixed(0));
+
+    document.getElementById('concentration').addEventListener('input', (e) => {
+        params.concentration = parseInt(e.target.value);
+        document.getElementById('concValue').textContent = params.concentration + ' átomos';
+    });
+
+    ['H', 'C', 'N', 'O'].forEach(el => {
+        const input = document.getElementById('count' + el);
+        input.addEventListener('change', (e) => {
+            params.elementCounts[el] = parseInt(e.target.value) || 0;
+            // Resalta el toggle si count > 0
+            const toggle = e.target.closest('.element-toggle');
+            toggle.classList.toggle('active', params.elementCounts[el] > 0);
+        });
+        // Click en el toggle activa/desactiva
+        const toggle = input.closest('.element-toggle');
+        toggle.addEventListener('click', (e) => {
+            if (e.target === input) return; // no doble trigger
+            const active = toggle.classList.toggle('active');
+            if (!active) { params.elementCounts[el] = 0; input.value = 0; }
+            else { params.elementCounts[el] = parseInt(input.value) || 1; }
+        });
+    });
+
+    document.getElementById('btnPause').addEventListener('click', () => {
+        paused = !paused;
+        document.getElementById('btnPause').textContent = paused ? '▶ Reanudar' : '⏸ Pausar';
+    });
+
+    document.getElementById('btnClearTrail').addEventListener('click', () => {
+        for (const a of atoms) a.trail = [];
+        showHint('Rastros limpiados');
+    });
+
+    document.getElementById('btnNewBroth').addEventListener('click', () => {
+        initAtoms();
+        showHint('Nuevo caldo primordial');
+    });
+
+    document.getElementById('btnSeedPolymer').addEventListener('click', () => {
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const chainLen = 8;
+        const chainAtoms = [];
+        for (let i = 0; i < chainLen; i++) {
+            const a = new Atom('C', cx + (i - chainLen / 2) * (params.bondRadius * 0.95), cy);
+            atoms.push(a);
+            chainAtoms.push(a);
+        }
+        for (let i = 0; i < chainAtoms.length - 1; i++) formBond(chainAtoms[i], chainAtoms[i + 1]);
+        // H around
+        for (let i = 0; i < chainLen; i++) {
+            const a = chainAtoms[i];
+            for (let h = 0; h < 2; h++) {
+                if (a.availableValence <= 0) break;
+                const off = h === 0 ? -1 : 1;
+                const hAtom = new Atom('H', a.x + off * 14, a.y - 14);
+                atoms.push(hAtom);
+                formBond(a, hAtom);
+            }
+        }
+        showHint('Polímero sembrado (octano)');
+    });
+
+    document.getElementById('btnCatalyst').addEventListener('click', () => {
+        catalystTimer = 3.0;
+        showHint('⚡ Catalizador activo · 3 s');
+    });
+
+    document.getElementById('btnResetTime').addEventListener('click', () => {
+        simTime = 0;
+        document.getElementById('timeDisplay').textContent = 't = 0.00 s';
+    });
+
+    document.getElementById('btnTrails').addEventListener('click', (e) => {
+        showTrails = !showTrails;
+        e.target.textContent = showTrails ? '✨ Rastros: On' : '✨ Rastros: Off';
+        if (!showTrails) for (const a of atoms) a.trail = [];
+    });
+
+    document.getElementById('btnLabels').addEventListener('click', (e) => {
+        showLabels = !showLabels;
+        e.target.textContent = showLabels ? '🏷 Etiquetas: On' : '🏷 Etiquetas: Off';
+    });
+
+    const speeds = [0.25, 0.5, 1, 2, 4];
+    let speedIdx = 2;
+    document.getElementById('speedUp').addEventListener('click', () => {
+        speedIdx = Math.min(speedIdx + 1, speeds.length - 1);
+        speedMultiplier = speeds[speedIdx];
+        document.getElementById('speedLabel').textContent = speedMultiplier + '×';
+    });
+    document.getElementById('speedDown').addEventListener('click', () => {
+        speedIdx = Math.max(speedIdx - 1, 0);
+        speedMultiplier = speeds[speedIdx];
+        document.getElementById('speedLabel').textContent = speedMultiplier + '×';
+    });
+
+    // ============================================
+    // PINCEL: selección de qué colocar al hacer click
+    // ============================================
+
+    // Catálogo del pincel: átomos + moléculas pre-armadas
+    // Las moléculas definen átomos (relativos al centro 0,0) y enlaces (índices).
+    // La geometría se reescala según params.bondRadius para encajar con el resto.
+    const brushCatalog = {
+        // --- átomos individuales ---
+        H: { formula: 'H',  name: 'Hidrógeno', kind: 'atom', atom: 'H' },
+        C: { formula: 'C',  name: 'Carbono',   kind: 'atom', atom: 'C' },
+        N: { formula: 'N',  name: 'Nitrógeno', kind: 'atom', atom: 'N' },
+        O: { formula: 'O',  name: 'Oxígeno',  kind: 'atom', atom: 'O' },
+
+        // --- diatómicas ---
+        H2:    { formula: 'H₂',    name: 'Hidrógeno mol.', kind: 'mol', atoms: [['H',-0.5,0],['H',0.5,0]], bonds: [[0,1,1]] },
+        O2:    { formula: 'O₂',    name: 'Oxígeno mol.',   kind: 'mol', atoms: [['O',-0.5,0],['O',0.5,0]], bonds: [[0,1,2]] },
+        N2:    { formula: 'N₂',    name: 'Nitrógeno mol.', kind: 'mol', atoms: [['N',-0.5,0],['N',0.5,0]], bonds: [[0,1,3]] },
+        CO:    { formula: 'CO',    name: 'Monóxido C.',    kind: 'mol', atoms: [['C',-0.5,0],['O',0.5,0]], bonds: [[0,1,3]] },
+        NO:    { formula: 'NO',    name: 'Óxido nítrico',  kind: 'mol', atoms: [['N',-0.5,0],['O',0.5,0]], bonds: [[0,1,2]] },
+        OH:    { formula: 'OH',    name: 'Radical OH',     kind: 'mol', atoms: [['O',-0.5,0],['H',0.5,0]], bonds: [[0,1,1]] },
+
+        // --- tri/tetra atómicas comunes ---
+        H2O:   { formula: 'H₂O',   name: 'Agua',           kind: 'mol',
+                 atoms: [['O',0,0],['H',-0.6,0.55],['H',0.6,0.55]], bonds: [[0,1,1],[0,2,1]] },
+        H2O2:  { formula: 'H₂O₂',  name: 'Peróxido H.',    kind: 'mol',
+                 atoms: [['O',-0.5,0],['O',0.5,0],['H',-1.0,0.5],['H',1.0,0.5]], bonds: [[0,1,1],[0,2,1],[1,3,1]] },
+        CO2:   { formula: 'CO₂',   name: 'Dióxido C.',     kind: 'mol',
+                 atoms: [['C',0,0],['O',-1,0],['O',1,0]], bonds: [[0,1,2],[0,2,2]] },
+        NH3:   { formula: 'NH₃',   name: 'Amoníaco',       kind: 'mol',
+                 atoms: [['N',0,0],['H',-0.6,-0.5],['H',0.6,-0.5],['H',0,0.7]], bonds: [[0,1,1],[0,2,1],[0,3,1]] },
+        NO2:   { formula: 'NO₂',   name: 'Dióxido N.',     kind: 'mol',
+                 atoms: [['N',0,0],['O',-0.7,0.5],['O',0.7,0.5]], bonds: [[0,1,2],[0,2,1]] },
+        N2O:   { formula: 'N₂O',   name: 'Óxido nitroso',  kind: 'mol',
+                 atoms: [['N',-1,0],['N',0,0],['O',1,0]], bonds: [[0,1,3],[1,2,1]] },
+        HCN:   { formula: 'HCN',   name: 'Cianuro H.',     kind: 'mol',
+                 atoms: [['H',-1.3,0],['C',-0.4,0],['N',0.5,0]], bonds: [[0,1,1],[1,2,3]] },
+        CH2O:  { formula: 'CH₂O',  name: 'Formaldehído',   kind: 'mol',
+                 atoms: [['C',0,0],['O',0.9,0.5],['H',-0.7,0.5],['H',-0.4,-0.7]], bonds: [[0,1,2],[0,2,1],[0,3,1]] },
+        CH2O2: { formula: 'CH₂O₂', name: 'Ácido fórmico',  kind: 'mol',
+                 atoms: [['C',0,0],['O',0.8,-0.4],['O',0.5,0.9],['H',-0.7,0.4],['H',1.2,0.6]], bonds: [[0,1,2],[0,2,1],[1,4,1],[0,3,1]] },
+
+        // --- 4-5 átomos ---
+        CH4:    { formula: 'CH₄',    name: 'Metano',         kind: 'mol',
+                  atoms: [['C',0,0],['H',0,0.8],['H',0.75,0.25],['H',-0.75,0.25],['H',0,-0.7]], bonds: [[0,1,1],[0,2,1],[0,3,1],[0,4,1]] },
+        CH3OH:  { formula: 'CH₃OH',  name: 'Metanol',        kind: 'mol',
+                  atoms: [['C',0,0],['O',0.9,-0.4],['H',1.6,0.1],['H',-0.5,0.6],['H',-0.6,-0.5],['H',0.2,0.7]],
+                  bonds: [[0,1,1],[1,2,1],[0,3,1],[0,4,1],[0,5,1]] },
+        NH2CHO: { formula: 'NH₂CHO', name: 'Formamida ★',    kind: 'mol',
+                  atoms: [['C',0,0],['O',0.9,-0.5],['N',-0.8,-0.3],['H',-1.4,0.2],['H',-0.9,-1.0],['H',0.2,0.8]],
+                  bonds: [[0,1,2],[0,2,1],[2,3,1],[2,4,1],[0,5,1]] },
+        C2H2:   { formula: 'C₂H₂',   name: 'Acetileno',      kind: 'mol',
+                  atoms: [['H',-1.2,0],['C',-0.4,0],['C',0.4,0],['H',1.2,0]], bonds: [[0,1,1],[1,2,3],[2,3,1]] },
+        C2H4:   { formula: 'C₂H₄',   name: 'Eteno',          kind: 'mol',
+                  atoms: [['C',-0.5,0],['C',0.5,0],['H',-1.0,0.7],['H',-1.0,-0.7],['H',1.0,0.7],['H',1.0,-0.7]],
+                  bonds: [[0,1,2],[0,2,1],[0,3,1],[1,4,1],[1,5,1]] },
+        C2H6:   { formula: 'C₂H₆',   name: 'Etano',          kind: 'mol',
+                  atoms: [['C',-0.5,0],['C',0.5,0],['H',-1.0,0.7],['H',-1.0,-0.7],['H',-0.5,0.9],['H',1.0,0.7],['H',1.0,-0.7],['H',0.5,-0.9]],
+                  bonds: [[0,1,1],[0,2,1],[0,3,1],[0,4,1],[1,5,1],[1,6,1],[1,7,1]] },
+        C2H6O:  { formula: 'C₂H₆O',  name: 'Etanol',         kind: 'mol',
+                  atoms: [['C',-0.8,0],['C',0.4,0],['O',1.0,-0.6],['H',1.6,-0.2],['H',-1.3,0.6],['H',-1.3,-0.6],['H',-0.5,0.9],['H',0.6,0.7],['H',0.7,-0.7]],
+                  bonds: [[0,1,1],[1,2,1],[2,3,1],[0,4,1],[0,5,1],[0,6,1],[1,7,1],[1,8,1]] },
+
+        // --- moléculas prebióticas más raras ---
+        HCNO:   { formula: 'HCNO',   name: 'Ácido isociánico', kind: 'mol',
+                  atoms: [['H',-1.5,0],['C',-0.5,0],['N',0.4,0],['O',1.1,0]], bonds: [[0,1,1],[1,2,3],[2,3,1]] },
+        C3HN:   { formula: 'C₃HN',   name: 'Cianoacetileno',  kind: 'mol',
+                  atoms: [['H',-2.0,0],['C',-1.2,0],['C',-0.2,0],['C',0.6,0],['N',1.4,0]], bonds: [[0,1,1],[1,2,3],[2,3,1],[3,4,3]] },
+        CH3NH2: { formula: 'CH₃NH₂', name: 'Metilamina',     kind: 'mol',
+                  atoms: [['C',-0.5,0],['N',0.7,0],['H',1.2,0.7],['H',0.9,-0.7],['H',-1.0,0.7],['H',-1.0,-0.6],['H',-0.5,0.8]],
+                  bonds: [[0,1,1],[1,2,1],[1,3,1],[0,4,1],[0,5,1],[0,6,1]] }
+    };
+
+    // Orden de aparición en la grilla
+    const brushOrder = [
+        'H','C','N','O',
+        'H2','O2','N2','CO','NO','OH',
+        'H2O','H2O2','CO2','NH3','NO2','N2O','HCN','CH2O','CH2O2',
+        'CH4','CH3OH','NH2CHO','C2H2','C2H4','C2H6','C2H6O',
+        'HCNO','C3HN','CH3NH2'
+    ];
+
+    let currentBrush = 'C';
+    const brushGridEl = document.getElementById('brushGrid');
+    const brushLabelEl = document.getElementById('brushLabel');
+    const brushCursor = document.getElementById('brushCursor');
+    const brushCursorLabel = document.getElementById('brushCursorLabel');
+
+    function renderBrushGrid() {
+        brushGridEl.innerHTML = '';
+        for (const key of brushOrder) {
+            const item = brushCatalog[key];
+            if (!item) continue;
+            const cell = document.createElement('div');
+            cell.className = 'brush-cell';
+            if (item.kind === 'atom') cell.classList.add('atom-' + item.atom);
+            if (key === currentBrush) cell.classList.add('active');
+            cell.dataset.brush = key;
+            // formula con subíndices usando <sub>
+            const formulaHtml = item.formula.replace(/(\d+)/g, '<sub>$1</sub>');
+            cell.innerHTML = `
+                <div class="bc-formula">${formulaHtml}</div>
+                <div class="bc-name">${item.name}</div>
+                <div class="bc-tag">${item.kind === 'atom' ? 'átomo' : item.atoms.length + ' átomos'}</div>
+            `;
+            cell.addEventListener('click', () => {
+                currentBrush = key;
+                document.querySelectorAll('.brush-cell').forEach(c => c.classList.remove('active'));
+                cell.classList.add('active');
+                updateBrushLabel();
+                updateBrushCursorSize();
+            });
+            brushGridEl.appendChild(cell);
+        }
+        updateBrushLabel();
+    }
+
+    function updateBrushLabel() {
+        const item = brushCatalog[currentBrush];
+        if (!item) return;
+        const f = item.formula.replace(/(\d+)/g, '$_$1').replace(/\$_/g,'');
+        // Subíndices planos para el label pequeño
+        brushLabelEl.textContent = `${item.formula} · ${item.name}`;
+        brushCursorLabel.textContent = item.formula;
+    }
+
+    function updateBrushCursorSize() {
+        const item = brushCatalog[currentBrush];
+        if (!item) { brushCursor.classList.remove('show'); return; }
+        let size;
+        if (item.kind === 'atom') size = 22;
+        else size = Math.sqrt(item.atoms.length) * params.bondRadius * 2.4;
+        size = Math.max(22, Math.min(size, 200));
+        brushCursor.style.width = size + 'px';
+        brushCursor.style.height = size + 'px';
+    }
+
+    function placeBrushAt(x, y) {
+        const item = brushCatalog[currentBrush];
+        if (!item) return;
+
+        if (item.kind === 'atom') {
+            atoms.push(new Atom(item.atom, x, y));
+            showHint(`+ ${item.formula} (${item.name})`);
+            return;
+        }
+        // molécula: posicionar con geometría relativa reescalada
+        const scale = params.bondRadius * 0.95;
+        const created = [];
+        // Pequeña rotación aleatoria para variar orientación
+        const angle = Math.random() * Math.PI * 2;
+        const cosA = Math.cos(angle), sinA = Math.sin(angle);
+        for (const [el, rx, ry] of item.atoms) {
+            // rotar + escalar
+            const px = (rx * cosA - ry * sinA) * scale;
+            const py = (rx * sinA + ry * cosA) * scale;
+            const a = new Atom(el, x + px, y + py);
+            atoms.push(a);
+            created.push(a);
+        }
+        // enlaces (idx, idx, order)
+        for (const [i, j, order] of item.bonds) {
+            const a = created[i];
+            const b = created[j];
+            // subir orden hasta el deseado
+            formBond(a, b);
+            let cur = (a.bonds.find(z => z.partner === b) || {}).order || 1;
+            while (cur < order && a.availableValence >= 1 && b.availableValence >= 1) {
+                formBond(a, b);
+                cur++;
+            }
+        }
+        showHint(`+ ${item.formula} (${item.name})`);
+    }
+
+    renderBrushGrid();
+
+    // Click en canvas para colocar el pincel actual
+    canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        placeBrushAt(x, y);
+    });
+
+    // Cursor preview que sigue al mouse
+    canvas.addEventListener('mouseenter', () => {
+        if (brushCatalog[currentBrush]) brushCursor.classList.add('show');
+    });
+    canvas.addEventListener('mouseleave', () => {
+        brushCursor.classList.remove('show');
+    });
+    canvas.addEventListener('mousemove', (e) => {
+        brushCursor.style.left = e.clientX + 'px';
+        brushCursor.style.top = e.clientY + 'px';
+    });
+    // Reajustar tamaño del cursor si cambia bondRadius
+    document.getElementById('bondRadius').addEventListener('input', updateBrushCursorSize);
+
+    // --- Initialize and Start ---
+    requestAnimationFrame(() => {
+        resize();
+        initAtoms();
+        updateStats();
+        update();
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Método del Círculo · Sumas Exponenciales con Primos</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/inter@5.0.0/index.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/jetbrains-mono@5.0.0/index.css">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg-0: #0a0e1a;
+    --bg-1: #0f1524;
+    --bg-2: #161d33;
+    --bg-3: #1e2742;
+    --border: #2a3556;
+    --text: #e8ecf5;
+    --text-dim: #8892b0;
+    --text-muted: #5a6688;
+    --accent: #7dd3fc;
+    --accent-2: #f472b6;
+    --accent-3: #a78bfa;
+    --accent-4: #34d399;
+    --warn: #fbbf24;
+    --danger: #f87171;
+  }
+  html, body {
+    height: 100%;
+    background: var(--bg-0);
+    color: var(--text);
+    font-family: 'Inter Variable', system-ui, sans-serif;
+    overflow: hidden;
+    font-size: 14px;
+  }
+  body {
+    background:
+      radial-gradient(circle at 20% 10%, rgba(125,211,252,0.08), transparent 40%),
+      radial-gradient(circle at 80% 90%, rgba(244,114,182,0.06), transparent 40%),
+      var(--bg-0);
+  }
+  .app { display: flex; height: 100vh; position: relative; }
+
+  /* ---------- DRAWER ---------- */
+  .drawer {
+    width: 340px;
+    background: linear-gradient(180deg, var(--bg-1), var(--bg-0));
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    transition: margin-left 0.35s cubic-bezier(.4,0,.2,1);
+    z-index: 10;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.4);
+  }
+  .drawer.collapsed { margin-left: -340px; }
+  .drawer-header {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(125,211,252,0.03);
+  }
+  .logo {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-3));
+    display: grid; place-items: center;
+    font-size: 18px;
+    box-shadow: 0 4px 12px rgba(125,211,252,0.3);
+  }
+  .drawer-title { font-size: 14px; font-weight: 600; letter-spacing: 0.3px; }
+  .drawer-subtitle { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono Variable', monospace; }
+
+  .drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+  .drawer-body::-webkit-scrollbar { width: 6px; }
+  .drawer-body::-webkit-scrollbar-track { background: transparent; }
+  .drawer-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .section { border-bottom: 1px solid var(--border); }
+  .section-header {
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .section-header:hover { background: rgba(255,255,255,0.02); }
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+  .chevron {
+    width: 14px; height: 14px;
+    color: var(--text-muted);
+    transition: transform 0.25s;
+  }
+  .section.collapsed .chevron { transform: rotate(-90deg); }
+  .section-content {
+    padding: 4px 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-height: 1200px;
+    overflow: hidden;
+    transition: max-height 0.3s, padding 0.3s, opacity 0.25s;
+    opacity: 1;
+  }
+  .section.collapsed .section-content {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 0;
+  }
+
+  .control { display: flex; flex-direction: column; gap: 6px; }
+  .control-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+  }
+  .control-label { color: var(--text-dim); font-weight: 500; }
+  .control-value {
+    font-family: 'JetBrains Mono Variable', monospace;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(125,211,252,0.08);
+    padding: 2px 8px;
+    border-radius: 4px;
+    min-width: 60px;
+    text-align: right;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--bg-3);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    box-shadow: 0 0 0 3px rgba(125,211,252,0.15), 0 0 8px var(--accent);
+    transition: transform 0.15s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+  input[type=range]::-moz-range-thumb {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 0 3px rgba(125,211,252,0.15), 0 0 8px var(--accent);
+  }
+
+  /* Input numérico */
+  .num-input {
+    font-family: 'JetBrains Mono Variable', monospace;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .num-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(125,211,252,0.15); }
+
+  /* Botones de paso fino */
+  .step-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+  }
+  .step-btn {
+    padding: 7px 4px;
+    font-family: 'JetBrains Mono Variable', monospace;
+    font-size: 10.5px;
+    font-weight: 600;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .step-btn:hover { color: var(--text); border-color: var(--accent); background: var(--bg-3); }
+  .step-btn.minus { color: var(--accent-2); }
+  .step-btn.plus { color: var(--accent-4); }
+  .step-btn.minus:hover { border-color: var(--accent-2); background: rgba(244,114,182,0.1); }
+  .step-btn.plus:hover { border-color: var(--accent-4); background: rgba(52,211,153,0.1); }
+
+  /* Fracciones rápidas */
+  .frac-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+  }
+  .frac-btn {
+    padding: 6px 2px;
+    font-family: 'JetBrains Mono Variable', monospace;
+    font-size: 10.5px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .frac-btn:hover { color: var(--accent-3); border-color: var(--accent-3); background: rgba(167,139,250,0.1); }
+
+  /* Presets velocidad */
+  .speed-presets {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+  }
+  .speed-preset {
+    padding: 7px 4px;
+    font-size: 10.5px;
+    font-weight: 600;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .speed-preset:hover { color: var(--text); border-color: var(--text-muted); }
+  .speed-preset.active {
+    background: rgba(125,211,252,0.12);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .btn {
+    padding: 9px 12px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: inherit;
+  }
+  .btn:hover { background: var(--bg-3); border-color: var(--accent); transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn.primary {
+    background: linear-gradient(135deg, rgba(125,211,252,0.2), rgba(167,139,250,0.2));
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .btn.primary:hover { background: linear-gradient(135deg, rgba(125,211,252,0.3), rgba(167,139,250,0.3)); }
+  .btn.active {
+    background: rgba(125,211,252,0.15);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .btn.full { grid-column: span 2; }
+
+  .mode-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .mode-btn {
+    padding: 8px 6px;
+    font-size: 11px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    font-weight: 500;
+  }
+  .mode-btn:hover { color: var(--text); border-color: var(--text-muted); }
+  .mode-btn.active {
+    background: rgba(125,211,252,0.12);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 12px;
+  }
+  .switch {
+    position: relative;
+    width: 34px; height: 18px;
+    background: var(--bg-3);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .switch::after {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    background: var(--text-dim);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: all 0.2s;
+  }
+  .switch.on { background: rgba(125,211,252,0.3); }
+  .switch.on::after {
+    left: 18px;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 2px 0;
+  }
+  .label-hint {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: -4px;
+  }
+
+  /* ---------- MAIN ---------- */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+  .topbar {
+    height: 52px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 16px;
+    background: rgba(15,21,36,0.6);
+    backdrop-filter: blur(10px);
+    z-index: 5;
+  }
+  .toggle-btn {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: all 0.15s;
+  }
+  .toggle-btn:hover { background: var(--bg-3); border-color: var(--accent); color: var(--accent); }
+  .topbar-title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .topbar-title span { color: var(--accent); font-family: 'JetBrains Mono Variable', monospace; }
+  .topbar-spacer { flex: 1; }
+  .topbar-stats {
+    display: flex;
+    gap: 18px;
+    font-family: 'JetBrains Mono Variable', monospace;
+    font-size: 11px;
+  }
+  .stat { display: flex; align-items: center; gap: 6px; color: var(--text-dim); }
+  .stat-value { color: var(--accent); font-weight: 600; }
+
+  .canvas-area {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding: 16px;
+    overflow: hidden;
+  }
+  .panel {
+    background: rgba(15,21,36,0.5);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    backdrop-filter: blur(8px);
+    position: relative;
+  }
+  .panel-header {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    background: rgba(0,0,0,0.2);
+  }
+  .panel-header .indicator {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent-2);
+    box-shadow: 0 0 6px var(--accent-2);
+  }
+  .panel-header .indicator.blue { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  .panel-body { flex: 1; position: relative; }
+  canvas { display: block; width: 100%; height: 100%; }
+
+  .info-overlay {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(10,14,26,0.85);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: 'JetBrains Mono Variable', monospace;
+    font-size: 11px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    backdrop-filter: blur(8px);
+    pointer-events: none;
+  }
+  .info-overlay .row { display: flex; justify-content: space-between; gap: 16px; }
+  .info-overlay .lbl { color: var(--text-muted); }
+  .info-overlay .val { color: var(--accent); font-weight: 600; }
+  .info-overlay .val.pink { color: var(--accent-2); }
+  .info-overlay .val.purple { color: var(--accent-3); }
+
+  .formula-bar {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    background: rgba(10,14,26,0.85);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-family: 'JetBrains Mono Variable', monospace;
+    font-size: 12px;
+    color: var(--text);
+    backdrop-filter: blur(8px);
+    pointer-events: none;
+  }
+  .formula-bar em { color: var(--accent); font-style: normal; }
+  .formula-bar i { color: var(--accent-2); font-style: normal; }
+
+  .arc-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: rgba(10,14,26,0.85);
+    border: 1px solid var(--accent-3);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-family: 'JetBrains Mono Variable', monospace;
+    font-size: 11px;
+    color: var(--accent-3);
+    backdrop-filter: blur(8px);
+    pointer-events: none;
+    display: none;
+  }
+  .arc-badge.show { display: block; }
+
+  .footer-note {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono Variable', monospace;
+    pointer-events: none;
+    text-align: center;
+    max-width: 90%;
+  }
+
+  @media (max-width: 900px) {
+    .canvas-area { grid-template-columns: 1fr; }
+    .drawer { width: 300px; }
+    .drawer.collapsed { margin-left: -300px; }
+    .topbar-stats { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ============ DRAWER ============ -->
+  <aside class="drawer" id="drawer">
+    <div class="drawer-header">
+      <div class="logo">🌀</div>
+      <div>
+        <div class="drawer-title">Circle Method</div>
+        <div class="drawer-subtitle">Hardy–Littlewood · v2.1</div>
+      </div>
+    </div>
+
+    <div class="drawer-body">
+      <!-- Control fino de α -->
+      <div class="section" id="sec-alpha">
+        <div class="section-header" onclick="toggleSection('sec-alpha')">
+          <div class="section-title"><span class="dot"></span>Control fino de α</div>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="section-content">
+          <div class="control">
+            <div class="control-row">
+              <span class="control-label">Valor actual de α</span>
+            </div>
+            <input type="number" class="num-input" id="alpha-num" min="0" max="1" step="0.0001" value="0.15">
+            <div class="label-hint">Precisión de 4 decimales · escribe y pulsa Enter</div>
+          </div>
+          <div class="control">
+            <div class="control-row">
+              <span class="control-label">Deslizante (coarse)</span>
+              <span class="control-value" id="val-alpha">0.150</span>
+            </div>
+            <input type="range" id="alpha" min="0" max="1" step="0.0001" value="0.15">
+          </div>
+          <div class="control">
+            <div class="control-row">
+              <span class="control-label">Pasos finos (Δα)</span>
+            </div>
+            <div class="step-grid">
+              <button class="step-btn minus" data-step="-0.01">−0.01</button>
+              <button class="step-btn minus" data-step="-0.001">−0.001</button>
+              <button class="step-btn plus" data-step="0.001">+0.001</button>
+              <button class="step-btn plus" data-step="0.01">+0.01</button>
+              <button class="step-btn minus" data-step="-0.0001">−0.0001</button>
+              <button class="step-btn minus" data-step="-0.0005">−0.0005</button>
+              <button class="step-btn plus" data-step="0.0005">+0.0005</button>
+              <button class="step-btn plus" data-step="0.0001">+0.0001</button>
+            </div>
+            <div class="label-hint">Usa también ← → del teclado (mantén Shift para ×10)</div>
+          </div>
+          <div class="divider"></div>
+          <div class="control">
+            <div class="control-row">
+              <span class="control-label">Saltar a arco mayor (a/q)</span>
+            </div>
+            <div class="frac-grid">
+              <button class="frac-btn" data-frac="0">0</button>
+              <button class="frac-btn" data-frac="0.5">1/2</button>
+              <button class="frac-btn" data-frac="0.3333">1/3</button>
+              <button class="frac-btn" data-frac="0.25">1/4</button>
+              <button class="frac-btn" data-frac="0.2">1/5</button>
+              <button class="frac-btn" data-frac="0.1667">1/6</button>
+              <button class="frac-btn" data-frac="0.1429">1/7</button>
+              <button class="frac-btn" data-frac="0.125">1/8</button>
+              <button class="frac-btn" data-frac="0.6667">2/3</button>
+              <button class="frac-btn" data-frac="0.75">3/4</button>
+              <button class="frac-btn" data-frac="0.4">2/5</button>
+              <button class="frac-btn" data-frac="0.6">3/5</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Animación -->
+      <div class="section" id="sec-anim">
+        <div class="section-header" onclick="toggleSection('sec-anim')">
+          <div class="section-title"><span class="dot" style="background:var(--accent-2);box-shadow:0 0 8px var(--accent-2)"></span>Animación</div>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="section-content">
+          <div class="btn-group">
+            <button class="btn primary" id="btn-play">▶ Animar α</button>
+            <button class="btn" id="btn-reset">⟲ α = 0</button>
+            <button class="btn full" id="btn-sweep">🔄 Barrido completo 0→1</button>
+          </div>
+          <div class="control">
+            <div class="control-row">
+              <span class="control-label">Velocidad</span>
+              <span class="control-value" id="val-speed">0.050</span>
+            </div>
+            <input type="range" id="speed" min="0.001" max="3" step="0.001" value="0.05">
+            <div class="label-hint">Mínimo 0.001 (muy lento) — recomendado para observar vectores</div>
+          </div>
+          <div class="control">
+            <div class="control-row">
+              <span class="control-label">Presets de velocidad</span>
+            </div>
+            <div class="speed-presets">
+              <button class="speed-preset active" data-speed="0.005">🐢 Muy lento</button>
+              <button class="speed-preset" data-speed="0.05">🚶 Lento</button>
+              <button class="speed-preset" data-speed="0.3">🏃 Medio</button>
+              <button class="speed-preset" data-speed="1.5">⚡ Rápido</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Parámetros -->
+      <div class="section collapsed" id="sec-params">
+        <div class="section-header" onclick="toggleSection('sec-params')">
+          <div class="section-title"><span class="dot" style="background:var(--accent-4);box-shadow:0 0 8px var(--accent-4)"></span>Parámetros</div>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="section-content">
+          <div class="control">
+            <div class="control-row">
+              <span class="control-label">Número de primos (N)</span>
+              <span class="control-value" id="val-n">200</span>
+            </div>
+            <input type="range" id="nprimes" min="10" max="1000" step="1" value="200">
+          </div>
+          <div class="control">
+            <div class="control-row">
+              <span class="control-label">Zoom</span>
+              <span class="control-value" id="val-zoom">1.2×</span>
+            </div>
+            <input type="range" id="zoom" min="0.3" max="3" step="0.05" value="1.2">
+          </div>
+          <div class="control">
+            <div class="control-row">
+              <span class="control-label">Opacidad vectores</span>
+              <span class="control-value" id="val-opac">0.45</span>
+            </div>
+            <input type="range" id="opac" min="0" max="1" step="0.01" value="0.45">
+          </div>
+          <div class="control">
+            <div class="control-row">
+              <span class="control-label">Grosor de vectores</span>
+              <span class="control-value" id="val-lw">1.0</span>
+            </div>
+            <input type="range" id="linewidth" min="0.3" max="3" step="0.1" value="1.0">
+          </div>
+        </div>
+      </div>
+
+      <!-- Conjunto -->
+      <div class="section collapsed" id="sec-set">
+        <div class="section-header" onclick="toggleSection('sec-set')">
+          <div class="section-title"><span class="dot" style="background:var(--accent-3);box-shadow:0 0 8px var(--accent-3)"></span>Conjunto</div>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="section-content">
+          <div class="mode-grid">
+            <button class="mode-btn active" data-mode="primes">Primos</button>
+            <button class="mode-btn" data-mode="integers">ℕ</button>
+            <button class="mode-btn" data-mode="squares">n²</button>
+            <button class="mode-btn" data-mode="cubes">n³</button>
+            <button class="mode-btn" data-mode="fib">Fib</button>
+            <button class="mode-btn" data-mode="powers2">2ⁿ</button>
+          </div>
+          <div class="checkbox-row">
+            <span class="control-label">Incluir n=0</span>
+            <div class="switch" id="sw-zero" onclick="this.classList.toggle('on'); rebuild()"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visualización -->
+      <div class="section collapsed" id="sec-vis">
+        <div class="section-header" onclick="toggleSection('sec-vis')">
+          <div class="section-title"><span class="dot" style="background:var(--warn);box-shadow:0 0 8px var(--warn)"></span>Visualización</div>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="section-content">
+          <div class="checkbox-row">
+            <span class="control-label">Mostrar vectores</span>
+            <div class="switch on" id="sw-vecs" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="checkbox-row">
+            <span class="control-label">Vector resultante</span>
+            <div class="switch on" id="sw-sum" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="checkbox-row">
+            <span class="control-label">Círculo unitario</span>
+            <div class="switch on" id="sw-circle" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="checkbox-row">
+            <span class="control-label">Ejes y rejilla</span>
+            <div class="switch on" id="sw-grid" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="checkbox-row">
+            <span class="control-label">Detectar arcos mayores</span>
+            <div class="switch on" id="sw-arcs" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="checkbox-row">
+            <span class="control-label">Estela de puntos</span>
+            <div class="switch on" id="sw-trail" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Información -->
+      <div class="section collapsed" id="sec-info">
+        <div class="section-header" onclick="toggleSection('sec-info')">
+          <div class="section-title"><span class="dot" style="background:var(--danger);box-shadow:0 0 8px var(--danger)"></span>Contexto matemático</div>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="section-content" style="font-size:11px; color:var(--text-dim); line-height:1.6;">
+          <p>El <b style="color:var(--text)">método del círculo</b> de Hardy–Littlewood–Ramanujan descompone la integral</p>
+          <p style="font-family:'JetBrains Mono Variable',monospace; color:var(--accent); text-align:center; margin:6px 0;">∫₀¹ S(α)ᵏ e⁻²πⁱⁿα dα</p>
+          <p>en <b style="color:var(--accent-2)">arcos mayores</b> (α ≈ a/q con q pequeño) y <b style="color:var(--text-dim)">arcos menores</b>. Los picos de |S(α)| revelan la estructura aritmética del conjunto.</p>
+          <div class="divider" style="margin:8px 0;"></div>
+          <p><b style="color:var(--accent)">💡 Consejo:</b> Usa los pasos finos (±0.0001) para explorar los arcos mayores con precisión. Los picos aparecen cuando α se aproxima a una fracción racional a/q.</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+    <div class="topbar">
+      <button class="toggle-btn" id="toggle-drawer" title="Mostrar/ocultar panel">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-title">Método del Círculo · <span>S(α) = Σ e<sup>2πi·n·α</sup></span></div>
+      <div class="topbar-spacer"></div>
+      <div class="topbar-stats">
+        <div class="stat">α <span class="stat-value" id="stat-alpha">0.1500</span></div>
+        <div class="stat">|S| <span class="stat-value" id="stat-mod">0.00</span></div>
+        <div class="stat">∠ <span class="stat-value" id="stat-arg">0.0°</span></div>
+        <div class="stat">N <span class="stat-value" id="stat-n">0</span></div>
+      </div>
+    </div>
+
+    <div class="canvas-area">
+      <!-- Panel círculo -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="indicator blue"></span>
+          Plano complejo · suma vectorial
+        </div>
+        <div class="panel-body">
+          <canvas id="cvCircle"></canvas>
+          <div class="info-overlay">
+            <div class="row"><span class="lbl">Re(S)</span><span class="val" id="ov-re">0.000</span></div>
+            <div class="row"><span class="lbl">Im(S)</span><span class="val pink" id="ov-im">0.000</span></div>
+            <div class="row"><span class="lbl">|S(α)|</span><span class="val purple" id="ov-mod">0.000</span></div>
+            <div class="row"><span class="lbl">arg(S)</span><span class="val" id="ov-arg">0.0°</span></div>
+          </div>
+          <div class="arc-badge" id="arc-badge">Arco mayor: —</div>
+          <div class="formula-bar">
+            <em>S</em>(α) = Σ<sub>p≤N</sub> <i>e</i><sup>2πi·p·α</sup>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel gráfico -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="indicator"></span>
+          |S(α)| en función de α ∈ [0,1]
+        </div>
+        <div class="panel-body">
+          <canvas id="cvPlot"></canvas>
+          <div class="footer-note">Los picos corresponden a arcos mayores α ≈ a/q con q pequeño</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==================== UTILIDADES ==================== */
+const $ = id => document.getElementById(id);
+const TAU = Math.PI * 2;
+
+function toggleSection(id) { $(id).classList.toggle('collapsed'); }
+
+/* ==================== GENERACIÓN DE CONJUNTOS ==================== */
+function sievePrimes(limit) {
+  const sieve = new Uint8Array(limit + 1);
+  const primes = [];
+  for (let i = 2; i <= limit; i++) {
+    if (!sieve[i]) {
+      primes.push(i);
+      for (let j = i * i; j <= limit; j += i) sieve[j] = 1;
+    }
+  }
+  return primes;
+}
+const PRIMES_POOL = sievePrimes(10000);
+
+function buildSet(mode, N, includeZero) {
+  const arr = [];
+  if (includeZero) arr.push(0);
+  switch (mode) {
+    case 'primes':
+      for (let i = 0; i < Math.min(N, PRIMES_POOL.length); i++) arr.push(PRIMES_POOL[i]);
+      break;
+    case 'integers':
+      for (let i = 1; i <= N; i++) arr.push(i);
+      break;
+    case 'squares':
+      for (let i = includeZero ? 0 : 1; i <= N; i++) arr.push(i * i);
+      break;
+    case 'cubes':
+      for (let i = includeZero ? 0 : 1; i <= N; i++) arr.push(i * i * i);
+      break;
+    case 'fib': {
+      let a = 0, b = 1;
+      if (includeZero) arr.push(0);
+      arr.push(1);
+      for (let i = 2; i <= N; i++) { const c = a + b; a = b; b = c; arr.push(c); }
+      break;
+    }
+    case 'powers2':
+      for (let i = includeZero ? 0 : 1; i <= N; i++) arr.push(Math.pow(2, i));
+      break;
+  }
+  return arr;
+}
+
+/* ==================== ESTADO ==================== */
+const state = {
+  alpha: 0.15,
+  N: 200,
+  zoom: 1.2,
+  opac: 0.45,
+  lineWidth: 1.0,
+  speed: 0.05,
+  mode: 'primes',
+  includeZero: false,
+  set: [],
+  playing: false,
+  sweeping: false,
+  plotData: [],
+  lastTime: 0,
+  trail: [], // estela de puntos de la punta del vector resultante
+};
+
+function rebuild() {
+  state.includeZero = $('sw-zero').classList.contains('on');
+  state.set = buildSet(state.mode, state.N, state.includeZero);
+  computePlot();
+  state.trail = [];
+  draw();
+}
+
+/* ==================== CÁLCULO DE S(α) ==================== */
+function computeS(alpha, set) {
+  let re = 0, im = 0;
+  for (let i = 0; i < set.length; i++) {
+    const theta = TAU * set[i] * alpha;
+    re += Math.cos(theta);
+    im += Math.sin(theta);
+  }
+  return { re, im, mod: Math.hypot(re, im), arg: Math.atan2(im, re) };
+}
+
+function computePlot() {
+  const set = state.set;
+  const samples = 500;
+  state.plotData = new Array(samples);
+  for (let i = 0; i < samples; i++) {
+    const a = i / (samples - 1);
+    const s = computeS(a, set);
+    state.plotData[i] = { alpha: a, mod: s.mod };
+  }
+}
+
+/* ==================== ARCOS MAYORES ==================== */
+const MAJOR_ARCS = [];
+for (let q = 1; q <= 12; q++) {
+  for (let a = 0; a <= q; a++) {
+    if (a === 0 && q > 1) continue;
+    if (a === q) continue;
+    MAJOR_ARCS.push({ a, q, val: a / q });
+  }
+}
+MAJOR_ARCS.sort((x, y) => x.val - y.val);
+
+function findNearestArc(alpha) {
+  let best = null, bestDist = Infinity;
+  for (const arc of MAJOR_ARCS) {
+    const d = Math.min(Math.abs(arc.val - alpha), 1 - Math.abs(arc.val - alpha));
+    if (d < bestDist) { bestDist = d; best = arc; }
+  }
+  return { arc: best, dist: bestDist };
+}
+
+/* ==================== CANVAS ==================== */
+const cvCircle = $('cvCircle');
+const cvPlot = $('cvPlot');
+const ctxC = cvCircle.getContext('2d');
+const ctxP = cvPlot.getContext('2d');
+
+function resizeCanvases() {
+  [cvCircle, cvPlot].forEach(cv => {
+    const rect = cv.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = rect.width * dpr;
+    cv.height = rect.height * dpr;
+    cv.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+  });
+  draw();
+}
+window.addEventListener('resize', resizeCanvases);
+
+function drawCircle() {
+  const ctx = ctxC;
+  const W = cvCircle.clientWidth;
+  const H = cvCircle.clientHeight;
+  ctx.clearRect(0, 0, W, H);
+
+  const cx = W / 2, cy = H / 2;
+  const R = Math.min(W, H) * 0.38 * state.zoom;
+
+  const showGrid = $('sw-grid').classList.contains('on');
+  const showCircle = $('sw-circle').classList.contains('on');
+  const showVecs = $('sw-vecs').classList.contains('on');
+  const showSum = $('sw-sum').classList.contains('on');
+  const showArcs = $('sw-arcs').classList.contains('on');
+  const showTrail = $('sw-trail').classList.contains('on');
+
+  // Rejilla
+  if (showGrid) {
+    ctx.strokeStyle = 'rgba(136,146,176,0.08)';
+    ctx.lineWidth = 1;
+    const step = R / 4;
+    for (let i = -8; i <= 8; i++) {
+      ctx.beginPath();
+      ctx.moveTo(cx + i * step, 0);
+      ctx.lineTo(cx + i * step, H);
+      ctx.moveTo(0, cy + i * step);
+      ctx.lineTo(W, cy + i * step);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(136,146,176,0.25)';
+    ctx.beginPath();
+    ctx.moveTo(0, cy); ctx.lineTo(W, cy);
+    ctx.moveTo(cx, 0); ctx.lineTo(cx, H);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(136,146,176,0.5)';
+    ctx.font = '10px JetBrains Mono Variable, monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('Re', W - 22, cy + 4);
+    ctx.fillText('Im', cx + 4, 4);
+    ctx.fillText('-1', cx - R - 10, cy + 4);
+    ctx.fillText('1', cx + R + 4, cy + 4);
+  }
+
+  // Círculo unitario
+  if (showCircle) {
+    ctx.strokeStyle = 'rgba(125,211,252,0.3)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, TAU);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Puntos de arcos mayores
+  if (showArcs) {
+    MAJOR_ARCS.forEach(arc => {
+      const theta = TAU * arc.val;
+      const x = cx + R * Math.cos(theta);
+      const y = cy - R * Math.sin(theta);
+      ctx.fillStyle = 'rgba(167,139,250,0.7)';
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, TAU);
+      ctx.fill();
+    });
+  }
+
+  // Calcular S(α)
+  const set = state.set;
+  const S = computeS(state.alpha, set);
+
+  // Estela de la punta del vector resultante
+  if (showTrail && state.trail.length > 1) {
+    ctx.lineWidth = 1.2;
+    for (let i = 1; i < state.trail.length; i++) {
+      const t0 = state.trail[i-1];
+      const t1 = state.trail[i];
+      const alpha = (i / state.trail.length) * 0.6;
+      ctx.strokeStyle = `rgba(244,114,182,${alpha})`;
+      ctx.beginPath();
+      ctx.moveTo(cx + R * t0.re, cy - R * t0.im);
+      ctx.lineTo(cx + R * t1.re, cy - R * t1.im);
+      ctx.stroke();
+    }
+  }
+
+  // Vectores individuales
+  if (showVecs && set.length > 0) {
+    let x0 = cx, y0 = cy;
+    const maxVecs = Math.min(set.length, 2000);
+    const step = Math.max(1, Math.floor(set.length / maxVecs));
+    ctx.lineWidth = state.lineWidth;
+    for (let i = 0; i < set.length; i += step) {
+      const n = set[i];
+      const theta = TAU * n * state.alpha;
+      const dx = R * Math.cos(theta);
+      const dy = -R * Math.sin(theta);
+      const hue = (i / set.length) * 300;
+      ctx.strokeStyle = `hsla(${hue}, 80%, 65%, ${state.opac})`;
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x0 + dx, y0 + dy);
+      ctx.stroke();
+      x0 += dx;
+      y0 += dy;
+    }
+  }
+
+  // Vector resultante
+  if (showSum) {
+    const endX = cx + R * S.re;
+    const endY = cy - R * S.im;
+    ctx.strokeStyle = 'rgba(244,114,182,0.3)';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+    const grad = ctx.createLinearGradient(cx, cy, endX, endY);
+    grad.addColorStop(0, '#f472b6');
+    grad.addColorStop(1, '#7dd3fc');
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(endX, endY, 4, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = '#f472b6';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  // Actualizar estela
+  if (showTrail) {
+    state.trail.push({ re: S.re, im: S.im });
+    const maxTrail = 200;
+    if (state.trail.length > maxTrail) state.trail.shift();
+  }
+
+  // Overlays
+  $('ov-re').textContent = S.re.toFixed(3);
+  $('ov-im').textContent = S.im.toFixed(3);
+  $('ov-mod').textContent = S.mod.toFixed(3);
+  $('ov-arg').textContent = (S.arg * 180 / Math.PI).toFixed(1) + '°';
+  $('stat-alpha').textContent = state.alpha.toFixed(4);
+  $('stat-mod').textContent = S.mod.toFixed(2);
+  $('stat-arg').textContent = (S.arg * 180 / Math.PI).toFixed(1) + '°';
+  $('stat-n').textContent = set.length;
+
+  const badge = $('arc-badge');
+  if (showArcs) {
+    const { arc, dist } = findNearestArc(state.alpha);
+    if (arc && dist < 0.05) {
+      badge.classList.add('show');
+      badge.textContent = `Arco mayor: α ≈ ${arc.a}/${arc.q} = ${arc.val.toFixed(4)} (Δ=${dist.toFixed(4)})`;
+    } else {
+      badge.classList.remove('show');
+    }
+  } else {
+    badge.classList.remove('show');
+  }
+}
+
+function drawPlot() {
+  const ctx = ctxP;
+  const W = cvPlot.clientWidth;
+  const H = cvPlot.clientHeight;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 44, r: 16, t: 16, b: 32 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  const data = state.plotData;
+  if (!data.length) return;
+
+  let maxMod = 0;
+  for (const d of data) if (d.mod > maxMod) maxMod = d.mod;
+  maxMod = Math.max(maxMod, 1);
+
+  ctx.strokeStyle = 'rgba(136,146,176,0.08)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const y = pad.t + (i / 5) * ph;
+    ctx.beginPath();
+    ctx.moveTo(pad.l, y);
+    ctx.lineTo(pad.l + pw, y);
+    ctx.stroke();
+  }
+  for (let i = 0; i <= 10; i++) {
+    const x = pad.l + (i / 10) * pw;
+    ctx.beginPath();
+    ctx.moveTo(x, pad.t);
+    ctx.lineTo(x, pad.t + ph);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = 'rgba(136,146,176,0.3)';
+  ctx.beginPath();
+  ctx.moveTo(pad.l, pad.t);
+  ctx.lineTo(pad.l, pad.t + ph);
+  ctx.lineTo(pad.l + pw, pad.t + ph);
+  ctx.stroke();
+
+  ctx.fillStyle = 'rgba(136,146,176,0.6)';
+  ctx.font = '10px JetBrains Mono Variable, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  for (let i = 0; i <= 10; i++) {
+    const x = pad.l + (i / 10) * pw;
+    ctx.fillText((i / 10).toFixed(1), x, pad.t + ph + 4);
+  }
+  ctx.fillText('α', pad.l + pw / 2, pad.t + ph + 18);
+
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 5; i++) {
+    const y = pad.t + ph - (i / 5) * ph;
+    const v = (i / 5) * maxMod;
+    ctx.fillText(v.toFixed(0), pad.l - 6, y);
+  }
+
+  if ($('sw-arcs').classList.contains('on')) {
+    MAJOR_ARCS.forEach(arc => {
+      const x = pad.l + arc.val * pw;
+      ctx.strokeStyle = 'rgba(167,139,250,0.15)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 3]);
+      ctx.beginPath();
+      ctx.moveTo(x, pad.t);
+      ctx.lineTo(x, pad.t + ph);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    });
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(pad.l, pad.t + ph);
+  for (let i = 0; i < data.length; i++) {
+    const x = pad.l + data[i].alpha * pw;
+    const y = pad.t + ph - (data[i].mod / maxMod) * ph;
+    ctx.lineTo(x, y);
+  }
+  ctx.lineTo(pad.l + pw, pad.t + ph);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + ph);
+  grad.addColorStop(0, 'rgba(244,114,182,0.3)');
+  grad.addColorStop(1, 'rgba(244,114,182,0)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  ctx.beginPath();
+  for (let i = 0; i < data.length; i++) {
+    const x = pad.l + data[i].alpha * pw;
+    const y = pad.t + ph - (data[i].mod / maxMod) * ph;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = '#f472b6';
+  ctx.lineWidth = 1.8;
+  ctx.stroke();
+
+  const curX = pad.l + state.alpha * pw;
+  const curS = computeS(state.alpha, state.set);
+  const curY = pad.t + ph - (curS.mod / maxMod) * ph;
+  ctx.strokeStyle = 'rgba(125,211,252,0.4)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  ctx.moveTo(curX, pad.t);
+  ctx.lineTo(curX, pad.t + ph);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = '#7dd3fc';
+  ctx.beginPath();
+  ctx.arc(curX, curY, 5, 0, TAU);
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.fillStyle = '#7dd3fc';
+  ctx.font = '11px JetBrains Mono Variable, monospace';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(`α=${state.alpha.toFixed(4)}`, curX + 8, curY - 4);
+}
+
+function draw() {
+  drawCircle();
+  drawPlot();
+}
+
+/* ==================== ANIMACIÓN ==================== */
+function loop(ts) {
+  if (!state.lastTime) state.lastTime = ts;
+  const dt = Math.min((ts - state.lastTime) / 1000, 0.1);
+  state.lastTime = ts;
+
+  if (state.playing || state.sweeping) {
+    state.alpha += state.speed * dt * 0.2;
+    if (state.alpha >= 1) {
+      if (state.sweeping) {
+        state.sweeping = false;
+        state.playing = false;
+        state.alpha = 1;
+        $('btn-play').textContent = '▶ Animar α';
+        $('btn-play').classList.add('primary');
+      } else {
+        state.alpha = state.alpha - 1;
+      }
+    }
+    syncAlphaUI();
+    draw();
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* ==================== SYNC UI ==================== */
+function syncAlphaUI() {
+  $('alpha').value = state.alpha;
+  $('alpha-num').value = state.alpha.toFixed(4);
+  $('val-alpha').textContent = state.alpha.toFixed(4);
+}
+
+function setAlpha(v, redraw = true) {
+  state.alpha = Math.max(0, Math.min(1, v));
+  syncAlphaUI();
+  if (redraw) draw();
+}
+
+/* ==================== EVENTOS ==================== */
+$('toggle-drawer').addEventListener('click', () => {
+  $('drawer').classList.toggle('collapsed');
+  setTimeout(resizeCanvases, 400);
+});
+
+$('alpha').addEventListener('input', e => {
+  setAlpha(parseFloat(e.target.value));
+});
+
+$('alpha-num').addEventListener('input', e => {
+  const v = parseFloat(e.target.value);
+  if (!isNaN(v)) setAlpha(v);
+});
+$('alpha-num').addEventListener('change', e => {
+  const v = parseFloat(e.target.value);
+  if (!isNaN(v)) setAlpha(v);
+});
+
+// Pasos finos
+document.querySelectorAll('.step-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const step = parseFloat(btn.dataset.step);
+    setAlpha(state.alpha + step);
+  });
+});
+
+// Fracciones rápidas
+document.querySelectorAll('.frac-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    setAlpha(parseFloat(btn.dataset.frac));
+  });
+});
+
+$('nprimes').addEventListener('input', e => {
+  state.N = parseInt(e.target.value);
+  $('val-n').textContent = state.N;
+  rebuild();
+});
+$('zoom').addEventListener('input', e => {
+  state.zoom = parseFloat(e.target.value);
+  $('val-zoom').textContent = state.zoom.toFixed(2) + '×';
+  draw();
+});
+$('opac').addEventListener('input', e => {
+  state.opac = parseFloat(e.target.value);
+  $('val-opac').textContent = state.opac.toFixed(2);
+  draw();
+});
+$('linewidth').addEventListener('input', e => {
+  state.lineWidth = parseFloat(e.target.value);
+  $('val-lw').textContent = state.lineWidth.toFixed(1);
+  draw();
+});
+$('speed').addEventListener('input', e => {
+  state.speed = parseFloat(e.target.value);
+  $('val-speed').textContent = state.speed.toFixed(3);
+  // Actualizar preset activo
+  document.querySelectorAll('.speed-preset').forEach(p => p.classList.remove('active'));
+});
+
+// Presets de velocidad
+document.querySelectorAll('.speed-preset').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.speed-preset').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    state.speed = parseFloat(btn.dataset.speed);
+    $('speed').value = state.speed;
+    $('val-speed').textContent = state.speed.toFixed(3);
+  });
+});
+
+$('btn-play').addEventListener('click', () => {
+  state.playing = !state.playing;
+  state.sweeping = false;
+  const btn = $('btn-play');
+  if (state.playing) {
+    btn.textContent = '⏸ Pausar';
+    btn.classList.remove('primary');
+  } else {
+    btn.textContent = '▶ Animar α';
+    btn.classList.add('primary');
+  }
+});
+$('btn-reset').addEventListener('click', () => {
+  state.alpha = 0;
+  state.playing = false;
+  state.sweeping = false;
+  state.trail = [];
+  syncAlphaUI();
+  $('btn-play').textContent = '▶ Animar α';
+  $('btn-play').classList.add('primary');
+  draw();
+});
+$('btn-sweep').addEventListener('click', () => {
+  state.alpha = 0;
+  state.playing = true;
+  state.sweeping = true;
+  state.trail = [];
+  syncAlphaUI();
+  $('btn-play').textContent = '⏸ Pausar';
+  $('btn-play').classList.remove('primary');
+});
+
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.mode = btn.dataset.mode;
+    const formulaMap = {
+      primes: 'S(α) = Σ<sub>p≤N</sub> <i>e</i><sup>2πi·p·α</sup>',
+      integers: 'S(α) = Σ<sub>n≤N</sub> <i>e</i><sup>2πi·n·α</sup>',
+      squares: 'S(α) = Σ<sub>n≤N</sub> <i>e</i><sup>2πi·n²·α</sup>',
+      cubes: 'S(α) = Σ<sub>n≤N</sub> <i>e</i><sup>2πi·n³·α</sup>',
+      fib: 'S(α) = Σ<sub>Fₙ≤N</sub> <i>e</i><sup>2πi·Fₙ·α</sup>',
+      powers2: 'S(α) = Σ<sub>n≤N</sub> <i>e</i><sup>2πi·2ⁿ·α</sup>',
+    };
+    document.querySelector('.formula-bar').innerHTML = formulaMap[state.mode];
+    rebuild();
+  });
+});
+
+// Atajos de teclado
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  const mult = e.shiftKey ? 10 : 1;
+  if (e.key === 'ArrowLeft') { setAlpha(state.alpha - 0.001 * mult); e.preventDefault(); }
+  else if (e.key === 'ArrowRight') { setAlpha(state.alpha + 0.001 * mult); e.preventDefault(); }
+  else if (e.key === ' ') { $('btn-play').click(); e.preventDefault(); }
+});
+
+/* ==================== INIT ==================== */
+rebuild();
+setTimeout(resizeCanvases, 50);
+</script>
+</body>
+</html>

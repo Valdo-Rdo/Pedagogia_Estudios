@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Paradoja de Braess · Simulador Universitario</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.0/index.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.0/index.css">
+<style>
+  :root{
+    --bg:#0b1020;
+    --panel:#111832;
+    --panel-2:#0f1530;
+    --line:#1f2a52;
+    --text:#e6ecff;
+    --muted:#8b95c7;
+    --accent:#6366f1;
+    --accent-2:#22d3ee;
+    --good:#10b981;
+    --bad:#ef4444;
+    --warn:#f59e0b;
+  }
+  html,body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .panel{background:linear-gradient(180deg,var(--panel) 0%,var(--panel-2) 100%);border:1px solid var(--line);}
+  .grid-bg{
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(99,102,241,.15), transparent 40%),
+      radial-gradient(circle at 80% 90%, rgba(34,211,238,.10), transparent 40%),
+      linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+    background-size:auto, auto, 32px 32px, 32px 32px;
+  }
+  #drawer{
+    position:fixed; top:0; left:0; height:100vh; width:380px; max-width:90vw;
+    background:var(--panel); border-right:1px solid var(--line);
+    transform:translateX(-100%); transition:transform .35s cubic-bezier(.2,.8,.2,1);
+    z-index:1000; overflow-y:auto;
+    box-shadow: 0 0 60px rgba(0,0,0,.5);
+  }
+  #drawer.open{transform:translateX(0);}
+  #backdrop{
+    position:fixed; inset:0; background:rgba(0,0,0,.5); backdrop-filter:blur(4px);
+    opacity:0; pointer-events:none; transition:opacity .3s; z-index:999;
+  }
+  #backdrop.show{opacity:1; pointer-events:auto;}
+  details > summary{cursor:pointer; list-style:none;}
+  details > summary::-webkit-details-marker{display:none;}
+  details[open] .chev{transform:rotate(90deg);}
+  .chev{transition:transform .2s;}
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; width:100%; height:6px;
+    background:linear-gradient(90deg,var(--accent) 0%, var(--accent) var(--val,50%), #1f2a52 var(--val,50%), #1f2a52 100%);
+    border-radius:999px; outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none; width:18px; height:18px;
+    background:#fff; border:2px solid var(--accent); border-radius:50%; cursor:pointer;
+    box-shadow:0 0 0 4px rgba(99,102,241,.15);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:18px; height:18px; background:#fff; border:2px solid var(--accent); border-radius:50%; cursor:pointer;
+  }
+  .badge{font-size:10px; letter-spacing:.08em; text-transform:uppercase;}
+  .scroll-thin::-webkit-scrollbar{width:8px;}
+  .scroll-thin::-webkit-scrollbar-thumb{background:#1f2a52;border-radius:8px;}
+  .scroll-thin::-webkit-scrollbar-track{background:transparent;}
+  .pulse-dot{animation:pulse 1.6s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:.4;transform:scale(1);}50%{opacity:1;transform:scale(1.3);}}
+  .metric-card{transition:transform .2s, border-color .2s;}
+  .metric-card:hover{transform:translateY(-2px); border-color:var(--accent);}
+  .btn{transition:all .15s;}
+  .btn:hover{transform:translateY(-1px);}
+  .btn:active{transform:translateY(0);}
+  .tab-active{background:var(--accent); color:#fff;}
+  .tab-inactive{background:transparent; color:var(--muted); border:1px solid var(--line);}
+  .tab-inactive:hover{color:#fff; border-color:#3b4680;}
+  .legend-dot{width:10px; height:10px; border-radius:50%; display:inline-block;}
+  .kbd{font-family:'JetBrains Mono',monospace; font-size:10px; padding:2px 6px; border:1px solid var(--line); border-radius:4px; background:#0b1020;}
+
+  #map{width:100%; height:100%; background:#0b1020; border-radius:12px; z-index:1;}
+  .leaflet-container{background:#0b1020; font-family:'Inter',sans-serif;}
+  .leaflet-control-attribution{
+    background:rgba(11,16,32,.85)!important;
+    color:#8b95c7!important;
+    font-size:10px!important;
+    border-top:1px solid #1f2a52!important;
+  }
+  .leaflet-control-attribution a{color:#818cf8!important;}
+  .leaflet-control-zoom a{
+    background:#111832!important; color:#e6ecff!important;
+    border-color:#1f2a52!important;
+  }
+  .leaflet-control-zoom a:hover{background:#1f2a52!important;}
+  .map-overlay-legend{
+    position:absolute; bottom:16px; left:16px; z-index:500;
+    background:rgba(17,24,50,.92); backdrop-filter:blur(8px);
+    border:1px solid #1f2a52; border-radius:12px; padding:12px 14px;
+    font-size:11px; color:#e6ecff;
+    pointer-events:none;
+  }
+  .map-overlay-info{
+    position:absolute; top:16px; right:16px; z-index:500;
+    background:rgba(17,24,50,.92); backdrop-filter:blur(8px);
+    border:1px solid #1f2a52; border-radius:12px; padding:10px 14px;
+    font-size:11px; color:#8b95c7;
+    max-width:240px;
+  }
+  .map-overlay-source{
+    position:absolute; top:16px; left:16px; z-index:500;
+    background:rgba(17,24,50,.92); backdrop-filter:blur(8px);
+    border:1px solid #1f2a52; border-radius:10px; padding:6px 10px;
+    font-size:10px; color:#8b95c7;
+    display:flex; align-items:center; gap:6px;
+  }
+  .custom-marker{background:transparent; border:none;}
+  .node-pin{
+    width:36px; height:36px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:13px; color:#fff;
+    box-shadow:0 0 0 3px rgba(11,16,32,.9), 0 0 20px rgba(0,0,0,.5);
+    border:2px solid currentColor;
+    background:#0b1020;
+  }
+  .center-pin{
+    width:48px; height:48px; border-radius:50%;
+    background:radial-gradient(circle, #6366f1 0%, #4338ca 100%);
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:20px;
+    box-shadow:0 0 0 3px rgba(11,16,32,.9), 0 0 30px rgba(99,102,241,.6);
+    animation:center-pulse 2s ease-in-out infinite;
+  }
+  @keyframes center-pulse{
+    0%,100%{box-shadow:0 0 0 3px rgba(11,16,32,.9), 0 0 30px rgba(99,102,241,.6);}
+    50%{box-shadow:0 0 0 3px rgba(11,16,32,.9), 0 0 45px rgba(99,102,241,.9);}
+  }
+  .flow-label{
+    background:rgba(11,16,32,.92);
+    border:1px solid #1f2a52;
+    border-radius:6px;
+    padding:2px 8px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    color:#e6ecff;
+    white-space:nowrap;
+    box-shadow:0 2px 8px rgba(0,0,0,.4);
+  }
+  .loading-overlay{
+    position:absolute; inset:0; z-index:600;
+    background:rgba(11,16,32,.85); backdrop-filter:blur(4px);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border-radius:12px;
+  }
+  .spinner{
+    width:40px; height:40px; border:3px solid #1f2a52;
+    border-top-color:#6366f1; border-radius:50%;
+    animation:spin 1s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .route-status{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:4px 10px; border-radius:999px;
+    font-size:11px; font-weight:500;
+  }
+  .route-status.ok{background:rgba(16,185,129,.15); color:#34d399; border:1px solid rgba(16,185,129,.3);}
+  .route-status.loading{background:rgba(245,158,11,.15); color:#fbbf24; border:1px solid rgba(245,158,11,.3);}
+  .route-status.error{background:rgba(239,68,68,.15); color:#f87171; border:1px solid rgba(239,68,68,.3);}
+</style>
+</head>
+<body class="grid-bg min-h-screen">
+
+<div id="backdrop" onclick="toggleDrawer(false)"></div>
+
+<aside id="drawer" class="scroll-thin">
+  <div class="p-5 border-b border-[color:var(--line)] flex items-center justify-between sticky top-0 bg-[color:var(--panel)] z-10">
+    <div>
+      <div class="text-xs text-[color:var(--muted)] uppercase tracking-widest">Panel de Control</div>
+      <div class="text-lg font-semibold">Parámetros de Simulación</div>
+    </div>
+    <button onclick="toggleDrawer(false)" class="w-9 h-9 rounded-lg border border-[color:var(--line)] hover:bg-[color:var(--line)] flex items-center justify-center">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <div class="p-5 space-y-5">
+
+    <details open class="panel rounded-xl p-4">
+      <summary class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-md bg-indigo-500/20 text-indigo-300 flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+          </span>
+          <div>
+            <div class="font-semibold text-sm">Demanda por Eje</div>
+            <div class="text-xs text-[color:var(--muted)]">Flujo vehicular hacia el Centro</div>
+          </div>
+        </div>
+        <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </summary>
+      <div class="mt-4 space-y-4" id="sliders-container"></div>
+      <div class="mt-4 pt-4 border-t border-[color:var(--line)] flex items-center justify-between">
+        <div class="text-xs text-[color:var(--muted)]">Demanda total</div>
+        <div class="mono text-lg font-bold text-[color:var(--accent-2)]" id="total-demand">0</div>
+      </div>
+      <button onclick="resetDemands()" class="btn w-full mt-3 py-2 rounded-lg bg-[color:var(--line)] hover:bg-indigo-500/30 text-sm">
+        ↻ Restablecer demandas
+      </button>
+    </details>
+
+    <details class="panel rounded-xl p-4">
+      <summary class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-md bg-cyan-500/20 text-cyan-300 flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          </span>
+          <div>
+            <div class="font-semibold text-sm">Modelo BPR</div>
+            <div class="text-xs text-[color:var(--muted)]">Función de costo de enlace</div>
+          </div>
+        </div>
+        <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </summary>
+      <div class="mt-4 space-y-3">
+        <div class="p-3 rounded-lg bg-[color:var(--bg)] border border-[color:var(--line)]">
+          <div class="mono text-xs text-[color:var(--muted)] mb-1">t(v) = t₀ · (1 + α·(v/c)<sup>β</sup>)</div>
+          <div class="text-[11px] text-[color:var(--muted)] leading-relaxed">Función del <em>Bureau of Public Roads</em>. Modela la congestión como función no-lineal del volumen.</div>
+        </div>
+        <div>
+          <div class="flex justify-between text-xs mb-1"><span class="text-[color:var(--muted)]">α (sensibilidad)</span><span class="mono" id="alpha-val">0.15</span></div>
+          <input type="range" min="0.05" max="1.5" step="0.05" value="0.15" id="alpha" oninput="updateParam(this)">
+        </div>
+        <div>
+          <div class="flex justify-between text-xs mb-1"><span class="text-[color:var(--muted)]">β (exponente)</span><span class="mono" id="beta-val">4.0</span></div>
+          <input type="range" min="1" max="8" step="0.5" value="4" id="beta" oninput="updateParam(this)">
+        </div>
+        <div>
+          <div class="flex justify-between text-xs mb-1"><span class="text-[color:var(--muted)]">Capacidad base c₀</span><span class="mono" id="cap-val">800</span></div>
+          <input type="range" min="200" max="2000" step="50" value="800" id="cap" oninput="updateParam(this)">
+        </div>
+      </div>
+    </details>
+
+    <details class="panel rounded-xl p-4">
+      <summary class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-md bg-emerald-500/20 text-emerald-300 flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </span>
+          <div>
+            <div class="font-semibold text-sm">Visualización</div>
+            <div class="text-xs text-[color:var(--muted)]">Opciones del mapa</div>
+          </div>
+        </div>
+        <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </summary>
+      <div class="mt-4 space-y-2">
+        <label class="flex items-center justify-between p-2 rounded-lg hover:bg-[color:var(--bg)] cursor-pointer">
+          <span class="text-sm">Mostrar vehículos</span>
+          <input type="checkbox" id="show-vehicles" checked onchange="renderVehicles()" class="w-4 h-4 accent-indigo-500">
+        </label>
+        <label class="flex items-center justify-between p-2 rounded-lg hover:bg-[color:var(--bg)] cursor-pointer">
+          <span class="text-sm">Mostrar etiquetas de flujo</span>
+          <input type="checkbox" id="show-labels" checked onchange="renderNetwork()" class="w-4 h-4 accent-indigo-500">
+        </label>
+        <label class="flex items-center justify-between p-2 rounded-lg hover:bg-[color:var(--bg)] cursor-pointer">
+          <span class="text-sm">Animación continua</span>
+          <input type="checkbox" id="animate" checked class="w-4 h-4 accent-indigo-500">
+        </label>
+        <div>
+          <div class="flex justify-between text-xs mb-1"><span class="text-[color:var(--muted)]">Velocidad de animación</span><span class="mono" id="speed-val">1.0×</span></div>
+          <input type="range" min="0.2" max="3" step="0.1" value="1" id="speed" oninput="updateParam(this)">
+        </div>
+        <div>
+          <div class="flex justify-between text-xs mb-1"><span class="text-[color:var(--muted)]">Capa del mapa</span></div>
+          <select id="map-layer" onchange="changeMapLayer(this.value)" class="w-full bg-[color:var(--bg)] border border-[color:var(--line)] rounded-lg px-3 py-2 text-sm text-white">
+            <option value="dark">Oscuro (CartoDB)</option>
+            <option value="streets">Calles (OpenStreetMap)</option>
+            <option value="satellite">Satélite (Esri)</option>
+          </select>
+        </div>
+        <div class="mt-3 pt-3 border-t border-[color:var(--line)]">
+          <div class="flex items-center justify-between text-xs mb-1.5">
+            <span class="text-[color:var(--muted)]">Rutas reales (OSRM)</span>
+            <span id="route-status-badge" class="route-status loading">
+              <span class="w-1.5 h-1.5 rounded-full bg-current pulse-dot"></span>
+              Cargando...
+            </span>
+          </div>
+          <div class="text-[10px] text-[color:var(--muted)] leading-relaxed">
+            Las líneas del mapa siguen calles reales obtenidas de <strong class="text-white">OpenStreetMap</strong> vía <strong class="text-white">OSRM</strong> (servicio gratuito, sin API key).
+          </div>
+          <button onclick="reloadRoutes()" class="btn w-full mt-2 py-1.5 rounded-lg bg-[color:var(--line)] hover:bg-indigo-500/30 text-xs flex items-center justify-center gap-1.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+            Recargar rutas
+          </button>
+        </div>
+      </div>
+    </details>
+
+    <details class="panel rounded-xl p-4">
+      <summary class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-md bg-amber-500/20 text-amber-300 flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          </span>
+          <div>
+            <div class="font-semibold text-sm">Escenarios Predefinidos</div>
+            <div class="text-xs text-[color:var(--muted)]">Casos de estudio</div>
+          </div>
+        </div>
+        <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </summary>
+      <div class="mt-4 space-y-2">
+        <button onclick="loadScenario('low')" class="btn w-full text-left p-3 rounded-lg bg-[color:var(--bg)] border border-[color:var(--line)] hover:border-indigo-500">
+          <div class="text-sm font-medium">Baja demanda</div>
+          <div class="text-xs text-[color:var(--muted)]">600 veh/h total · Flujo libre</div>
+        </button>
+        <button onclick="loadScenario('medium')" class="btn w-full text-left p-3 rounded-lg bg-[color:var(--bg)] border border-[color:var(--line)] hover:border-indigo-500">
+          <div class="text-sm font-medium">Demanda media</div>
+          <div class="text-xs text-[color:var(--muted)]">2400 veh/h total · Equilibrio</div>
+        </button>
+        <button onclick="loadScenario('high')" class="btn w-full text-left p-3 rounded-lg bg-[color:var(--bg)] border border-[color:var(--line)] hover:border-indigo-500">
+          <div class="text-sm font-medium">Alta demanda (paradoja)</div>
+          <div class="text-xs text-[color:var(--muted)]">4000 veh/h total · Saturación</div>
+        </button>
+        <button onclick="loadScenario('asymmetric')" class="btn w-full text-left p-3 rounded-lg bg-[color:var(--bg)] border border-[color:var(--line)] hover:border-indigo-500">
+          <div class="text-sm font-medium">Asimétrico</div>
+          <div class="text-xs text-[color:var(--muted)]">Cargas desbalanceadas por eje</div>
+        </button>
+      </div>
+    </details>
+
+    <details class="panel rounded-xl p-4">
+      <summary class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-md bg-rose-500/20 text-rose-300 flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+          </span>
+          <div>
+            <div class="font-semibold text-sm">Fundamento Teórico</div>
+            <div class="text-xs text-[color:var(--muted)]">Equilibrio de Wardrop</div>
+          </div>
+        </div>
+        <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </summary>
+      <div class="mt-4 space-y-3 text-xs leading-relaxed text-[color:var(--muted)]">
+        <p><strong class="text-white">Principio de Wardrop (1st):</strong> En equilibrio, ningún conductor puede reducir su tiempo de viaje cambiando de ruta unilateralmente.</p>
+        <div class="p-3 rounded-lg bg-[color:var(--bg)] border border-[color:var(--line)] mono text-[11px]">
+          t₁(v₁) = t₂(v₂) &nbsp; si v₁,v₂ &gt; 0<br>
+          v₁ + v₂ = N
+        </div>
+        <p><strong class="text-white">Paradoja de Braess (1968):</strong> Agregar capacidad a una red puede <em>empeorar</em> el tiempo de viaje en equilibrio, porque los usuarios actúan de forma egoísta.</p>
+        <p><strong class="text-white">Precio de la Anarquía (PoA):</strong> Razón entre el costo del equilibrio de Nash y el óptimo social.</p>
+        <div class="p-3 rounded-lg bg-[color:var(--bg)] border border-[color:var(--line)] mono text-[11px]">
+          PoA = C(equilibrio) / C(óptimo) ≥ 1
+        </div>
+      </div>
+    </details>
+
+  </div>
+</aside>
+
+<main class="min-h-screen">
+
+  <header class="border-b border-[color:var(--line)] bg-[color:var(--panel)]/60 backdrop-blur sticky top-0 z-30">
+    <div class="max-w-[1600px] mx-auto px-6 py-4 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <button onclick="toggleDrawer(true)" class="btn w-10 h-10 rounded-lg border border-[color:var(--line)] hover:bg-[color:var(--line)] flex items-center justify-center" title="Abrir panel (D)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        </button>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🚦</span>
+            <h1 class="text-lg md:text-xl font-bold">Paradoja de Braess</h1>
+            <span class="badge px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 hidden md:inline">Simulador Universitario</span>
+          </div>
+          <div class="text-xs text-[color:var(--muted)]">Modelo de asignación de tráfico · Rutas reales de calles · Centro Histórico de Guadalajara</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[color:var(--line)] bg-[color:var(--bg)]">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot"></span>
+          <span class="text-xs text-[color:var(--muted)]">Simulación activa</span>
+        </div>
+        <button onclick="exportData()" class="btn hidden md:flex items-center gap-2 px-3 py-2 rounded-lg border border-[color:var(--line)] hover:bg-[color:var(--line)] text-sm">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Exportar
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="max-w-[1600px] mx-auto p-6 grid grid-cols-12 gap-6">
+
+    <section class="col-span-12 grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="metric-card panel rounded-xl p-4">
+        <div class="flex items-center justify-between">
+          <div class="text-xs text-[color:var(--muted)] uppercase tracking-wider">Tiempo promedio</div>
+          <span class="w-7 h-7 rounded-md bg-indigo-500/20 text-indigo-300 flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </span>
+        </div>
+        <div class="mt-2 flex items-baseline gap-1">
+          <span class="text-3xl font-bold mono" id="m-avg-time">0.0</span>
+          <span class="text-sm text-[color:var(--muted)]">min</span>
+        </div>
+        <div class="mt-1 text-xs" id="m-avg-status">—</div>
+      </div>
+      <div class="metric-card panel rounded-xl p-4">
+        <div class="flex items-center justify-between">
+          <div class="text-xs text-[color:var(--muted)] uppercase tracking-wider">Costo total del sistema</div>
+          <span class="w-7 h-7 rounded-md bg-cyan-500/20 text-cyan-300 flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          </span>
+        </div>
+        <div class="mt-2 flex items-baseline gap-1">
+          <span class="text-3xl font-bold mono" id="m-total-cost">0</span>
+          <span class="text-sm text-[color:var(--muted)]">veh·min</span>
+        </div>
+        <div class="mt-1 text-xs text-[color:var(--muted)]">Σ tᵢ · vᵢ</div>
+      </div>
+      <div class="metric-card panel rounded-xl p-4">
+        <div class="flex items-center justify-between">
+          <div class="text-xs text-[color:var(--muted)] uppercase tracking-wider">Precio de la Anarquía</div>
+          <span class="w-7 h-7 rounded-md bg-rose-500/20 text-rose-300 flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+          </span>
+        </div>
+        <div class="mt-2 flex items-baseline gap-1">
+          <span class="text-3xl font-bold mono" id="m-poa">1.00</span>
+          <span class="text-sm text-[color:var(--muted)]">×</span>
+        </div>
+        <div class="mt-1 text-xs" id="m-poa-status">—</div>
+      </div>
+      <div class="metric-card panel rounded-xl p-4">
+        <div class="flex items-center justify-between">
+          <div class="text-xs text-[color:var(--muted)] uppercase tracking-wider">Nivel de congestión</div>
+          <span class="w-7 h-7 rounded-md bg-amber-500/20 text-amber-300 flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64A9 9 0 0120.77 12M6.16 6.16A9 9 0 005 12a9 9 0 009 9M12 12h.01"/></svg>
+          </span>
+        </div>
+        <div class="mt-2 flex items-baseline gap-1">
+          <span class="text-3xl font-bold mono" id="m-congestion">0</span>
+          <span class="text-sm text-[color:var(--muted)]">%</span>
+        </div>
+        <div class="mt-1 text-xs text-[color:var(--muted)]">v/c promedio</div>
+      </div>
+    </section>
+
+    <section class="col-span-12 lg:col-span-8 panel rounded-2xl p-5">
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <div>
+          <h2 class="font-semibold">Red de Corredores · Guadalajara</h2>
+          <div class="text-xs text-[color:var(--muted)]">Mapa real con calles de OpenStreetMap · Rutas calculadas por OSRM</div>
+        </div>
+        <div class="flex items-center gap-3 text-xs">
+          <div class="flex items-center gap-1.5"><span class="legend-dot" style="background:#10b981"></span><span class="text-[color:var(--muted)]">Óptima</span></div>
+          <div class="flex items-center gap-1.5"><span class="legend-dot" style="background:#ef4444"></span><span class="text-[color:var(--muted)]">Saturada</span></div>
+          <div class="flex items-center gap-1.5"><span class="legend-dot" style="background:#f59e0b"></span><span class="text-[color:var(--muted)]">Equilibrio</span></div>
+        </div>
+      </div>
+      <div class="relative rounded-xl overflow-hidden border border-[color:var(--line)]" style="height:560px;">
+        <div id="map"></div>
+        <div id="map-loading" class="loading-overlay">
+          <div class="spinner mb-3"></div>
+          <div class="text-sm font-medium">Trazando rutas reales...</div>
+          <div class="text-xs text-[color:var(--muted)] mt-1">Consultando OpenStreetMap vía OSRM</div>
+        </div>
+        <div class="map-overlay-source">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+          <span>OSRM + OpenStreetMap · <span id="route-count">0/8</span> rutas</span>
+        </div>
+        <div class="map-overlay-legend">
+          <div class="font-semibold mb-1.5 text-xs">Leyenda del mapa</div>
+          <div class="space-y-1">
+            <div class="flex items-center gap-2"><span class="w-3 h-0.5 bg-emerald-400 inline-block rounded"></span><span>Ruta con menor tiempo</span></div>
+            <div class="flex items-center gap-2"><span class="w-3 h-0.5 bg-rose-400 inline-block rounded"></span><span>Ruta con mayor tiempo</span></div>
+            <div class="flex items-center gap-2"><span class="w-3 h-0.5 bg-amber-400 inline-block rounded"></span><span>Tiempos equilibrados</span></div>
+            <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-indigo-400 inline-block"></span><span>Vehículos simulados</span></div>
+          </div>
+        </div>
+        <div class="map-overlay-info">
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="w-2 h-2 rounded-full bg-indigo-400 pulse-dot"></span>
+            <span class="font-semibold text-white text-xs">Centro Histórico</span>
+          </div>
+          <div class="leading-relaxed">Destino único de la red. Los 4 ejes convergen desde Huentitán, San Agustín, Zapopan y Tonalá.</div>
+        </div>
+      </div>
+
+      <div class="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3" id="axis-detail"></div>
+    </section>
+
+    <section class="col-span-12 lg:col-span-4 space-y-6">
+
+      <div class="panel rounded-2xl p-5">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h2 class="font-semibold">Curva de la Paradoja</h2>
+            <div class="text-xs text-[color:var(--muted)]">Tiempo vs. demanda total</div>
+          </div>
+          <div class="flex gap-1">
+            <button onclick="setChartMode('equilibrium')" id="btn-eq" class="tab-active text-xs px-2.5 py-1 rounded-md">Equilibrio</button>
+            <button onclick="setChartMode('optimal')" id="btn-opt" class="tab-inactive text-xs px-2.5 py-1 rounded-md">Óptimo</button>
+          </div>
+        </div>
+        <div class="relative" style="height:220px;">
+          <canvas id="chart-paradox"></canvas>
+        </div>
+        <div class="mt-3 flex items-center gap-4 text-xs text-[color:var(--muted)]">
+          <div class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-indigo-400 inline-block"></span>Equilibrio (Wardrop)</div>
+          <div class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-emerald-400 inline-block"></span>Óptimo social</div>
+          <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-rose-400 inline-block"></span>Punto actual</div>
+        </div>
+      </div>
+
+      <div class="panel rounded-2xl p-5">
+        <h2 class="font-semibold mb-1">Asignación por Ruta</h2>
+        <div class="text-xs text-[color:var(--muted)] mb-3">Flujo asignado en equilibrio de Wardrop</div>
+        <div id="route-bars" class="space-y-3"></div>
+      </div>
+
+      <div class="panel rounded-2xl p-5">
+        <div class="flex items-start gap-3">
+          <span class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-300 flex items-center justify-center flex-shrink-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          </span>
+          <div>
+            <h3 class="font-semibold text-sm mb-1">¿Qué observar?</h3>
+            <p class="text-xs text-[color:var(--muted)] leading-relaxed">
+              Las líneas del mapa siguen <strong class="text-white">calles reales</strong> obtenidas de OpenStreetMap. Aumenta la demanda y observa cómo las rutas se saturan progresivamente sobre la red urbana real de Guadalajara.
+            </p>
+            <div class="mt-3 flex flex-wrap gap-1.5">
+              <span class="kbd">D</span><span class="text-xs text-[color:var(--muted)] self-center">drawer</span>
+              <span class="kbd">R</span><span class="text-xs text-[color:var(--muted)] self-center">reset</span>
+              <span class="kbd">E</span><span class="text-xs text-[color:var(--muted)] self-center">exportar</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <section class="col-span-12 panel rounded-2xl p-5">
+      <div class="grid md:grid-cols-3 gap-4 text-xs">
+        <div>
+          <div class="text-[color:var(--muted)] uppercase tracking-wider mb-1">Contexto geográfico</div>
+          <p class="leading-relaxed">Red basada en los corredores reales del Área Metropolitana de Guadalajara. Las rutas se trazan sobre calles reales usando <strong class="text-white">OpenStreetMap</strong> y el motor de ruteo <strong class="text-white">OSRM</strong>, ambos gratuitos y sin API key.</p>
+        </div>
+        <div>
+          <div class="text-[color:var(--muted)] uppercase tracking-wider mb-1">Modelo</div>
+          <p class="leading-relaxed">Asignación todo-o-nada con función BPR. Equilibrio calculado por bisección sobre la condición de Wardrop. PoA comparado contra el mínimo social por búsqueda.</p>
+        </div>
+        <div>
+          <div class="text-[color:var(--muted)] uppercase tracking-wider mb-1">Aplicaciones</div>
+          <p class="leading-relaxed">Análisis de políticas de cierre vial, peajes urbanos, y diseño de redes. Ilustra por qué añadir infraestructura no siempre mejora el desempeño del sistema.</p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   PARADOJA DE BRAESS - SIMULADOR CON RUTAS REALES
+   Leaflet + OpenStreetMap + OSRM (gratuito, sin API key)
+   ============================================================ */
+
+// ============ CONFIGURACIÓN DE EJES ============
+// Coordenadas de puntos de referencia reales en Guadalajara
+const CENTER = [20.6752, -103.3503]; // Plaza de la Liberación / Catedral
+
+// Puntos de origen aproximados en cada zona
+const ORIGINS = {
+  N: [20.7200, -103.3470], // Huentitán (norte)
+  S: [20.6280, -103.3500], // San Agustín (sur)
+  W: [20.6800, -103.4100], // Zapopan (poniente)
+  E: [20.6450, -103.2600]  // Tonalá (oriente)
+};
+
+// Puntos intermedios reales para guiar el ruteo (intersecciones conocidas)
+// Estos ayudan a OSRM a elegir la calle correcta
+const INTERMEDIATES = {
+  N1: [[20.7050, -103.3450], [20.6900, -103.3475]], // Av. Alcalde
+  N2: [[20.7050, -103.3540], [20.6900, -103.3525]], // Calz. Independencia
+  S1: [[20.6450, -103.3510], [20.6600, -103.3505]], // Av. 8 de Julio
+  S2: [[20.6450, -103.3480], [20.6600, -103.3490]], // Av. Colón
+  W1: [[20.6780, -103.3900], [20.6770, -103.3700]], // Av. Vallarta
+  W2: [[20.6840, -103.3900], [20.6810, -103.3700]], // Ávila Camacho
+  E1: [[20.6580, -103.2900], [20.6680, -103.3200]], // Javier Mina
+  E2: [[20.6520, -103.2900], [20.6630, -103.3200]]  // Av. Revolución
+};
+
+const AXES = [
+  { id:'N', name:'Eje Norte', from:'Huentitán', to:'Centro',
+    color:'#818cf8', icon:'⬆️',
+    origin: ORIGINS.N,
+    routes:[
+      { id:'N1', name:'Av. Alcalde', t0:12.3, cMul:0.85, redundant:true },
+      { id:'N2', name:'Calz. Independencia', t0:8.1, cMul:1.15, redundant:false }
+    ]},
+  { id:'S', name:'Eje Sur', from:'San Agustín', to:'Centro',
+    color:'#f472b6', icon:'⬇️',
+    origin: ORIGINS.S,
+    routes:[
+      { id:'S1', name:'Av. 8 de Julio', t0:14.2, cMul:0.80, redundant:true },
+      { id:'S2', name:'Av. Colón', t0:9.5, cMul:1.20, redundant:false }
+    ]},
+  { id:'W', name:'Eje Poniente', from:'Zapopan', to:'Centro',
+    color:'#34d399', icon:'⬅️',
+    origin: ORIGINS.W,
+    routes:[
+      { id:'W1', name:'Av. Vallarta', t0:15.5, cMul:0.85, redundant:true },
+      { id:'W2', name:'Ávila Camacho', t0:10.2, cMul:1.15, redundant:false }
+    ]},
+  { id:'E', name:'Eje Oriente', from:'Tonalá', to:'Centro',
+    color:'#fbbf24', icon:'➡️',
+    origin: ORIGINS.E,
+    routes:[
+      { id:'E1', name:'Javier Mina', t0:13.8, cMul:0.85, redundant:true },
+      { id:'E2', name:'Av. Revolución', t0:11.0, cMul:1.15, redundant:false }
+    ]}
+];
+
+const DEFAULT_DEMANDS = { N:600, S:600, W:600, E:600 };
+let demands = { ...DEFAULT_DEMANDS };
+let params = { alpha:0.15, beta:4, cap:800 };
+let chartMode = 'equilibrium';
+let animSpeed = 1;
+let vehicles = [];
+
+// Caché de rutas reales (coordenadas [lat,lng] siguiendo calles)
+let routeCoords = {}; // { 'N1': [[lat,lng], ...], 'N2': [...], ... }
+let routeStatus = { loaded:0, total:8, state:'loading' }; // loading | ok | error
+
+// ============ MAPA LEAFLET ============
+let map, tileLayer, routesLayer, labelsLayer, vehiclesLayer, nodesLayer;
+const TILE_LAYERS = {
+  dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+  streets: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+};
+
+function initMap(){
+  map = L.map('map', {
+    center: CENTER,
+    zoom: 13,
+    zoomControl: true,
+    attributionControl: true
+  });
+  tileLayer = L.tileLayer(TILE_LAYERS.dark, {
+    maxZoom: 19,
+    subdomains: 'abcd',
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · © <a href="https://carto.com/">CARTO</a> · Rutas © <a href="http://project-osrm.org/">OSRM</a>'
+  }).addTo(map);
+
+  routesLayer = L.layerGroup().addTo(map);
+  labelsLayer = L.layerGroup().addTo(map);
+  vehiclesLayer = L.layerGroup().addTo(map);
+  nodesLayer = L.layerGroup().addTo(map);
+
+  // Nodo centro
+  const centerIcon = L.divIcon({
+    className:'custom-marker',
+    html:`<div class="center-pin">🏛️</div>`,
+    iconSize:[48,48], iconAnchor:[24,24]
+  });
+  L.marker(CENTER, { icon:centerIcon, zIndexOffset:1000 })
+    .bindPopup(`<div style="font-family:Inter,sans-serif;"><strong>Centro Histórico</strong><br><small>Plaza de la Liberación</small><br><small>Destino único de la red</small></div>`)
+    .addTo(nodesLayer);
+}
+
+function changeMapLayer(name){
+  map.removeLayer(tileLayer);
+  tileLayer = L.tileLayer(TILE_LAYERS[name], {
+    maxZoom: 19,
+    subdomains: name==='streets' ? 'abc' : 'abcd',
+    attribution: name==='dark' ? '© OpenStreetMap · © CARTO · Rutas © OSRM'
+                  : name==='satellite' ? '© Esri · © OpenStreetMap · Rutas © OSRM'
+                  : '© OpenStreetMap · Rutas © OSRM'
+  }).addTo(map);
+}
+
+// ============ OSRM: obtener ruta real siguiendo calles ============
+// API pública gratuita de OSRM - no requiere API key
+const OSRM_ENDPOINT = 'https://router.project-osrm.org/route/v1/driving/';
+
+async function fetchRouteFromOSRM(routeId){
+  const ax = AXES.find(a => a.routes.some(r => r.id === routeId));
+  const route = ax.routes.find(r => r.id === routeId);
+  const origin = ax.origin;
+  const dest = CENTER;
+  const intermediates = INTERMEDIATES[routeId] || [];
+
+  // Construir la secuencia de puntos: origen -> intermedios -> destino
+  // Formato OSRM: {lon},{lat};{lon},{lat};...
+  const points = [origin, ...intermediates, dest];
+  const coordsStr = points.map(p => `${p[1]},${p[0]}`).join(';');
+
+  const url = `${OSRM_ENDPOINT}${coordsStr}?overview=full&geometries=geojson&steps=false`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('OSRM request failed');
+    const data = await response.json();
+
+    if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
+      throw new Error('No route found');
+    }
+
+    // OSRM devuelve coordenadas en [lng, lat], convertir a [lat, lng]
+    const geometry = data.routes[0].geometry.coordinates;
+    const latlngs = geometry.map(c => [c[1], c[0]]);
+
+    return { ok: true, coords: latlngs, distance: data.routes[0].distance };
+  } catch (err) {
+    console.warn(`OSRM fallback para ${routeId}:`, err.message);
+    // Fallback: línea recta con waypoints intermedios
+    const fallbackCoords = [origin, ...intermediates, dest];
+    return { ok: false, coords: fallbackCoords, distance: null };
+  }
+}
+
+async function loadAllRoutes(){
+  routeStatus = { loaded:0, total:8, state:'loading' };
+  updateRouteStatus();
+  document.getElementById('map-loading').style.display = 'flex';
+
+  const allRouteIds = AXES.flatMap(ax => ax.routes.map(r => r.id));
+  let anySuccess = false;
+
+  // Cargar en paralelo con límite de concurrencia
+  const results = await Promise.all(allRouteIds.map(async (id) => {
+    const result = await fetchRouteFromOSRM(id);
+    routeCoords[id] = result.coords;
+    routeStatus.loaded++;
+    updateRouteStatus();
+    if (result.ok) anySuccess = true;
+    return result;
+  }));
+
+  routeStatus.state = anySuccess ? 'ok' : 'error';
+  updateRouteStatus();
+  document.getElementById('map-loading').style.display = 'none';
+
+  // Re-renderizar con las nuevas coordenadas
+  renderNetwork();
+  initVehicles();
+  renderVehicles();
+}
+
+function reloadRoutes(){
+  routeCoords = {};
+  loadAllRoutes();
+}
+
+function updateRouteStatus(){
+  const badge = document.getElementById('route-status-badge');
+  const counter = document.getElementById('route-count');
+  counter.textContent = `${routeStatus.loaded}/${routeStatus.total} rutas`;
+
+  if (routeStatus.state === 'loading'){
+    badge.className = 'route-status loading';
+    badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-current pulse-dot"></span> Cargando ${routeStatus.loaded}/${routeStatus.total}`;
+  } else if (routeStatus.state === 'ok'){
+    badge.className = 'route-status ok';
+    badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-current"></span> Rutas reales activas`;
+  } else {
+    badge.className = 'route-status error';
+    badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-current"></span> Fallback (sin OSRM)`;
+  }
+}
+
+// ============ MODELO BPR ============
+function bprTime(v, t0, cMul){
+  const c = params.cap * cMul;
+  return t0 * (1 + params.alpha * Math.pow(Math.max(0,v)/c, params.beta));
+}
+
+function wardropEquilibrium(N, r1, r2){
+  if (N <= 0) return { v1:0, v2:0, t: r1.t0 };
+  let lo = 0, hi = N;
+  for (let i=0; i<60; i++){
+    const mid = (lo+hi)/2;
+    const t1 = bprTime(mid, r1.t0, r1.cMul);
+    const t2 = bprTime(N-mid, r2.t0, r2.cMul);
+    if (t1 < t2) lo = mid; else hi = mid;
+  }
+  const v1 = (lo+hi)/2;
+  const v2 = N - v1;
+  const t = Math.max(bprTime(v1, r1.t0, r1.cMul), bprTime(v2, r2.t0, r2.cMul));
+  return { v1, v2, t };
+}
+
+function socialOptimum(N, r1, r2){
+  if (N <= 0) return { v1:0, v2:0, t: r1.t0, totalCost:0 };
+  let lo = 0, hi = N;
+  function marginal(v1){
+    const v2 = N - v1;
+    const t1 = bprTime(v1, r1.t0, r1.cMul);
+    const t2 = bprTime(v2, r2.t0, r2.cMul);
+    const c1 = params.cap * r1.cMul;
+    const c2 = params.cap * r2.cMul;
+    const dt1 = params.alpha * params.beta * r1.t0 * Math.pow(Math.max(1e-9,v1)/c1, params.beta-1) / c1;
+    const dt2 = params.alpha * params.beta * r2.t0 * Math.pow(Math.max(1e-9,v2)/c2, params.beta-1) / c2;
+    return (t1 + v1*dt1) - (t2 + v2*dt2);
+  }
+  let mLo = marginal(lo), mHi = marginal(hi);
+  if (mLo * mHi > 0){
+    let best = 0, bestCost = Infinity;
+    for (let k=0; k<=20; k++){
+      const v1 = N * k/20;
+      const v2 = N - v1;
+      const cost = bprTime(v1, r1.t0, r1.cMul)*v1 + bprTime(v2, r2.t0, r2.cMul)*v2;
+      if (cost < bestCost){ bestCost = cost; best = v1; }
+    }
+    const v1 = best, v2 = N-best;
+    const t = Math.max(bprTime(v1, r1.t0, r1.cMul), bprTime(v2, r2.t0, r2.cMul));
+    return { v1, v2, t, totalCost: bestCost };
+  }
+  for (let i=0; i<60; i++){
+    const mid = (lo+hi)/2;
+    const m = marginal(mid);
+    if (m * mLo > 0){ lo = mid; mLo = m; } else { hi = mid; mHi = m; }
+  }
+  const v1 = (lo+hi)/2;
+  const v2 = N - v1;
+  const t = Math.max(bprTime(v1, r1.t0, r1.cMul), bprTime(v2, r2.t0, r2.cMul));
+  const totalCost = bprTime(v1, r1.t0, r1.cMul)*v1 + bprTime(v2, r2.t0, r2.cMul)*v2;
+  return { v1, v2, t, totalCost };
+}
+
+function computeAll(){
+  const results = {};
+  let totalVehMin = 0, totalVeh = 0, totalSocialCost = 0;
+  let vcSum = 0, vcCount = 0;
+  for (const ax of AXES){
+    const N = demands[ax.id];
+    const eq = wardropEquilibrium(N, ax.routes[0], ax.routes[1]);
+    const so = socialOptimum(N, ax.routes[0], ax.routes[1]);
+    const t1_eq = bprTime(eq.v1, ax.routes[0].t0, ax.routes[0].cMul);
+    const t2_eq = bprTime(eq.v2, ax.routes[1].t0, ax.routes[1].cMul);
+    const cost_eq = t1_eq*eq.v1 + t2_eq*eq.v2;
+    totalVehMin += cost_eq;
+    totalVeh += N;
+    totalSocialCost += so.totalCost;
+    const vc1 = eq.v1 / (params.cap * ax.routes[0].cMul);
+    const vc2 = eq.v2 / (params.cap * ax.routes[1].cMul);
+    vcSum += (vc1 + vc2); vcCount += 2;
+    results[ax.id] = { eq, so, t1_eq, t2_eq, cost_eq, vc1, vc2 };
+  }
+  const avgTime = totalVeh>0 ? totalVehMin/totalVeh : 0;
+  const poa = totalSocialCost>0 ? totalVehMin/totalSocialCost : 1;
+  const congestion = Math.min(100, Math.round((vcSum/vcCount)*100));
+  return { results, avgTime, totalVehMin, poa, congestion, totalVeh };
+}
+
+// ============ RENDER DE RUTAS EN EL MAPA ============
+function renderNetwork(){
+  routesLayer.clearLayers();
+  labelsLayer.clearLayers();
+  nodesLayer.eachLayer(l => { if (!l._isCenter) nodesLayer.removeLayer(l); });
+
+  const data = computeAll();
+
+  for (const ax of AXES){
+    const r = data.results[ax.id];
+    const t1 = r.t1_eq, t2 = r.t2_eq;
+    const minT = Math.min(t1,t2), maxT = Math.max(t1,t2);
+
+    for (let i=0; i<2; i++){
+      const route = ax.routes[i];
+      const t = i===0 ? t1 : t2;
+      const v = i===0 ? r.eq.v1 : r.eq.v2;
+
+      let color;
+      if (maxT - minT < 0.3) color = '#f59e0b';
+      else if (t <= minT + 0.3) color = '#10b981';
+      else color = '#ef4444';
+
+      const width = 4 + Math.min(7, v/120);
+
+      // Obtener coordenadas: reales de OSRM o fallback
+      const coords = routeCoords[route.id] || [ax.origin, CENTER];
+
+      const polyline = L.polyline(coords, {
+        color: color,
+        weight: width,
+        opacity: 0.85,
+        lineCap: 'round',
+        lineJoin: 'round'
+      }).addTo(routesLayer);
+
+      polyline.bindTooltip(
+        `<div style="font-family:Inter,sans-serif;font-size:12px;">
+          <strong style="color:${ax.color}">${ax.icon} ${route.name}</strong><br>
+          <span style="color:#8b95c7">Flujo:</span> <strong>${v.toFixed(0)} veh/h</strong><br>
+          <span style="color:#8b95c7">Tiempo:</span> <strong>${t.toFixed(2)} min</strong><br>
+          <span style="color:#8b95c7">v/c:</span> <strong>${(v/(params.cap*route.cMul)*100).toFixed(0)}%</strong>
+        </div>`,
+        { sticky:true }
+      );
+
+      // Etiqueta de flujo a mitad de ruta
+      if (document.getElementById('show-labels').checked && coords.length > 0){
+        const midIdx = Math.floor(coords.length/2);
+        const mid = coords[midIdx];
+        const labelIcon = L.divIcon({
+          className:'custom-marker',
+          html:`<div class="flow-label" style="border-color:${color}">${t.toFixed(1)}′ · ${v.toFixed(0)}</div>`,
+          iconSize:[80,20], iconAnchor:[40,10]
+        });
+        L.marker(mid, { icon:labelIcon, interactive:false }).addTo(labelsLayer);
+      }
+    }
+
+    // Nodo origen del eje
+    const originIcon = L.divIcon({
+      className:'custom-marker',
+      html:`<div class="node-pin" style="color:${ax.color};border-color:${ax.color}">${ax.id}</div>`,
+      iconSize:[36,36], iconAnchor:[18,18]
+    });
+    L.marker(ax.origin, { icon:originIcon })
+      .bindPopup(`<div style="font-family:Inter,sans-serif;">
+        <strong style="color:${ax.color}">${ax.icon} ${ax.name}</strong><br>
+        <small>${ax.from} → ${ax.to}</small><br>
+        <strong>${demands[ax.id]} veh/h</strong>
+      </div>`)
+      .addTo(nodesLayer);
+
+    // Etiqueta de demanda
+    const demandIcon = L.divIcon({
+      className:'custom-marker',
+      html:`<div class="flow-label" style="border-color:${ax.color};background:rgba(11,16,32,.95);">${ax.from}<br><strong style="color:${ax.color}">${demands[ax.id]} veh/h</strong></div>`,
+      iconSize:[100,34], iconAnchor:[50,-20]
+    });
+    L.marker(ax.origin, { icon:demandIcon, interactive:false }).addTo(labelsLayer);
+  }
+
+  nodesLayer.eachLayer(l => { if (l._leaflet_id) l._isCenter = true; });
+}
+
+// ============ VEHÍCULOS ANIMADOS ============
+function interpolatePath(coords, t){
+  if (!coords || coords.length < 2) return CENTER;
+  if (t <= 0) return coords[0];
+  if (t >= 1) return coords[coords.length-1];
+
+  // Calcular longitudes acumuladas para interpolación uniforme por distancia
+  const distances = [0];
+  let total = 0;
+  for (let i=1; i<coords.length; i++){
+    const d = Math.hypot(coords[i][0]-coords[i-1][0], coords[i][1]-coords[i-1][1]);
+    total += d;
+    distances.push(total);
+  }
+
+  const target = t * total;
+  let i = 0;
+  while (i < distances.length-1 && distances[i+1] < target) i++;
+  if (i >= coords.length-1) return coords[coords.length-1];
+
+  const segLen = distances[i+1] - distances[i];
+  const frac = segLen > 0 ? (target - distances[i])/segLen : 0;
+  return [
+    coords[i][0] + (coords[i+1][0]-coords[i][0])*frac,
+    coords[i][1] + (coords[i+1][1]-coords[i][1])*frac
+  ];
+}
+
+function initVehicles(){
+  vehiclesLayer.clearLayers();
+  vehicles = [];
+  const data = computeAll();
+
+  for (const ax of AXES){
+    const r = data.results[ax.id];
+    for (let i=0; i<2; i++){
+      const v = i===0 ? r.eq.v1 : r.eq.v2;
+      const count = Math.max(2, Math.round(v/60));
+      const coords = routeCoords[ax.routes[i].id] || [ax.origin, CENTER];
+
+      for (let k=0; k<count; k++){
+        const t0 = Math.random();
+        const pos = interpolatePath(coords, t0);
+        const marker = L.circleMarker(pos, {
+          radius: 3,
+          color: ax.color,
+          fillColor: ax.color,
+          fillOpacity: 0.9,
+          weight: 1,
+          opacity: 0.9
+        }).addTo(vehiclesLayer);
+
+        vehicles.push({
+          axisId: ax.id,
+          routeIdx: i,
+          t: t0,
+          speed: (0.0015 + Math.random()*0.0015),
+          marker: marker,
+          coords: coords
+        });
+      }
+    }
+  }
+}
+
+function renderVehicles(){
+  const show = document.getElementById('show-vehicles').checked;
+  const container = vehiclesLayer.getContainer?.() || vehiclesLayer._container;
+  if (container) container.style.display = show ? '' : 'none';
+}
+
+function animateVehicles(){
+  if (!document.getElementById('animate').checked) return;
+  if (!document.getElementById('show-vehicles').checked) return;
+  for (const vh of vehicles){
+    vh.t += vh.speed * animSpeed;
+    if (vh.t > 1) vh.t = 0;
+    const pos = interpolatePath(vh.coords, vh.t);
+    vh.marker.setLatLng(pos);
+  }
+}
+
+let animFrame;
+function loop(){
+  animateVehicles();
+  animFrame = requestAnimationFrame(loop);
+}
+
+// ============ UI ============
+function buildSliders(){
+  const cont = document.getElementById('sliders-container');
+  cont.innerHTML = '';
+  for (const ax of AXES){
+    const val = demands[ax.id];
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `
+      <div class="flex items-center justify-between mb-1.5">
+        <div class="flex items-center gap-2">
+          <span class="text-base">${ax.icon}</span>
+          <div>
+            <div class="text-sm font-medium">${ax.name}</div>
+            <div class="text-[11px] text-[color:var(--muted)]">${ax.from} → ${ax.to}</div>
+          </div>
+        </div>
+        <div class="mono text-sm font-bold" style="color:${ax.color}" id="val-${ax.id}">${val}</div>
+      </div>
+      <input type="range" min="0" max="1500" step="50" value="${val}" id="slider-${ax.id}" style="--val:${(val/1500)*100}%" oninput="updateDemand('${ax.id}', this)">
+    `;
+    cont.appendChild(wrap);
+  }
+  updateTotal();
+}
+
+function updateDemand(id, el){
+  demands[id] = parseInt(el.value);
+  el.style.setProperty('--val', (el.value/1500)*100 + '%');
+  document.getElementById('val-'+id).textContent = el.value;
+  updateTotal();
+  recompute();
+}
+function updateTotal(){
+  const t = Object.values(demands).reduce((a,b)=>a+b,0);
+  document.getElementById('total-demand').textContent = t.toLocaleString() + ' veh/h';
+}
+function updateParam(el){
+  const id = el.id;
+  const v = parseFloat(el.value);
+  el.style.setProperty('--val', ((v-parseFloat(el.min))/(parseFloat(el.max)-parseFloat(el.min)))*100 + '%');
+  if (id==='alpha'){ params.alpha=v; document.getElementById('alpha-val').textContent=v.toFixed(2); }
+  if (id==='beta'){ params.beta=v; document.getElementById('beta-val').textContent=v.toFixed(1); }
+  if (id==='cap'){ params.cap=v; document.getElementById('cap-val').textContent=v.toFixed(0); }
+  if (id==='speed'){ animSpeed=v; document.getElementById('speed-val').textContent=v.toFixed(1)+'×'; }
+  recompute();
+}
+function resetDemands(){
+  demands = { ...DEFAULT_DEMANDS };
+  buildSliders();
+  recompute();
+}
+
+function loadScenario(name){
+  const map = {
+    low: { N:150, S:150, W:150, E:150 },
+    medium: { N:600, S:600, W:600, E:600 },
+    high: { N:1000, S:1000, W:1000, E:1000 },
+    asymmetric: { N:1200, S:400, W:900, E:200 }
+  };
+  demands = map[name];
+  buildSliders();
+  recompute();
+}
+
+function toggleDrawer(open){
+  document.getElementById('drawer').classList.toggle('open', open);
+  document.getElementById('backdrop').classList.toggle('show', open);
+  setTimeout(()=>map && map.invalidateSize(), 400);
+}
+
+function renderAxisDetail(){
+  const cont = document.getElementById('axis-detail');
+  const data = computeAll();
+  cont.innerHTML = '';
+  for (const ax of AXES){
+    const r = data.results[ax.id];
+    const faster = r.t1_eq < r.t2_eq - 0.3 ? 0 : (r.t2_eq < r.t1_eq - 0.3 ? 1 : -1);
+    cont.innerHTML += `
+      <div class="panel rounded-xl p-3 cursor-pointer hover:border-indigo-500 transition" style="border-left:3px solid ${ax.color}" onclick="flyToAxis('${ax.id}')">
+        <div class="text-xs text-[color:var(--muted)] uppercase tracking-wider">${ax.icon} ${ax.name}</div>
+        <div class="mt-2 space-y-1.5 text-xs">
+          <div class="flex justify-between">
+            <span class="text-[color:var(--muted)] truncate">${ax.routes[0].name}</span>
+            <span class="mono ${faster===0?'text-emerald-400':'text-rose-400'}">${r.eq.v1.toFixed(0)} · ${r.t1_eq.toFixed(1)}′</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-[color:var(--muted)] truncate">${ax.routes[1].name}</span>
+            <span class="mono ${faster===1?'text-emerald-400':'text-rose-400'}">${r.eq.v2.toFixed(0)} · ${r.t2_eq.toFixed(1)}′</span>
+          </div>
+          <div class="pt-1.5 border-t border-[color:var(--line)] flex justify-between">
+            <span class="text-[color:var(--muted)]">v/c</span>
+            <span class="mono">${((r.vc1+r.vc2)/2*100).toFixed(0)}%</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function flyToAxis(id){
+  const ax = AXES.find(a=>a.id===id);
+  const allPts = [];
+  for (const r of ax.routes){
+    const c = routeCoords[r.id] || [ax.origin, CENTER];
+    allPts.push(...c);
+  }
+  const bounds = L.latLngBounds(allPts);
+  map.flyToBounds(bounds.pad(0.3), { duration: 0.8 });
+}
+
+function renderRouteBars(){
+  const cont = document.getElementById('route-bars');
+  const data = computeAll();
+  cont.innerHTML = '';
+  for (const ax of AXES){
+    const r = data.results[ax.id];
+    const N = demands[ax.id];
+    const p1 = N>0 ? (r.eq.v1/N)*100 : 50;
+    const p2 = 100 - p1;
+    cont.innerHTML += `
+      <div>
+        <div class="flex justify-between text-xs mb-1">
+          <span style="color:${ax.color}" class="font-medium">${ax.icon} ${ax.name}</span>
+          <span class="mono text-[color:var(--muted)]">${N} veh/h</span>
+        </div>
+        <div class="flex h-6 rounded-md overflow-hidden bg-[color:var(--bg)] border border-[color:var(--line)]">
+          <div style="width:${p1}%; background:linear-gradient(90deg, ${ax.color}cc, ${ax.color}88);" class="flex items-center justify-center text-[10px] mono text-white font-semibold">
+            ${p1>15 ? p1.toFixed(0)+'%' : ''}
+          </div>
+          <div style="width:${p2}%; background:linear-gradient(90deg, ${ax.color}66, ${ax.color}33);" class="flex items-center justify-center text-[10px] mono text-white/80 font-semibold">
+            ${p2>15 ? p2.toFixed(0)+'%' : ''}
+          </div>
+        </div>
+        <div class="flex justify-between text-[10px] text-[color:var(--muted)] mt-0.5 mono">
+          <span>${ax.routes[0].name.split(' ').slice(-1)[0]}: ${r.eq.v1.toFixed(0)}</span>
+          <span>${ax.routes[1].name.split(' ').slice(-1)[0]}: ${r.eq.v2.toFixed(0)}</span>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function renderMetrics(){
+  const d = computeAll();
+  document.getElementById('m-avg-time').textContent = d.avgTime.toFixed(1);
+  document.getElementById('m-total-cost').textContent = Math.round(d.totalVehMin).toLocaleString();
+  document.getElementById('m-poa').textContent = d.poa.toFixed(2);
+  document.getElementById('m-congestion').textContent = d.congestion;
+
+  const avg = d.avgTime;
+  const avgEl = document.getElementById('m-avg-status');
+  if (avg < 10){ avgEl.textContent = 'Flujo libre'; avgEl.className='mt-1 text-xs text-emerald-400'; }
+  else if (avg < 14){ avgEl.textContent = 'Flujo estable'; avgEl.className='mt-1 text-xs text-amber-400'; }
+  else { avgEl.textContent = 'Congestión severa'; avgEl.className='mt-1 text-xs text-rose-400'; }
+
+  const poaEl = document.getElementById('m-poa-status');
+  if (d.poa < 1.05){ poaEl.textContent = 'Cercano al óptimo'; poaEl.className='mt-1 text-xs text-emerald-400'; }
+  else if (d.poa < 1.2){ poaEl.textContent = 'Ineficiencia moderada'; poaEl.className='mt-1 text-xs text-amber-400'; }
+  else { poaEl.textContent = 'Alto costo social'; poaEl.className='mt-1 text-xs text-rose-400'; }
+}
+
+// ============ GRÁFICA ============
+let chart;
+function buildChart(){
+  const ctx = document.getElementById('chart-paradox').getContext('2d');
+  chart = new Chart(ctx, {
+    type:'line',
+    data:{ datasets:[] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      animation:{ duration: 400 },
+      plugins:{
+        legend:{ display:false },
+        tooltip:{
+          backgroundColor:'#111832', borderColor:'#1f2a52', borderWidth:1,
+          titleColor:'#e6ecff', bodyColor:'#8b95c7',
+          padding:10, displayColors:false,
+          callbacks:{ label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} min` }
+        }
+      },
+      scales:{
+        x:{
+          type:'linear',
+          title:{ display:true, text:'Demanda total (veh/h)', color:'#8b95c7', font:{size:10} },
+          grid:{ color:'rgba(255,255,255,.05)' },
+          ticks:{ color:'#8b95c7', font:{size:10} }
+        },
+        y:{
+          title:{ display:true, text:'Tiempo promedio (min)', color:'#8b95c7', font:{size:10} },
+          grid:{ color:'rgba(255,255,255,.05)' },
+          ticks:{ color:'#8b95c7', font:{size:10} },
+          beginAtZero:true
+        }
+      }
+    }
+  });
+  updateChart();
+}
+
+function updateChart(){
+  const saved = { ...demands };
+  const baseTotal = Object.values(saved).reduce((a,b)=>a+b,0) || 1;
+  const ratios = {};
+  for (const k in saved) ratios[k] = saved[k]/baseTotal;
+
+  const eqPts = [], optPts = [];
+  for (let total=0; total<=6000; total+=150){
+    for (const k in demands) demands[k] = Math.round(total * ratios[k]);
+    const d = computeAll();
+    eqPts.push({ x: total, y: d.avgTime });
+
+    let totalCost = 0, totalVeh = 0;
+    for (const ax of AXES){
+      const N = demands[ax.id];
+      const so = socialOptimum(N, ax.routes[0], ax.routes[1]);
+      totalCost += so.totalCost;
+      totalVeh += N;
+    }
+    optPts.push({ x: total, y: totalVeh>0 ? totalCost/totalVeh : 0 });
+  }
+  Object.assign(demands, saved);
+
+  const currentTotal = Object.values(demands).reduce((a,b)=>a+b,0);
+  const currentD = computeAll();
+
+  chart.data.datasets = [
+    {
+      label:'Equilibrio (Wardrop)',
+      data: eqPts,
+      borderColor:'#818cf8',
+      backgroundColor:'rgba(129,140,248,.1)',
+      borderWidth:2, tension:.3, fill:true, pointRadius:0
+    },
+    {
+      label:'Óptimo social',
+      data: optPts,
+      borderColor:'#34d399',
+      backgroundColor:'rgba(52,211,153,.08)',
+      borderWidth:2, tension:.3, fill:true, pointRadius:0,
+      borderDash:[5,4]
+    },
+    {
+      label:'Punto actual',
+      data:[{ x: currentTotal, y: currentD.avgTime }],
+      borderColor:'#f43f5e',
+      backgroundColor:'#f43f5e',
+      pointRadius:7, pointHoverRadius:9, showLine:false
+    }
+  ];
+  chart.update('none');
+}
+
+function setChartMode(mode){
+  chartMode = mode;
+  document.getElementById('btn-eq').className = mode==='equilibrium' ? 'tab-active text-xs px-2.5 py-1 rounded-md' : 'tab-inactive text-xs px-2.5 py-1 rounded-md';
+  document.getElementById('btn-opt').className = mode==='optimal' ? 'tab-active text-xs px-2.5 py-1 rounded-md' : 'tab-inactive text-xs px-2.5 py-1 rounded-md';
+  if (chart){
+    chart.data.datasets[0].borderWidth = mode==='equilibrium' ? 3 : 1.5;
+    chart.data.datasets[1].borderWidth = mode==='optimal' ? 3 : 1.5;
+    chart.update('none');
+  }
+}
+
+function exportData(){
+  const d = computeAll();
+  const out = {
+    timestamp: new Date().toISOString(),
+    context: 'Guadalajara Metropolitan Area',
+    dataSource: 'OpenStreetMap + OSRM (free, no API key)',
+    params, demands,
+    metrics:{ avgTime: d.avgTime, totalCost: d.totalVehMin, poa: d.poa, congestion: d.congestion },
+    perAxis: {}
+  };
+  for (const ax of AXES){
+    const r = d.results[ax.id];
+    out.perAxis[ax.id] = {
+      name: ax.name, from: ax.from,
+      demand: demands[ax.id],
+      equilibrium: { v1:r.eq.v1, v2:r.eq.v2, t1:r.t1_eq, t2:r.t2_eq },
+      socialOptimum: { v1:r.so.v1, v2:r.so.v2, t:r.so.t }
+    };
+  }
+  const blob = new Blob([JSON.stringify(out, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'braess_guadalajara.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function recompute(){
+  renderNetwork();
+  initVehicles();
+  renderVehicles();
+  renderAxisDetail();
+  renderRouteBars();
+  renderMetrics();
+  updateChart();
+}
+
+// ============ INIT ============
+initMap();
+buildSliders();
+buildChart();
+
+// Cargar rutas reales desde OSRM
+loadAllRoutes().then(() => {
+  recompute();
+});
+
+// Iniciar loop de animación
+loop();
+
+document.addEventListener('keydown', e=>{
+  if (e.target.tagName==='INPUT') return;
+  if (e.key==='d' || e.key==='D'){
+    const open = document.getElementById('drawer').classList.contains('open');
+    toggleDrawer(!open);
+  }
+  if (e.key==='r' || e.key==='R') resetDemands();
+  if (e.key==='e' || e.key==='E') exportData();
+});
+
+if (window.innerWidth > 1024){
+  setTimeout(()=>toggleDrawer(true), 400);
+}
+
+// Tooltips oscuros para Leaflet
+const style = document.createElement('style');
+style.textContent = `
+  .leaflet-tooltip{
+    background:rgba(17,24,50,.95)!important;
+    border:1px solid #1f2a52!important;
+    color:#e6ecff!important;
+    border-radius:8px!important;
+    padding:8px 12px!important;
+    box-shadow:0 4px 20px rgba(0,0,0,.5)!important;
+  }
+  .leaflet-tooltip-top:before,.leaflet-tooltip-bottom:before,
+  .leaflet-tooltip-left:before,.leaflet-tooltip-right:before{
+    border-top-color:rgba(17,24,50,.95)!important;
+  }
+`;
+document.head.appendChild(style);
+</script>
+</body>
+</html>

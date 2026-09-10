@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="es" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Generador de equipos aleatorios para actividades grupales. Agrega participantes y crea equipos de 2 o 3 personas al azar.">
+    <meta name="keywords" content="generador equipos, equipos aleatorios, actividades grupales, randomizador">
+    <meta name="author" content="Generador de Equipos">
+
+    <meta property="og:title" content="Generador de Equipos Aleatorios">
+    <meta property="og:description" content="Crea equipos aleatorios para tus actividades grupales de forma rápida y sencilla">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="es_ES">
+
+    <title>Generador de Equipos Aleatorios | Herramienta de Organización</title>
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Generador de Equipos Aleatorios",
+        "description": "Herramienta para generar equipos aleatorios para actividades grupales",
+        "applicationCategory": "UtilityApplication",
+        "operatingSystem": "Web Browser"
+    }
+    </script>
+
+    <style>
+        :root {
+            --color-primary: #6366f1;
+            --color-primary-dark: #4f46e5;
+            --color-secondary: #8b5cf6;
+            --color-success: #10b981;
+            --color-warning: #f59e0b;
+            --color-error: #ef4444;
+            --color-text: #1f2937;
+            --color-text-light: #6b7280;
+            --color-bg: #f9fafb;
+            --color-bg-card: #ffffff;
+            --color-border: #e5e7eb;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --transition: all 0.2s ease;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--color-primary);
+            color: white;
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            z-index: 100;
+            border-radius: var(--radius-sm);
+        }
+
+        .skip-link:focus { top: 0; }
+
+        header {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            color: white;
+            padding: 2rem 1rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-md);
+            transition: var(--transition);
+        }
+
+        .back-link:hover,
+        .back-link:focus {
+            background: rgba(255, 255, 255, 0.3);
+            outline: 2px solid white;
+            outline-offset: 2px;
+        }
+
+        h1 {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .intro {
+            background: var(--color-bg-card);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 2rem;
+            border-left: 4px solid var(--color-primary);
+        }
+
+        .intro p {
+            color: var(--color-text-light);
+            font-size: 1.1rem;
+        }
+
+        section {
+            background: var(--color-bg-card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        h2 {
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+            color: var(--color-text);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Add participant form */
+        .add-participant-form {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .add-participant-form input[type="text"] {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .add-participant-form input[type="text"]:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+
+        .btn-add {
+            padding: 0.75rem 1.5rem;
+            background: var(--color-success);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-add:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .btn-add:focus {
+            outline: 2px solid var(--color-success);
+            outline-offset: 2px;
+        }
+
+        /* Participants grid */
+        .participants-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .participant-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: var(--color-bg);
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius-md);
+            transition: var(--transition);
+        }
+
+        .participant-item:hover {
+            border-color: var(--color-primary);
+        }
+
+        .participant-item.checked {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--color-primary);
+        }
+
+        .participant-item label {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            cursor: pointer;
+            gap: 0.75rem;
+        }
+
+        .participant-item input[type="checkbox"] {
+            width: 1.25rem;
+            height: 1.25rem;
+            cursor: pointer;
+            accent-color: var(--color-primary);
+        }
+
+        .participant-item input[type="checkbox"]:focus {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+
+        .btn-remove {
+            background: transparent;
+            border: none;
+            color: var(--color-text-light);
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-sm);
+            font-size: 1.1rem;
+            line-height: 1;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+        }
+
+        .btn-remove:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--color-error);
+        }
+
+        .btn-remove:focus {
+            outline: 2px solid var(--color-error);
+            outline-offset: 2px;
+        }
+
+        .selected-count {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-bottom: 1rem;
+        }
+
+        /* Team size options */
+        .team-size-options {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .size-option { flex: 1; min-width: 200px; }
+
+        .size-option input[type="radio"] { display: none; }
+
+        .size-option label {
+            display: block;
+            padding: 1rem;
+            background: var(--color-bg);
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius-md);
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+        }
+
+        .size-option input[type="radio"]:checked + label {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .size-option label:hover { border-color: var(--color-primary); }
+
+        .size-option input[type="radio"]:focus + label {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+
+        /* Generate button */
+        .generate-btn {
+            width: 100%;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: var(--shadow-md);
+        }
+
+        .generate-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .generate-btn:focus {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Results */
+        .results-container { min-height: 200px; }
+
+        .results-placeholder {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--color-text-light);
+        }
+
+        .results-placeholder p { margin-bottom: 0.5rem; }
+
+        .teams-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .team-card {
+            background: linear-gradient(135deg, var(--color-bg) 0%, white 100%);
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .team-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--color-primary);
+        }
+
+        .team-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--color-border);
+        }
+
+        .team-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            background: var(--color-primary);
+            color: white;
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .team-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--color-text);
+        }
+
+        .team-members { list-style: none; }
+
+        .team-member {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .team-member::before {
+            content: "👤";
+            font-size: 1.2rem;
+        }
+
+        /* Easter egg info button */
+        .info-trigger {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 50%;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 0.25rem;
+            line-height: 1;
+        }
+
+        .info-trigger:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .info-trigger:focus {
+            outline: 2px solid white;
+            outline-offset: 2px;
+        }
+
+        .info-trigger.active {
+            color: #fde68a;
+            text-shadow: 0 0 8px rgba(253, 230, 138, 0.6);
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--color-text-light);
+            border-top: 1px solid var(--color-border);
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            .participants-grid { grid-template-columns: 1fr; }
+            .team-size-options { flex-direction: column; }
+            .teams-grid { grid-template-columns: 1fr; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--color-text);
+            color: white;
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .toast.error { background: var(--color-error); }
+        .toast.success { background: var(--color-success); }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <header role="banner">
+        <div class="header-content">
+            <h1>
+                <span aria-hidden="true">🎲</span>
+                Generador de Equipos
+                <button
+                    type="button"
+                    class="info-trigger"
+                    id="info-trigger"
+                    aria-label="Información"
+                    aria-pressed="false"
+                    title="Información">
+                    <span aria-hidden="true">ℹ</span>
+                </button>
+            </h1>
+            <a href="index.html" class="back-link" aria-label="Volver a la página de inicio">
+                <span aria-hidden="true">←</span>
+                Volver al inicio
+            </a>
+        </div>
+    </header>
+
+    <main id="main-content" role="main">
+        <section class="intro" aria-labelledby="intro-title">
+            <h2 id="intro-title" class="sr-only">Introducción</h2>
+            <p>Selecciona a los participantes presentes y genera combinaciones 100% al azar.</p>
+        </section>
+
+        <section aria-labelledby="participants-title">
+            <h2 id="participants-title">
+                <span aria-hidden="true">👥</span>
+                Participantes
+            </h2>
+
+            <form class="add-participant-form" id="add-participant-form" aria-label="Agregar nuevo participante">
+                <label for="new-participant" class="sr-only">Nombre del nuevo participante</label>
+                <input
+                    type="text"
+                    id="new-participant"
+                    name="new-participant"
+                    placeholder="Escribe un nombre y presiona Agregar..."
+                    maxlength="30"
+                    autocomplete="off"
+                    aria-describedby="add-help">
+                <button type="submit" class="btn-add">
+                    <span aria-hidden="true">＋</span>
+                    Agregar
+                </button>
+                <span id="add-help" class="sr-only">Agrega un nuevo participante a la lista</span>
+            </form>
+
+            <div class="selected-count" aria-live="polite" aria-atomic="true">
+                <span id="selected-number">0</span> Seleccionados
+            </div>
+
+            <form id="participants-form" aria-label="Formulario de generación de equipos">
+                <div class="participants-grid" id="participants-grid" role="group" aria-labelledby="participants-title">
+                    <!-- Se renderiza dinámicamente -->
+                </div>
+
+                <fieldset style="border: none; margin: 1.5rem 0;">
+                    <legend style="font-weight: 600; margin-bottom: 1rem; font-size: 1.1rem;">
+                        Tamaño de equipo:
+                    </legend>
+                    <div class="team-size-options">
+                        <div class="size-option">
+                            <input type="radio" id="size-3" name="team-size" value="3" checked>
+                            <label for="size-3">Equipos de 3 personas</label>
+                        </div>
+                        <div class="size-option">
+                            <input type="radio" id="size-2" name="team-size" value="2">
+                            <label for="size-2">Equipos de 2 personas</label>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <button type="submit" class="generate-btn" id="generate-btn" disabled>
+                    <span aria-hidden="true">🎲</span>
+                    Generar Equipos
+                </button>
+            </form>
+        </section>
+
+        <section aria-labelledby="results-title">
+            <h2 id="results-title">
+                <span aria-hidden="true">🏆</span>
+                Resultados
+            </h2>
+
+            <div class="results-container" id="results-container" aria-live="polite" aria-atomic="true">
+                <div class="results-placeholder">
+                    <p><strong>Mezclando nombres aleatoriamente...</strong></p>
+                    <p>Los equipos aparecerán aquí.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer role="contentinfo">
+        <p>&copy; 2026 Generador de Equipos Aleatorios. Herramienta para actividades grupales.</p>
+    </footer>
+
+    <script>
+        'use strict';
+
+        const TeamGenerator = (() => {
+            const STORAGE_KEY = 'team-generator-participants';
+            const HIDDEN_PAIR = ['Oswaldo', 'Teresa'];
+
+            const state = {
+                participants: [],
+                selected: new Set(),
+                teamSize: 3,
+                hiddenPairTogether: false
+            };
+
+            const elements = {
+                grid: document.getElementById('participants-grid'),
+                addForm: document.getElementById('add-participant-form'),
+                addInput: document.getElementById('new-participant'),
+                participantsForm: document.getElementById('participants-form'),
+                sizeRadios: document.querySelectorAll('input[name="team-size"]'),
+                selectedCount: document.getElementById('selected-number'),
+                resultsContainer: document.getElementById('results-container'),
+                generateBtn: document.getElementById('generate-btn'),
+                infoTrigger: document.getElementById('info-trigger')
+            };
+
+            // Persistencia
+            const loadParticipants = () => {
+                try {
+                    const stored = localStorage.getItem(STORAGE_KEY);
+                    if (stored) {
+                        state.participants = JSON.parse(stored);
+                    } else {
+                        state.participants = [
+                            'Oswaldo', 'Teresa', 'Ximena', 'Andrea', 'Angelica',
+                            'Fanny', 'Juanita', 'Laura', 'Lidia', 'Pau', 'Tatiana'
+                        ];
+                        state.participants.forEach(p => state.selected.add(p));
+                    }
+                } catch (e) {
+                    state.participants = [
+                        'Oswaldo', 'Teresa', 'Ximena', 'Andrea', 'Angelica',
+                        'Fanny', 'Juanita', 'Laura', 'Lidia', 'Pau', 'Tatiana'
+                    ];
+                    state.participants.forEach(p => state.selected.add(p));
+                }
+            };
+
+            const saveParticipants = () => {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.participants));
+                } catch (e) { /* silent */ }
+            };
+
+            // Toast notifications
+            const showToast = (message, type = 'info') => {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
+                toast.setAttribute('role', 'status');
+                toast.setAttribute('aria-live', 'polite');
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 2500);
+            };
+
+            // Renderizar participantes
+            const renderParticipants = () => {
+                elements.grid.innerHTML = '';
+                state.participants.forEach((name, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'participant-item' + (state.selected.has(name) ? ' checked' : '');
+                    item.dataset.name = name;
+
+                    const label = document.createElement('label');
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.name = 'participant';
+                    checkbox.value = name;
+                    checkbox.checked = state.selected.has(name);
+                    checkbox.setAttribute('aria-label', `Seleccionar a ${name}`);
+
+                    const span = document.createElement('span');
+                    span.textContent = name;
+
+                    label.appendChild(checkbox);
+                    label.appendChild(span);
+
+                    const removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.className = 'btn-remove';
+                    removeBtn.innerHTML = '<span aria-hidden="true">✕</span>';
+                    removeBtn.setAttribute('aria-label', `Eliminar a ${name}`);
+                    removeBtn.dataset.name = name;
+
+                    item.appendChild(label);
+                    item.appendChild(removeBtn);
+                    elements.grid.appendChild(item);
+                });
+                attachParticipantListeners();
+                updateSelectedCount();
+            };
+
+            const attachParticipantListeners = () => {
+                elements.grid.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                    cb.addEventListener('change', handleParticipantChange);
+                });
+                elements.grid.querySelectorAll('.btn-remove').forEach(btn => {
+                    btn.addEventListener('click', handleRemoveParticipant);
+                });
+            };
+
+            const handleParticipantChange = (e) => {
+                const name = e.target.value;
+                const item = e.target.closest('.participant-item');
+                if (e.target.checked) {
+                    state.selected.add(name);
+                    item.classList.add('checked');
+                } else {
+                    state.selected.delete(name);
+                    item.classList.remove('checked');
+                }
+                updateSelectedCount();
+            };
+
+            const handleRemoveParticipant = (e) => {
+                const name = e.currentTarget.dataset.name;
+                if (!confirm(`¿Eliminar a "${name}" de la lista?`)) return;
+
+                state.participants = state.participants.filter(p => p !== name);
+                state.selected.delete(name);
+                saveParticipants();
+                renderParticipants();
+                showToast(`${name} eliminado`, 'success');
+            };
+
+            const handleAddParticipant = (e) => {
+                e.preventDefault();
+                const name = elements.addInput.value.trim();
+
+                if (!name) {
+                    showToast('Escribe un nombre', 'error');
+                    return;
+                }
+
+                if (name.length < 2) {
+                    showToast('El nombre es muy corto', 'error');
+                    return;
+                }
+
+                if (state.participants.some(p => p.toLowerCase() === name.toLowerCase())) {
+                    showToast('Ese nombre ya existe', 'error');
+                    return;
+                }
+
+                state.participants.push(name);
+                state.selected.add(name);
+                saveParticipants();
+                renderParticipants();
+                elements.addInput.value = '';
+                elements.addInput.focus();
+                showToast(`${name} agregado`, 'success');
+            };
+
+            const handleSizeChange = (e) => {
+                state.teamSize = parseInt(e.target.value);
+            };
+
+            const updateSelectedCount = () => {
+                elements.selectedCount.textContent = state.selected.size;
+                elements.generateBtn.disabled = state.selected.size < 2;
+            };
+
+            // Easter egg: toggle oculto
+            const toggleHiddenPair = () => {
+                state.hiddenPairTogether = !state.hiddenPairTogether;
+                elements.infoTrigger.classList.toggle('active', state.hiddenPairTogether);
+                elements.infoTrigger.setAttribute('aria-pressed', String(state.hiddenPairTogether));
+            };
+
+            // Fisher-Yates shuffle
+            const shuffleArray = (array) => {
+                const shuffled = [...array];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                return shuffled;
+            };
+
+            // Generar equipos con reglas:
+            // - Tamaño 2: ningún equipo con 1 solo integrante; si sobra uno, se integra a un equipo de 2 (queda con 3)
+            // - Tamaño 3: distribución normal, el último puede quedar con menos
+            // - Par oculto: si está activo, Oswaldo y Teresa siempre van juntos
+            const generateTeams = () => {
+                let participants = Array.from(state.selected);
+                const teamSize = state.teamSize;
+
+                // Aplicar regla oculta: Oswaldo y Teresa juntos
+                const bothPresent = HIDDEN_PAIR.every(p => participants.includes(p));
+
+                if (state.hiddenPairTogether && bothPresent) {
+                    // Separar la pareja del resto
+                    const others = participants.filter(p => !HIDDEN_PAIR.includes(p));
+                    const shuffledOthers = shuffleArray(others);
+
+                    const teams = [];
+                    // Equipo de la pareja
+                    const pairTeam = [...HIDDEN_PAIR];
+
+                    if (teamSize === 3) {
+                        // En equipos de 3, la pareja necesita un tercero
+                        if (shuffledOthers.length > 0) {
+                            pairTeam.push(shuffledOthers.shift());
+                        }
+                        teams.push(pairTeam);
+
+                        // Distribuir el resto en equipos de 3
+                        for (let i = 0; i < shuffledOthers.length; i += teamSize) {
+                            const team = shuffledOthers.slice(i, i + teamSize);
+                            if (team.length > 0) teams.push(team);
+                        }
+                    } else {
+                        // En equipos de 2, la pareja forma un equipo de 2
+                        teams.push(pairTeam);
+
+                        // Distribuir el resto en equipos de 2 (sin equipos de 1)
+                        const remaining = shuffledOthers;
+                        const remainingTeams = [];
+                        for (let i = 0; i < remaining.length; i += 2) {
+                            const team = remaining.slice(i, i + 2);
+                            remainingTeams.push(team);
+                        }
+
+                        // Si sobra uno, integrarlo a un equipo existente
+                        if (remainingTeams.length > 0 &&
+                            remainingTeams[remainingTeams.length - 1].length === 1) {
+                            const leftover = remainingTeams.pop();
+                            // Integrar al equipo más pequeño disponible
+                            if (remainingTeams.length > 0) {
+                                remainingTeams[remainingTeams.length - 1].push(leftover[0]);
+                            } else {
+                                // Solo estaba la pareja, integrar al equipo de la pareja
+                                pairTeam.push(leftover[0]);
+                            }
+                        }
+                        teams.push(...remainingTeams);
+                    }
+
+                    // Mezclar orden de equipos (excepto el de la pareja que va al inicio)
+                    const pairTeamFinal = teams.shift();
+                    const shuffledRest = shuffleArray(teams);
+                    return [pairTeamFinal, ...shuffledRest];
+                }
+
+                // Distribución normal
+                const shuffled = shuffleArray(participants);
+                const teams = [];
+
+                if (teamSize === 2) {
+                    // Ningún equipo con 1 solo integrante
+                    for (let i = 0; i < shuffled.length; i += 2) {
+                        const team = shuffled.slice(i, i + 2);
+                        teams.push(team);
+                    }
+                    // Si sobra uno, integrarlo a un equipo existente
+                    if (teams.length > 0 && teams[teams.length - 1].length === 1) {
+                        const leftover = teams.pop();
+                        if (teams.length > 0) {
+                            teams[teams.length - 1].push(leftover[0]);
+                        }
+                    }
+                } else {
+                    // Tamaño 3: distribución normal
+                    for (let i = 0; i < shuffled.length; i += teamSize) {
+                        const team = shuffled.slice(i, i + teamSize);
+                        if (team.length > 0) teams.push(team);
+                    }
+                }
+
+                return teams;
+            };
+
+            const renderResults = (teams) => {
+                if (teams.length === 0) {
+                    elements.resultsContainer.innerHTML = `
+                        <div class="results-placeholder">
+                            <p><strong>No se pudieron generar equipos</strong></p>
+                            <p>Selecciona al menos 2 participantes.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const teamsHTML = teams.map((team, index) => `
+                    <article class="team-card" aria-label="Equipo ${index + 1} con ${team.length} integrante${team.length !== 1 ? 's' : ''}">
+                        <div class="team-header">
+                            <span class="team-number" aria-hidden="true">${index + 1}</span>
+                            <h3 class="team-title">Equipo ${index + 1}</h3>
+                        </div>
+                        <ul class="team-members">
+                            ${team.map(member => `
+                                <li class="team-member">${member}</li>
+                            `).join('')}
+                        </ul>
+                    </article>
+                `).join('');
+
+                elements.resultsContainer.innerHTML = `
+                    <div class="teams-grid" role="list">
+                        ${teamsHTML}
+                    </div>
+                `;
+
+                elements.resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            };
+
+            const handleFormSubmit = (e) => {
+                e.preventDefault();
+                if (state.selected.size < 2) {
+                    showToast('Selecciona al menos 2 participantes', 'error');
+                    return;
+                }
+                const teams = generateTeams();
+                renderResults(teams);
+            };
+
+            const init = () => {
+                loadParticipants();
+                renderParticipants();
+
+                elements.addForm.addEventListener('submit', handleAddParticipant);
+                elements.sizeRadios.forEach(radio => {
+                    radio.addEventListener('change', handleSizeChange);
+                });
+                elements.participantsForm.addEventListener('submit', handleFormSubmit);
+                elements.infoTrigger.addEventListener('click', toggleHiddenPair);
+            };
+
+            return { init };
+        })();
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', TeamGenerator.init);
+        } else {
+            TeamGenerator.init();
+        }
+    </script>
+</body>
+</html>

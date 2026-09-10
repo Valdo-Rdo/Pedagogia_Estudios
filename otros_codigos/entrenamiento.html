@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fitness Dashboard ULTIMATE V7 · Gestión de Entrenamiento, Progreso y Rutinas</title>
+  <meta name="description" content="Panel de control de fitness: calendario mensual de entrenamientos, seguimiento de progreso semanal, objetivos y récords, horarios por grupo muscular y rutinas personalizadas.">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="author" content="Fitness Dashboard">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://example.com/entrenamiento.html">
+
+  <!-- Open Graph / Twitter -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Fitness Dashboard ULTIMATE V7">
+  <meta property="og:description" content="Gestiona tu entrenamiento: progreso, metas, horarios y rutinas en un solo panel accesible.">
+  <meta property="og:url" content="https://example.com/entrenamiento.html">
+  <meta property="og:locale" content="es_ES">
+  <meta name="twitter:card" content="summary">
+
+  <!-- Datos estructurados -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Fitness Dashboard ULTIMATE V7",
+    "applicationCategory": "HealthApplication",
+    "operatingSystem": "Web",
+    "inLanguage": "es",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+    "featureList": ["Calendario de entrenamientos", "Seguimiento de progreso", "Objetivos y récords", "Horarios por grupo muscular", "Rutinas personalizadas"]
+  }
+  </script>
+
+  <!-- Tipografía: Inter vía Fontsource CDN -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/inter@5.0.16/index.css">
+
+  <style>
+    /* ============ Design tokens ============ */
+    :root {
+      --c-bg: #f4f6fb;
+      --c-surface: #ffffff;
+      --c-surface-2: #f8fafc;
+      --c-border: #dfe5ee;
+      --c-text: #1a2233;
+      --c-text-soft: #55617a;
+      --c-primary: #4f6df5;
+      --c-primary-dark: #3a55d9;
+      --c-plan: #f97316;         /* 🟠 Plan */
+      --c-plan-soft: #ffedd5;
+      --c-hecho: #16a34a;        /* 🟢 Hecho */
+      --c-hecho-soft: #dcfce7;
+      --c-danger: #dc2626;
+      --c-focus: #2563eb;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(16, 24, 40, .08), 0 4px 16px rgba(16, 24, 40, .06);
+      --font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --c-bg: #0b1120;
+        --c-surface: #131a2b;
+        --c-surface-2: #1a2338;
+        --c-border: #2a3550;
+        --c-text: #e8edf7;
+        --c-text-soft: #9aa7c2;
+        --c-plan-soft: #43290c;
+        --c-hecho-soft: #10331c;
+        --shadow: 0 1px 3px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.3);
+      }
+    }
+
+    /* ============ Reset básico ============ */
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--c-bg);
+      color: var(--c-text);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3 { line-height: 1.25; margin: 0 0 .5rem; }
+    button { font: inherit; cursor: pointer; }
+    input, select { font: inherit; color: inherit; }
+
+    :focus-visible {
+      outline: 3px solid var(--c-focus);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+
+    /* ============ Utilidades a11y ============ */
+    .skip-link {
+      position: absolute; left: -9999px; top: 0;
+      background: var(--c-primary); color: #fff;
+      padding: .6rem 1rem; z-index: 100; border-radius: 0 0 8px 0;
+    }
+    .skip-link:focus { left: 0; }
+    .visually-hidden {
+      position: absolute !important; width: 1px; height: 1px;
+      margin: -1px; padding: 0; border: 0;
+      clip-path: inset(50%); overflow: hidden; white-space: nowrap;
+    }
+
+    /* ============ Layout ============ */
+    .contenedor { max-width: 1100px; margin: 0 auto; padding: 0 1rem 3rem; }
+
+    .cabecera-app {
+      background: linear-gradient(135deg, #303f8f, var(--c-primary));
+      color: #fff;
+      padding: 1.5rem 1rem;
+      box-shadow: var(--shadow);
+    }
+    .cabecera-app .contenedor { padding-bottom: 0; }
+    .cabecera-flex {
+      display: flex; flex-wrap: wrap; gap: 1rem;
+      align-items: center; justify-content: space-between;
+    }
+    .cabecera-app h1 { font-size: clamp(1.25rem, 3vw, 1.75rem); color: #fff; margin: 0; }
+    .cabecera-app p { margin: .25rem 0 1rem; opacity: .85; font-size: .9rem; }
+
+    .barra-herramientas { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .btn {
+      display: inline-flex; align-items: center; gap: .4rem;
+      padding: .5rem .9rem; border-radius: 8px;
+      border: 1px solid transparent; font-weight: 600; font-size: .875rem;
+      background: var(--c-surface); color: var(--c-text);
+      transition: background .15s, transform .1s;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .cabecera-app .btn { background: rgba(255,255,255,.15); color: #fff; border-color: rgba(255,255,255,.35); }
+    .cabecera-app .btn:hover { background: rgba(255,255,255,.28); }
+    .btn--primario { background: var(--c-primary); color: #fff; }
+    .btn--primario:hover { background: var(--c-primary-dark); }
+    .btn--peligro { color: var(--c-danger); border-color: var(--c-danger); background: transparent; }
+    .btn--pequeno { padding: .3rem .65rem; font-size: .8rem; }
+    .btn[aria-pressed="true"] { background: var(--c-hecho); color: #fff; border-color: var(--c-hecho); }
+
+    /* ============ Pestañas (ARIA tabs) ============ */
+    .nav-pestanas {
+      position: sticky; top: 0; z-index: 20;
+      background: var(--c-surface);
+      border-bottom: 1px solid var(--c-border);
+      box-shadow: var(--shadow);
+    }
+    .lista-pestanas {
+      display: flex; gap: .25rem; overflow-x: auto;
+      max-width: 1100px; margin: 0 auto; padding: .5rem 1rem;
+      list-style: none;
+    }
+    .pestana {
+      padding: .55rem 1rem; border-radius: 8px;
+      border: none; background: transparent; color: var(--c-text-soft);
+      font-weight: 600; white-space: nowrap;
+    }
+    .pestana[aria-selected="true"] {
+      background: var(--c-primary); color: #fff;
+    }
+
+    /* ============ Paneles y tarjetas ============ */
+    .panel { padding-top: 1.5rem; }
+    .panel[hidden] { display: none; }
+    .panel > h2 { font-size: 1.3rem; }
+
+    .tarjeta {
+      background: var(--c-surface); border: 1px solid var(--c-border);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 1.25rem; margin-bottom: 1.5rem;
+    }
+    .tarjeta h3 { font-size: 1.05rem; display: flex; align-items: center; gap: .5rem; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    @media (max-width: 800px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ============ Controles de formulario ============ */
+    .campo { display: flex; flex-direction: column; gap: .3rem; }
+    .campo label { font-size: .8rem; font-weight: 600; color: var(--c-text-soft); }
+    .input, select.input {
+      padding: .5rem .7rem; border: 1px solid var(--c-border);
+      border-radius: 8px; background: var(--c-surface-2);
+      min-width: 0;
+    }
+    .input[readonly] {
+      background: transparent; border-color: transparent; padding-left: .25rem;
+    }
+    body.editando .input[readonly]:not([type="date"]) { border-color: var(--c-border); background: var(--c-surface-2); }
+
+    .fila-controles { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; }
+
+    /* ============ Leyenda ============ */
+    .leyenda { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; font-size: .875rem; }
+    .chip { display: inline-flex; align-items: center; gap: .4rem; font-weight: 600; }
+    .chip::before {
+      content: ""; width: .85rem; height: .85rem; border-radius: 50%;
+      display: inline-block;
+    }
+    .chip--plan::before { background: var(--c-plan); }
+    .chip--hecho::before { background: var(--c-hecho); }
+
+    /* ============ Calendario ============ */
+    .calendario { display: grid; grid-template-columns: repeat(7, 1fr); gap: .4rem; margin-top: 1rem; }
+    .calendario-dow {
+      text-align: center; font-size: .72rem; font-weight: 700;
+      color: var(--c-text-soft); text-transform: uppercase; padding-bottom: .25rem;
+    }
+    .dia {
+      aspect-ratio: 1 / 1; border-radius: 10px;
+      border: 1px solid var(--c-border); background: var(--c-surface-2);
+      color: var(--c-text); font-weight: 600; font-size: .85rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform .1s;
+    }
+    .dia:hover { transform: scale(1.06); }
+    .dia--vacio-celda { visibility: hidden; border: 0; background: none; pointer-events: none; }
+    .dia--plan { background: var(--c-plan-soft); border-color: var(--c-plan); color: var(--c-plan); }
+    .dia--hecho { background: var(--c-hecho-soft); border-color: var(--c-hecho); color: var(--c-hecho); }
+    .dia--hoy { box-shadow: inset 0 0 0 3px var(--c-primary); }
+
+    /* ============ Métricas ============ */
+    .metricas { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1.25rem; }
+    .metrica {
+      background: var(--c-surface-2); border: 1px solid var(--c-border);
+      border-radius: 10px; padding: .9rem 1rem; text-align: center;
+    }
+    .metrica strong { display: block; font-size: 1.5rem; color: var(--c-primary); }
+    .metrica span { font-size: .78rem; color: var(--c-text-soft); font-weight: 600; }
+
+    /* ============ Tablas ============ */
+    .envoltura-tabla { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    caption {
+      caption-side: top; text-align: left; font-weight: 700;
+      padding-bottom: .6rem; color: var(--c-text);
+    }
+    th, td { padding: .55rem .6rem; border-bottom: 1px solid var(--c-border); text-align: left; vertical-align: middle; }
+    thead th { background: var(--c-surface-2); font-size: .78rem; text-transform: uppercase; letter-spacing: .03em; color: var(--c-text-soft); }
+    tbody tr:hover { background: var(--c-surface-2); }
+    td .input { width: 100%; }
+    .barra-progreso {
+      height: 8px; border-radius: 99px; background: var(--c-border);
+      overflow: hidden; margin-top: .3rem;
+    }
+    .barra-progreso > span {
+      display: block; height: 100%; border-radius: 99px;
+      background: linear-gradient(90deg, var(--c-primary), var(--c-hecho));
+    }
+    .sin-datos { color: var(--c-text-soft); font-size: .85rem; padding: .75rem 0; }
+
+    /* ============ Horario / Rutinas ============ */
+    .lista-elementos { display: flex; flex-direction: column; gap: .5rem; margin: .75rem 0; padding: 0; list-style: none; }
+    .elemento {
+      display: flex; flex-wrap: wrap; gap: .5rem; align-items: center;
+      background: var(--c-surface-2); border: 1px solid var(--c-border);
+      border-radius: 10px; padding: .5rem .7rem;
+    }
+    .elemento .input { flex: 1 1 8rem; }
+    .grupo-muscular {
+      border: 1px solid var(--c-border); border-radius: 10px;
+      padding: 1rem; background: var(--c-surface-2); margin-bottom: 1rem;
+    }
+    .grupo-muscular header { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between; margin-bottom: .75rem; }
+    .etiqueta {
+      background: var(--c-primary); color: #fff; border-radius: 99px;
+      padding: .15rem .7rem; font-size: .75rem; font-weight: 700;
+    }
+
+    /* ============ Acciones de edición ============ */
+    .solo-edicion { display: none; }
+    body.editando .solo-edicion { display: inline-flex; }
+
+    /* ============ Toast ============ */
+    .toast {
+      position: fixed; bottom: 1.25rem; left: 50%;
+      transform: translateX(-50%) translateY(120%);
+      background: var(--c-hecho); color: #fff; font-weight: 700;
+      padding: .7rem 1.4rem; border-radius: 99px; box-shadow: var(--shadow);
+      transition: transform .3s ease; z-index: 50;
+    }
+    .toast--visible { transform: translateX(-50%) translateY(0); }
+    .toast--error { background: var(--c-danger); }
+
+    /* ============ Gráfico SVG ============ */
+    .grafico { width: 100%; height: 140px; margin-top: .5rem; }
+    .grafico polyline { fill: none; stroke: var(--c-primary); stroke-width: 2.5; stroke-linejoin: round; }
+    .grafico circle { fill: var(--c-primary); }
+
+    /* ============ Pie ============ */
+    .pie-app {
+      text-align: center; font-size: .8rem; color: var(--c-text-soft);
+      padding: 1.5rem 1rem; border-top: 1px solid var(--c-border); margin-top: 2rem;
+    }
+
+    /* ============ Impresión ============ */
+    @media print {
+      .nav-pestanas, .barra-herramientas, .skip-link, .solo-edicion, .toast { display: none !important; }
+      .panel { display: block !important; padding-top: 1rem; }
+      body { background: #fff; }
+      .tarjeta { box-shadow: none; break-inside: avoid; }
+      .cabecera-app { background: #fff; color: #000; }
+      .cabecera-app h1, .cabecera-app p { color: #000; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido principal</a>
+
+  <!-- ═══════════ CABECERA ═══════════ -->
+  <header class="cabecera-app">
+    <div class="contenedor cabecera-flex">
+      <div>
+        <h1>🏋️ Fitness Dashboard <abbr title="Versión">V7</abbr></h1>
+        <p>Tu entrenamiento, progreso y rutinas en un solo lugar.</p>
+      </div>
+      <nav class="barra-herramientas" aria-label="Herramientas del panel">
+        <button type="button" class="btn" id="btnEditar" aria-pressed="false">✎ <span>Editar</span></button>
+        <button type="button" class="btn" id="btnGuardar">💾 <span>Guardar</span></button>
+        <button type="button" class="btn" id="btnExportar">⬇ <span>Exportar</span></button>
+        <button type="button" class="btn" id="btnImportar">⬆ <span>Importar</span></button>
+        <button type="button" class="btn" id="btnImprimir">🖨 <span>Imprimir</span></button>
+        <input type="file" id="inputImportar" accept="application/json,.json" class="visually-hidden" tabindex="-1">
+      </nav>
+    </div>
+  </header>
+
+  <!-- ═══════════ NAVEGACIÓN POR PESTAÑAS ═══════════ -->
+  <nav class="nav-pestanas" aria-label="Secciones del panel">
+    <ul class="lista-pestanas" role="tablist" aria-label="Secciones">
+      <li role="presentation"><button type="button" role="tab" class="pestana" id="tab-gestion" aria-controls="panel-gestion" aria-selected="true" tabindex="0">📅 Gestión</button></li>
+      <li role="presentation"><button type="button" role="tab" class="pestana" id="tab-progreso" aria-controls="panel-progreso" aria-selected="false" tabindex="-1">📊 Progreso &amp; Metas</button></li>
+      <li role="presentation"><button type="button" role="tab" class="pestana" id="tab-horario" aria-controls="panel-horario" aria-selected="false" tabindex="-1">⏰ Horario</button></li>
+      <li role="presentation"><button type="button" role="tab" class="pestana" id="tab-rutinas" aria-controls="panel-rutinas" aria-selected="false" tabindex="-1">💪 Rutinas</button></li>
+    </ul>
+  </nav>
+
+  <!-- ═══════════ CONTENIDO PRINCIPAL ═══════════ -->
+  <main id="contenido" class="contenedor">
+
+    <!-- ─────── PANEL: GESTIÓN ─────── -->
+    <section class="panel" id="panel-gestion" role="tabpanel" aria-labelledby="tab-gestion" tabindex="0">
+      <h2>Gestión del mes</h2>
+
+      <div class="tarjeta">
+        <div class="fila-controles">
+          <div class="campo">
+            <label for="inputMes">Mes</label>
+            <input type="month" id="inputMes" class="input">
+          </div>
+          <div class="campo">
+            <span id="etiquetaHoy" class="etiqueta" style="font-size:.85rem;padding:.4rem .9rem;"></span>
+          </div>
+          <div class="leyenda" aria-hidden="false">
+            <span class="chip chip--plan">Plan</span>
+            <span class="chip chip--hecho">Hecho</span>
+          </div>
+        </div>
+        <p class="visually-hidden">Calendario mensual interactivo: pulsa un día para alternar entre sin estado, planificado y completado.</p>
+        <div class="calendario" id="calendario" role="grid" aria-label="Calendario de entrenamientos del mes"></div>
+        <div class="metricas" id="metricas"></div>
+      </div>
+    </section>
+
+    <!-- ─────── PANEL: PROGRESO & METAS ─────── -->
+    <section class="panel" id="panel-progreso" role="tabpanel" aria-labelledby="tab-progreso" tabindex="0" hidden>
+      <h2>Progreso &amp; Metas</h2>
+
+      <article class="tarjeta">
+        <h3>📊 Progreso semanal</h3>
+        <div class="envoltura-tabla">
+          <table id="tablaProgreso">
+            <caption>Registro semanal de peso y medidas corporales</caption>
+            <thead>
+              <tr>
+                <th scope="col"><span class="visually-hidden">Semana / </span>Fecha</th>
+                <th scope="col">Peso (kg)</th>
+                <th scope="col">Notas / Medidas</th>
+                <th scope="col"><span class="visually-hidden">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody id="cuerpoProgreso"></tbody>
+          </table>
+        </div>
+        <p class="sin-datos" id="avisoProgreso" hidden>Aún no hay registros. Añade tu primera semana.</p>
+        <button type="button" class="btn btn--primario btn--pequeno" id="btnAgregarSemana">+ Agregar Semana</button>
+        <figure style="margin:1rem 0 0;">
+          <figcaption class="visually-hidden">Gráfico de tendencia de peso</figcaption>
+          <svg class="grafico" id="graficoPeso" viewBox="0 0 600 140" role="img" aria-labelledby="tituloGrafico"></svg>
+          <title id="tituloGrafico">Evolución del peso corporal</title>
+        </figure>
+      </article>
+
+      <article class="tarjeta">
+        <h3>🎯 Objetivos y récords</h3>
+        <div class="envoltura-tabla">
+          <table id="tablaObjetivos">
+            <caption>Metas por ejercicio con fecha límite y progreso</caption>
+            <thead>
+              <tr>
+                <th scope="col">Ejercicio</th>
+                <th scope="col">Actual</th>
+                <th scope="col">Meta</th>
+                <th scope="col">Fecha límite</th>
+                <th scope="col">Progreso</th>
+                <th scope="col"><span class="visually-hidden">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody id="cuerpoObjetivos"></tbody>
+          </table>
+        </div>
+        <p class="sin-datos" id="avisoObjetivos" hidden>Aún no hay objetivos definidos.</p>
+        <button type="button" class="btn btn--primario btn--pequeno" id="btnAgregarObjetivo">+ Agregar Objetivo</button>
+      </article>
+    </section>
+
+    <!-- ─────── PANEL: HORARIO ─────── -->
+    <section class="panel" id="panel-horario" role="tabpanel" aria-labelledby="tab-horario" tabindex="0" hidden>
+      <h2>Horario de entrenamiento</h2>
+      <div class="grid-2">
+        <article class="tarjeta">
+          <h3>🗓️ Lunes a Viernes</h3>
+          <ul class="lista-elementos" id="listaLV" aria-label="Horario de lunes a viernes"></ul>
+          <button type="button" class="btn btn--primario btn--pequeno" data-agregar-horario="lv">+ Agregar Horario</button>
+        </article>
+        <article class="tarjeta">
+          <h3>🏖️ Sábados</h3>
+          <ul class="lista-elementos" id="listaSab" aria-label="Horario de sábados"></ul>
+          <button type="button" class="btn btn--primario btn--pequeno" data-agregar-horario="sab">+ Agregar Horario</button>
+        </article>
+      </div>
+    </section>
+
+    <!-- ─────── PANEL: RUTINAS ─────── -->
+    <section class="panel" id="panel-rutinas" role="tabpanel" aria-labelledby="tab-rutinas" tabindex="0" hidden>
+      <h2>Rutinas por grupo muscular</h2>
+      <div id="contenedorRutinas"></div>
+      <button type="button" class="btn btn--primario" id="btnAgregarGrupo">+ Agregar Grupo Muscular</button>
+    </section>
+  </main>
+
+  <footer class="pie-app">
+    <p><small>Fitness Dashboard ULTIMATE V7 · Datos guardados localmente en tu navegador · <span id="anioActual"></span></small></p>
+  </footer>
+
+  <!-- Aviso en vivo para lectores de pantalla -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    'use strict';
+
+    /* ════════════════════════════════════════════
+       1. ESTADO CENTRAL + PERSISTENCIA
+       ════════════════════════════════════════════ */
+    const CLAVE_STORAGE = 'fitnessDashboardV7';
+    const HOY = new Date();
+    const fmtISO = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const MES_ACTUAL = `${HOY.getFullYear()}-${String(HOY.getMonth() + 1).padStart(2, '0')}`;
+
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    function datosSemilla() {
+      const dias = {};
+      const d1 = new Date(HOY); d1.setDate(d1.getDate() - 1);
+      const d2 = new Date(HOY); d2.setDate(d2.getDate() - 3);
+      dias[fmtISO(d1)] = 'hecho';
+      dias[fmtISO(d2)] = 'hecho';
+      dias[fmtISO(HOY)] = 'plan';
+      return {
+        mes: MES_ACTUAL,
+        editando: false,
+        dias,
+        progreso: [
+          { semana: fmtISO(d2), peso: '82.5', notas: 'Cintura 84 cm' }
+        ],
+        objetivos: [
+          { ejercicio: 'Press banca', actual: '90', meta: '100', fecha: `${HOY.getFullYear()}-12-31` }
+        ],
+        horario: {
+          lv: [{ hora: '07:00', actividad: 'Empuje (pecho/hombro/tríceps)', grupo: 'Pecho' }],
+          sab: [{ hora: '09:00', actividad: 'Pierna completa', grupo: 'Pierna' }]
+        },
+        rutinas: [
+          { grupo: 'Pecho', ejercicios: [{ nombre: 'Press banca', series: '4', reps: '8', peso: '90 kg' }] }
+        ]
+      };
+    }
+
+    let state = cargar();
+
+    function cargar() {
+      try {
+        const raw = localStorage.getItem(CLAVE_STORAGE);
+        if (!raw) return datosSemilla();
+        const data = JSON.parse(raw);
+        return Object.assign(datosSemilla(), data);
+      } catch { return datosSemilla(); }
+    }
+
+    function persistir() {
+      try { localStorage.setItem(CLAVE_STORAGE, JSON.stringify(state)); }
+      catch { mostrarToast('No se pudo guardar (almacenamiento lleno).', true); }
+    }
+
+    /* ════════════════════════════════════════════
+       2. UTILIDADES DE UI
+       ════════════════════════════════════════════ */
+    const $ = sel => document.querySelector(sel);
+
+    let temporizadorToast;
+    function mostrarToast(mensaje, esError = false) {
+      const toast = $('#toast');
+      toast.textContent = mensaje;
+      toast.classList.toggle('toast--error', esError);
+      toast.classList.add('toast--visible');
+      clearTimeout(temporizadorToast);
+      temporizadorToast = setTimeout(() => toast.classList.remove('toast--visible'), 2600);
+    }
+
+    function inputAbierto(attrs, valor) {
+      return `<input class="input" value="${esc(valor)}" ${state.editando ? '' : 'readonly'}
+        tabindex="${state.editando ? '0' : '-1'}" ${attrs} aria-label="${esc(attrs.match(/aria-label="([^"]*)"/)?.[1] || '')}">`;
+    }
+
+    function botonEliminar(tipo, indice, extra = '') {
+      return `<button type="button" class="btn btn--peligro btn--pequeno solo-edicion"
+        data-eliminar="${tipo}" data-indice="${indice}" ${extra}
+        aria-label="Eliminar elemento ${indice + 1}">✕</button>`;
+    }
+
+    /* ════════════════════════════════════════════
+       3. RENDER: GESTIÓN (calendario + métricas)
+       ════════════════════════════════════════════ */
+    const NOMBRES_MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const DOW = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    const ESTADOS_DIA = ['', 'plan', 'hecho'];
+    const NOMBRE_ESTADO = { '': 'sin estado', plan: 'planificado', hecho: 'completado' };
+
+    function renderGestion() {
+      $('#inputMes').value = state.mes;
+      $('#etiquetaHoy').textContent = '📍 Hoy: ' + HOY.toLocaleDateString('es-ES',
+        { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+      const [anio, mes] = state.mes.split('-').map(Number);
+      const diasMes = new Date(anio, mes, 0).getDate();
+      const desfase = (new Date(anio, mes - 1, 1).getDay() + 6) % 7; // semana inicia lunes
+
+      let html = DOW.map(d => `<span class="calendario-dow" role="columnheader">${d}</span>`).join('');
+      for (let i = 0; i < desfase; i++) html += '<span class="dia dia--vacio-celda" aria-hidden="true"></span>';
+
+      let plan = 0, hecho = 0;
+      for (let dia = 1; dia <= diasMes; dia++) {
+        const iso = `${state.mes}-${String(dia).padStart(2, '0')}`;
+        const estado = state.dias[iso] || '';
+        if (estado === 'plan') plan++;
+        if (estado === 'hecho') hecho++;
+        const esHoy = iso === fmtISO(HOY) ? ' dia--hoy' : '';
+        const clases = ['dia', estado ? 'dia--' + estado : '', esHoy].filter(Boolean).join(' ');
+        html += `<button type="button" class="${clases}" role="gridcell" data-dia="${iso}"
+          aria-label="${dia} de ${NOMBRES_MESES[mes - 1]}: ${NOMBRE_ESTADO[estado]}. Pulsar para cambiar estado."
+          ${estado ? 'aria-pressed="true"' : 'aria-pressed="false"'}>${dia}</button>`;
+      }
+      $('#calendario').innerHTML = html;
+
+      const total = plan + hecho;
+      const adherencia = total ? Math.round((hecho / total) * 100) : 0;
+      $('#metricas').innerHTML = `
+        <div class="metrica"><strong>${plan}</strong><span>🟠 Días planificados</span></div>
+        <div class="metrica"><strong>${hecho}</strong><span>🟢 Días completados</span></div>
+        <div class="metrica"><strong>${adherencia}%</strong><span>Adherencia del mes</span></div>`;
+    }
+
+    /* ════════════════════════════════════════════
+       4. RENDER: PROGRESO & METAS
+       ════════════════════════════════════════════ */
+    function renderProgreso() {
+      const tbody = $('#cuerpoProgreso');
+      tbody.innerHTML = state.progreso.map((fila, i) => `
+        <tr>
+          <td><input class="input" type="date" value="${esc(fila.semana)}" data-seccion="progreso" data-indice="${i}" data-campo="semana" aria-label="Fecha de la semana ${i + 1}" ${state.editando ? '' : 'disabled'}></td>
+          <td><input class="input" type="number" step="0.1" min="0" value="${esc(fila.peso)}" data-seccion="progreso" data-indice="${i}" data-campo="peso" aria-label="Peso en kilogramos, semana ${i + 1}" ${state.editando ? '' : 'disabled'}></td>
+          <td><input class="input" type="text" value="${esc(fila.notas)}" data-seccion="progreso" data-indice="${i}" data-campo="notas" aria-label="Notas y medidas, semana ${i + 1}" ${state.editando ? '' : 'readonly'} tabindex="${state.editando ? 0 : -1}"></td>
+          <td>${botonEliminar('progreso', i)}</td>
+        </tr>`).join('');
+      $('#avisoProgreso').hidden = state.progreso.length > 0;
+      renderGraficoPeso();
+    }
+
+    function renderGraficoPeso() {
+      const svg = $('#graficoPeso');
+      const puntos = state.progreso
+        .map(f => ({ x: f.semana, y: parseFloat(f.peso) }))
+        .filter(p => p.x && !isNaN(p.y))
+        .sort((a, b) => a.x.localeCompare(b.x));
+
+      if (puntos.length < 2) {
+        svg.innerHTML = `<text x="300" y="70" text-anchor="middle" fill="currentColor" font-size="13" opacity=".6">Añade al menos 2 registros de peso para ver la tendencia</text>`;
+        return;
+      }
+      const min = Math.min(...puntos.map(p => p.y));
+      const max = Math.max(...puntos.map(p => p.y));
+      const rango = (max - min) || 1;
+      const coords = puntos.map((p, i) => [
+        30 + (i / (puntos.length - 1)) * 540,
+        120 - ((p.y - min) / rango) * 100
+      ]);
+      const linea = coords.map(c => c.map(n => n.toFixed(1)).join(',')).join(' ');
+      const circulos = coords.map((c, i) =>
+        `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="4"><title>${esc(puntos[i].x)}: ${puntos[i].y} kg</title></circle>`).join('');
+      svg.innerHTML = `<polyline points="${linea}"/>${circulos}`;
+    }
+
+    function renderObjetivos() {
+      const tbody = $('#cuerpoObjetivos');
+      tbody.innerHTML = state.objetivos.map((obj, i) => {
+        const actual = parseFloat(obj.actual), meta = parseFloat(obj.meta);
+        const pct = (!isNaN(actual) && !isNaN(meta) && meta !== 0)
+          ? Math.min(100, Math.round((actual / meta) * 100)) : null;
+        return `
+        <tr>
+          <td><input class="input" type="text" value="${esc(obj.ejercicio)}" data-seccion="objetivos" data-indice="${i}" data-campo="ejercicio" aria-label="Ejercicio del objetivo ${i + 1}" ${state.editando ? '' : 'readonly'} tabindex="${state.editando ? 0 : -1}"></td>
+          <td><input class="input" type="text" value="${esc(obj.actual)}" data-seccion="objetivos" data-indice="${i}" data-campo="actual" aria-label="Marca actual, objetivo ${i + 1}" ${state.editando ? '' : 'readonly'} tabindex="${state.editando ? 0 : -1}"></td>
+          <td><input class="input" type="text" value="${esc(obj.meta)}" data-seccion="objetivos" data-indice="${i}" data-campo="meta" aria-label="Meta, objetivo ${i + 1}" ${state.editando ? '' : 'readonly'} tabindex="${state.editando ? 0 : -1}"></td>
+          <td><input class="input" type="date" value="${esc(obj.fecha)}" data-seccion="objetivos" data-indice="${i}" data-campo="fecha" aria-label="Fecha límite, objetivo ${i + 1}" ${state.editando ? '' : 'disabled'}></td>
+          <td>${pct === null ? '<span class="sin-datos">—</span>' :
+            `<span aria-label="Progreso del ${pct} por ciento">${pct}%</span>
+             <div class="barra-progreso" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><span style="width:${pct}%"></span></div>`}</td>
+          <td>${botonEliminar('objetivos', i)}</td>
+        </tr>`;
+      }).join('');
+      $('#avisoObjetivos').hidden = state.objetivos.length > 0;
+    }
+
+    /* ════════════════════════════════════════════
+       5. RENDER: HORARIO
+       ════════════════════════════════════════════ */
+    function renderHorario() {
+      [['lv', '#listaLV'], ['sab', '#listaSab']].forEach(([clave, sel]) => {
+        const lista = state.horario[clave];
+        $(sel).innerHTML = lista.length ? lista.map((e, i) => `
+          <li class="elemento">
+            <input class="input" type="time" value="${esc(e.hora)}" data-seccion="horario" data-clave="${clave}" data-indice="${i}" data-campo="hora" aria-label="Hora, entrada ${i + 1}" style="flex:0 1 8rem" ${state.editando ? '' : 'disabled'}>
+            <input class="input" type="text" value="${esc(e.actividad)}" data-seccion="horario" data-clave="${clave}" data-indice="${i}" data-campo="actividad" aria-label="Actividad, entrada ${i + 1}" ${state.editando ? '' : 'readonly'} tabindex="${state.editando ? 0 : -1}">
+            <input class="input" type="text" value="${esc(e.grupo)}" data-seccion="horario" data-clave="${clave}" data-indice="${i}" data-campo="grupo" aria-label="Grupo muscular, entrada ${i + 1}" style="flex:0 1 9rem" placeholder="Grupo muscular" ${state.editando ? '' : 'readonly'} tabindex="${state.editando ? 0 : -1}">
+            ${botonEliminar('horario-' + clave, i)}
+          </li>`).join('')
+          : '<li class="sin-datos">Sin horarios añadidos.</li>';
+      });
+    }
+
+    /* ════════════════════════════════════════════
+       6. RENDER: RUTINAS
+       ════════════════════════════════════════════ */
+    function renderRutinas() {
+      $('#contenedorRutinas').innerHTML = state.rutinas.length
+        ? state.rutinas.map((grupo, gi) => `
+        <article class="grupo-muscular" aria-labelledby="grupo-${gi}">
+          <header>
+            <h3 id="grupo-${gi}" style="margin:0;">
+              <span class="etiqueta">💪</span>
+              <input class="input" type="text" value="${esc(grupo.grupo)}" style="max-width:16rem;font-weight:700;"
+                data-seccion="rutinas" data-indice="${gi}" data-campo="grupo" aria-label="Nombre del grupo muscular ${gi + 1}" ${state.editando ? '' : 'readonly'} tabindex="${state.editando ? 0 : -1}">
+            </h3>
+            <span style="display:flex;gap:.4rem;">
+              <button type="button" class="btn btn--pequeno solo-edicion" data-agregar-ejercicio="${gi}">+ Ejercicio</button>
+              ${botonEliminar('rutinas', gi)}
+            </span>
+          </header>
+          ${grupo.ejercicios.length ? `
+          <div class="envoltura-tabla">
+            <table>
+              <caption class="visually-hidden">Ejercicios del grupo ${esc(grupo.grupo)}</caption>
+              <thead><tr>
+                <th scope="col">Ejercicio</th><th scope="col">Series</th>
+                <th scope="col">Reps</th><th scope="col">Peso</th>
+                <th scope="col"><span class="visually-hidden">Acciones</span></th>
+              </tr></thead>
+              <tbody>
+                ${grupo.ejercicios.map((ej, ei) => `
+                <tr>
+                  <td><input class="input" type="text" value="${esc(ej.nombre)}" data-seccion="ejercicio" data-indice="${gi}" data-sub="${ei}" data-campo="nombre" aria-label="Nombre del ejercicio" ${state.editando ? '' : 'readonly'} tabindex="${state.editando ? 0 : -1}"></td>
+                  <td><input class="input" type="text" value="${esc(ej.series)}" style="max-width:5rem" data-seccion="ejercicio" data-indice="${gi}" data-sub="${ei}" data-campo="series" aria-label="Series" ${state.editando ? '' : 'readonly'} tabindex="${state.editando ? 0 : -1}"></td>
+                  <td><input class="input" type="text" value="${esc(ej.reps)}" style="max-width:6rem" data-seccion="ejercicio" data-indice="${gi}" data-sub="${ei}" data-campo="reps" aria-label="Repeticiones" ${state.editando ? '' : 'readonly'} tabindex="${state.editando ? 0 : -1}"></td>
+                  <td><input class="input" type="text" value="${esc(ej.peso)}" style="max-width:7rem" data-seccion="ejercicio" data-indice="${gi}" data-sub="${ei}" data-campo="peso" aria-label="Peso" ${state.editando ? '' : 'readonly'} tabindex="${state.editando ? 0 : -1}"></td>
+                  <td>${botonEliminar('ejercicio-' + gi, ei)}</td>
+                </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>` : '<p class="sin-datos">Sin ejercicios. Activa el modo edición y añade el primero.</p>'}
+        </article>`).join('')
+        : '<div class="tarjeta"><p class="sin-datos">No hay grupos musculares. Pulsa «+ Agregar Grupo Muscular».</p></div>';
+    }
+
+    function renderTodo() {
+      renderGestion();
+      renderProgreso();
+      renderObjetivos();
+      renderHorario();
+      renderRutinas();
+    }
+
+    /* ════════════════════════════════════════════
+       7. MODO EDICIÓN
+       ════════════════════════════════════════════ */
+    function alternarEdicion() {
+      state.editando = !state.editando;
+      document.body.classList.toggle('editando', state.editando);
+      const btn = $('#btnEditar');
+      btn.setAttribute('aria-pressed', String(state.editando));
+      btn.querySelector('span').textContent = state.editando ? 'Finalizar edición' : 'Editar';
+      renderTodo();
+      persistir();
+      mostrarToast(state.editando ? '✎ Modo edición activado' : 'Modo edición desactivado');
+    }
+
+    /* ════════════════════════════════════════════
+       8. EXPORTAR / IMPORTAR / IMPRIMIR
+       ════════════════════════════════════════════ */
+    function exportar() {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `fitness-dashboard-${fmtISO(HOY)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      mostrarToast('⬇ Datos exportados correctamente');
+    }
+
+    function importar(archivo) {
+      const lector = new FileReader();
+      lector.onload = () => {
+        try {
+          const data = JSON.parse(lector.result);
+          if (typeof data !== 'object' || data === null || !('progreso' in data || 'rutinas' in data)) {
+            throw new Error('estructura no válida');
+          }
+          state = Object.assign(datosSemilla(), data);
+          persistir();
+          aplicarModoEdicion();
+          renderTodo();
+          mostrarToast('⬆ Datos importados correctamente');
+        } catch {
+          mostrarToast('⚠ Archivo JSON no válido.', true);
+        }
+      };
+      lector.onerror = () => mostrarToast('⚠ Error al leer el archivo.', true);
+      lector.readAsText(archivo);
+    }
+
+    function aplicarModoEdicion() {
+      document.body.classList.toggle('editando', state.editando);
+      const btn = $('#btnEditar');
+      btn.setAttribute('aria-pressed', String(state.editando));
+      btn.querySelector('span').textContent = state.editando ? 'Finalizar edición' : 'Editar';
+    }
+
+    /* ════════════════════════════════════════════
+       9. EVENTOS (delegación)
+       ════════════════════════════════════════════ */
+    // Campos editables
+    document.addEventListener('input', e => {
+      const t = e.target;
+      if (!t.dataset.seccion) return;
+      const { seccion, indice, sub, campo, clave } = t.dataset;
+      if (seccion === 'progreso') state.progreso[indice][campo] = t.value;
+      else if (seccion === 'objetivos') { state.objetivos[indice][campo] = t.value; renderObjetivosDebounced(); }
+      else if (seccion === 'horario') state.horario[clave][indice][campo] = t.value;
+      else if (seccion === 'rutinas') { state.rutinas[indice][campo] = t.value; }
+      else if (seccion === 'ejercicio') { state.rutinas[indice].ejercicios[sub][campo] = t.value; }
+      if (seccion === 'progreso' && campo === 'peso') renderGraficoPeso();
+      persistir();
+    });
+    let tempObj;
+    function renderObjetivosDebounced() {
+      clearTimeout(tempObj);
+      tempObj = setTimeout(() => {
+        const activo = document.activeElement;
+        renderObjetivos();
+        if (activo?.dataset?.seccion === 'objetivos') {
+          const sel = `[data-seccion="objetivos"][data-indice="${activo.dataset.indice}"][data-campo="${activo.dataset.campo}"]`;
+          const nuevo = document.querySelector(sel);
+          if (nuevo) { nuevo.focus(); }
+        }
+      }, 400);
+    }
+
+    // Clics: calendario, agregar, eliminar
+    document.addEventListener('click', e => {
+      const boton = e.target.closest('button');
+      if (!boton) return;
+
+      // Calendario: ciclar estado del día
+      if (boton.dataset.dia) {
+        const iso = boton.dataset.dia;
+        const actual = state.dias[iso] || '';
+        const siguiente = ESTADOS_DIA[(ESTADOS_DIA.indexOf(actual) + 1) % ESTADOS_DIA.length];
+        if (siguiente) state.dias[iso] = siguiente; else delete state.dias[iso];
+        persistir();
+        renderGestion();
+        return;
+      }
+
+      // Eliminar filas/elementos
+      if (boton.dataset.eliminar) {
+        const [tipo, sub] = boton.dataset.eliminar.split('-');
+        const i = Number(boton.dataset.indice);
+        if (tipo === 'progreso') state.progreso.splice(i, 1), renderProgreso();
+        else if (tipo === 'objetivos') state.objetivos.splice(i, 1), renderObjetivos();
+        else if (tipo === 'horario') state.horario[sub].splice(i, 1), renderHorario();
+        else if (tipo === 'rutinas') state.rutinas.splice(i, 1), renderRutinas();
+        else if (tipo === 'ejercicio') state.rutinas[Number(sub)].ejercicios.splice(i, 1), renderRutinas();
+        persistir();
+        mostrarToast('Elemento eliminado');
+        return;
+      }
+
+      // Agregar horario
+      if (boton.dataset.agregarHorario) {
+        const clave = boton.dataset.agregarHorario;
+        state.horario[clave].push({ hora: '08:00', actividad: 'Nueva sesión', grupo: '' });
+        persistir(); renderHorario();
+        return;
+      }
+
+      // Agregar ejercicio a grupo
+      if (boton.dataset.agregarEjercicio !== undefined) {
+        state.rutinas[Number(boton.dataset.agregarEjercicio)].ejercicios
+          .push({ nombre: 'Nuevo ejercicio', series: '3', reps: '10', peso: '' });
+        persistir(); renderRutinas();
+        return;
+      }
+    });
+
+    // Botones de la barra y secciones
+    $('#btnEditar').addEventListener('click', alternarEdicion);
+    $('#btnGuardar').addEventListener('click', () => { persistir(); mostrarToast('💾 ¡Guardado!'); });
+    $('#btnExportar').addEventListener('click', exportar);
+    $('#btnImportar').addEventListener('click', () => $('#inputImportar').click());
+    $('#inputImportar').addEventListener('change', e => {
+      if (e.target.files[0]) importar(e.target.files[0]);
+      e.target.value = '';
+    });
+    $('#btnImprimir').addEventListener('click', () => window.print());
+
+    $('#inputMes').addEventListener('change', e => {
+      state.mes = e.target.value || MES_ACTUAL;
+      persistir(); renderGestion();
+    });
+
+    $('#btnAgregarSemana').addEventListener('click', () => {
+      state.progreso.unshift({ semana: fmtISO(HOY), peso: '', notas: '' });
+      persistir(); renderProgreso();
+      mostrarToast('Semana añadida');
+    });
+    $('#btnAgregarObjetivo').addEventListener('click', () => {
+      state.objetivos.push({ ejercicio: '', actual: '', meta: '', fecha: `${HOY.getFullYear()}-12-31` });
+      persistir(); renderObjetivos();
+      mostrarToast('Objetivo añadido');
+    });
+    $('#btnAgregarGrupo').addEventListener('click', () => {
+      state.rutinas.push({ grupo: 'Nuevo grupo muscular', ejercicios: [] });
+      persistir(); renderRutinas();
+      mostrarToast('Grupo muscular añadido');
+    });
+
+    /* ════════════════════════════════════════════
+       10. PATRÓN ARIA TABS (teclado incluido)
+       ════════════════════════════════════════════ */
+    const pestanas = Array.from(document.querySelectorAll('[role="tab"]'));
+    function activarPestana(pestana, enfocar = true) {
+      pestanas.forEach(p => {
+        const activa = p === pestana;
+        p.setAttribute('aria-selected', String(activa));
+        p.tabIndex = activa ? 0 : -1;
+        document.getElementById(p.getAttribute('aria-controls')).hidden = !activa;
+      });
+      if (enfocar) pestana.focus();
+    }
+    pestanas.forEach(p => {
+      p.addEventListener('click', () => activarPestana(p, false));
+      p.addEventListener('keydown', e => {
+        const idx = pestanas.indexOf(p);
+        let destino = null;
+        if (e.key === 'ArrowRight') destino = pestanas[(idx + 1) % pestanas.length];
+        else if (e.key === 'ArrowLeft') destino = pestanas[(idx - 1 + pestanas.length) % pestanas.length];
+        else if (e.key === 'Home') destino = pestanas[0];
+        else if (e.key === 'End') destino = pestanas[pestanas.length - 1];
+        if (destino) { e.preventDefault(); activarPestana(destino); }
+      });
+    });
+
+    /* ════════════════════════════════════════════
+       11. ARRANQUE
+       ════════════════════════════════════════════ */
+    $('#anioActual').textContent = HOY.getFullYear();
+    aplicarModoEdicion();
+    renderTodo();
+  </script>
+</body>
+</html>

@@ -30,17 +30,21 @@ a:hover { text-decoration: underline; }
   padding: 0 20px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   display: flex; gap: 4px;
-  align-items: stretch;
+  align-items: center;
   transition: background 0.5s, max-height 0.3s, overflow 0.3s;
   z-index: 1000;
   position: relative;
   overflow: hidden;
   max-height: none;
+  min-height: 56px;
 }
 /* Fondo de la barra según pestaña activa (sobreescribe el default) */
 .tab-bar[data-active="tech"] { background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%); }
 .tab-bar[data-active="pedagogia"] { background: linear-gradient(135deg, #4a2c1a 0%, #7c2d12 50%, #c2410c 100%); }
 .tab-bar[data-active="ejemplos"] { background: linear-gradient(135deg, #2e1065 0%, #4c1d95 50%, #7c3aed 100%); }
+/* Barra colapsada - oculta todo excepto el botón hamburguesa y modo oscuro */
+.tab-bar.collapsed .tab-buttons-container { display: none; }
+.tab-bar.collapsed { padding-left: 16px; padding-right: 16px; justify-content: space-between; }
 
 .tab-btn {
   flex: 1; max-width: 360px;
@@ -54,6 +58,7 @@ a:hover { text-decoration: underline; }
   text-align: left;
   white-space: nowrap;
   overflow: hidden;
+  height: 56px;
 }
 .tab-btn:hover { background: rgba(255,255,255,0.1); color: white; }
 /* Pestaña activa: adopta el color del manual */
@@ -148,7 +153,7 @@ a:hover { text-decoration: underline; }
 /* ====== BOTÓN MODO OSCURO EN BARRA PRINCIPAL ====== */
 .dark-mode-btn-main {
   position: absolute;
-  top: 10px; right: 20px;
+  top: 8px; right: 20px;
   z-index: 1001;
   background: rgba(250, 204, 21, 0.15);
   color: #facc15;
@@ -169,6 +174,9 @@ a:hover { text-decoration: underline; }
 .dark-mode-btn-main.active {
   background: rgba(250, 204, 21, 0.4);
   color: white;
+}
+.tab-bar.collapsed .dark-mode-btn-main {
+  right: 16px;
 }
 
 /* ====== DRAWER (panel lateral deslizable) ====== */
@@ -268,6 +276,16 @@ a:hover { text-decoration: underline; }
   font-size: 0.78rem;
   border-bottom: 1px solid var(--card-border);
   display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;
+  transition: max-height 0.3s, opacity 0.3s, padding 0.3s;
+  max-height: 100px;
+  opacity: 1;
+}
+.info-strip.hidden {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow: hidden;
 }
 .info-strip span { display: inline-flex; align-items: center; gap: 6px; }
 .info-strip i { color: var(--text-mute); }
@@ -282,32 +300,30 @@ a:hover { text-decoration: underline; }
 /* ====== RESPONSIVE ====== */
 @media (max-width: 800px) {
   html, body { height: 100dvh; }
-  .tab-bar { flex-direction: column; padding: 0; position: relative; max-height: none !important; }
+  .tab-bar { flex-direction: row; padding: 0 16px; position: relative; max-height: none !important; align-items: center; min-height: 56px; }
   .tab-btn { max-width: 100%; border-radius: 0; border-bottom: 4px solid transparent; padding: 12px 16px; }
   .tab-btn.active { border-bottom-color: white; }
   .tab-btn .tab-subtitle { display: none; }
-  /* Botón toggle para móvil */
+  /* Botón hamburguesa para colapsar/expandir toda la barra */
   .tab-bar-toggle {
     display: flex !important;
     align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    background: rgba(0,0,0,0.2);
+    justify-content: center;
+    width: 40px; height: 40px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
     cursor: pointer;
     user-select: none;
+    margin-right: 12px;
+    transition: all 0.2s;
   }
-  .tab-bar-toggle:hover { background: rgba(0,0,0,0.3); }
-  .tab-bar-toggle span { font-size: 0.85rem; font-weight: 600; color: white; }
-  .tab-bar-toggle i { transition: transform 0.3s; }
+  .tab-bar-toggle:hover { background: rgba(255,255,255,0.25); }
+  .tab-bar-toggle i { font-size: 1.1rem; color: white; transition: transform 0.3s; }
   .tab-bar.collapsed .tab-bar-toggle i { transform: rotate(-90deg); }
-  .tab-bar:not(.collapsed) .tab-buttons-container { max-height: 500px; }
-  .tab-bar.collapsed .tab-buttons-container { max-height: 0; }
   .tab-buttons-container {
     display: flex;
-    flex-direction: column;
-    max-height: 500px;
-    overflow: hidden;
-    transition: max-height 0.3s ease-out;
+    flex-direction: row;
+    gap: 4px;
   }
   .info-strip { font-size: 0.7rem; padding: 5px 10px; gap: 10px; }
   .back-home-btn-float { width: 38px; height: 38px; top: 10px; left: 10px; font-size: 1rem; }
@@ -318,6 +334,7 @@ a:hover { text-decoration: underline; }
 
 @media (min-width: 801px) {
   .tab-bar-toggle { display: none !important; }
+  .info-strip.hidden { display: flex !important; max-height: 100px !important; opacity: 1 !important; padding: 6px 24px !important; }
 }
 
 @media print {
@@ -332,11 +349,10 @@ a:hover { text-decoration: underline; }
 
 <!-- ====== BARRA DE PESTAÑAS (color cambia con la pestaña activa) ====== -->
 <nav class="tab-bar" role="tablist" data-active="tech">
-  <!-- Botón toggle solo visible en móvil -->
-  <div class="tab-bar-toggle" onclick="toggleTabBar()">
-    <span><i class="fas fa-book"></i> Menú de manuales</span>
-    <i class="fas fa-chevron-down"></i>
-  </div>
+  <!-- Botón hamburguesa solo visible en móvil -->
+  <button class="tab-bar-toggle" onclick="toggleTabBar()" title="Mostrar/Ocultar menú">
+    <i class="fas fa-bars"></i>
+  </button>
   <!-- Contenedor de botones de pestañas -->
   <div class="tab-buttons-container">
     <button class="tab-btn active" data-tab="tech" role="tab" aria-selected="true">
@@ -368,7 +384,7 @@ a:hover { text-decoration: underline; }
 </nav>
 
 <!-- ====== INFO STRIP ====== -->
-<div class="info-strip">
+<div class="info-strip" id="infoStrip">
   <span><i class="fas fa-book-bookmark"></i> <strong>Compilación integral</strong> · 3 manuales en 1</span>
   <span><i class="fas fa-bars"></i> Botón <strong>Índice</strong> arriba a la izquierda de cada pestaña</span>
   <span><i class="fas fa-keyboard"></i> <kbd>Alt</kbd>+<kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> cambia de pestaña</span>
@@ -6816,10 +6832,17 @@ function goToSection(tabName, secId) {
 const tabButtons = document.querySelectorAll('.tab-btn');
 const tabPanels = document.querySelectorAll('.tab-panel');
 const tabBar = document.querySelector('.tab-bar');
+const infoStrip = document.getElementById('infoStrip');
 
 // Función para colapsar/expandir la barra en móvil
 function toggleTabBar() {
-  tabBar.classList.toggle('collapsed');
+  const isCollapsed = tabBar.classList.toggle('collapsed');
+  // También ocultar/mostrar el info strip
+  if (isCollapsed) {
+    infoStrip.classList.add('hidden');
+  } else {
+    infoStrip.classList.remove('hidden');
+  }
 }
 
 function activateTab(tabName) {

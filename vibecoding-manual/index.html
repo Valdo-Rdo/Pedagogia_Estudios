@@ -31,9 +31,11 @@ a:hover { text-decoration: underline; }
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   display: flex; gap: 4px;
   align-items: stretch;
-  transition: background 0.5s;
+  transition: background 0.5s, max-height 0.3s, overflow 0.3s;
   z-index: 1000;
   position: relative;
+  overflow: hidden;
+  max-height: none;
 }
 /* Fondo de la barra según pestaña activa (sobreescribe el default) */
 .tab-bar[data-active="tech"] { background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%); }
@@ -280,15 +282,42 @@ a:hover { text-decoration: underline; }
 /* ====== RESPONSIVE ====== */
 @media (max-width: 800px) {
   html, body { height: 100dvh; }
-  .tab-bar { flex-direction: column; padding: 0; }
+  .tab-bar { flex-direction: column; padding: 0; position: relative; max-height: none !important; }
   .tab-btn { max-width: 100%; border-radius: 0; border-bottom: 4px solid transparent; padding: 12px 16px; }
   .tab-btn.active { border-bottom-color: white; }
   .tab-btn .tab-subtitle { display: none; }
+  /* Botón toggle para móvil */
+  .tab-bar-toggle {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: rgba(0,0,0,0.2);
+    cursor: pointer;
+    user-select: none;
+  }
+  .tab-bar-toggle:hover { background: rgba(0,0,0,0.3); }
+  .tab-bar-toggle span { font-size: 0.85rem; font-weight: 600; color: white; }
+  .tab-bar-toggle i { transition: transform 0.3s; }
+  .tab-bar.collapsed .tab-bar-toggle i { transform: rotate(-90deg); }
+  .tab-bar:not(.collapsed) .tab-buttons-container { max-height: 500px; }
+  .tab-bar.collapsed .tab-buttons-container { max-height: 0; }
+  .tab-buttons-container {
+    display: flex;
+    flex-direction: column;
+    max-height: 500px;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+  }
   .info-strip { font-size: 0.7rem; padding: 5px 10px; gap: 10px; }
   .back-home-btn-float { width: 38px; height: 38px; top: 10px; left: 10px; font-size: 1rem; }
   .drawer-btn { top: 10px; left: 58px; padding: 9px 14px; font-size: 0.85rem; }
   .drawer-panel { width: 90vw; left: -95vw; }
   .dark-mode-btn-main { top: 8px; right: 10px; width: 36px; height: 36px; font-size: 1rem; }
+}
+
+@media (min-width: 801px) {
+  .tab-bar-toggle { display: none !important; }
 }
 
 @media print {
@@ -303,27 +332,35 @@ a:hover { text-decoration: underline; }
 
 <!-- ====== BARRA DE PESTAÑAS (color cambia con la pestaña activa) ====== -->
 <nav class="tab-bar" role="tablist" data-active="tech">
-  <button class="tab-btn active" data-tab="tech" role="tab" aria-selected="true">
-    <span class="tab-icon"><i class="fas fa-code"></i></span>
-    <span class="tab-text">
-      <span class="tab-title">Vibecoding Tech</span>
-      <span class="tab-subtitle">Para programadores · 15+ lenguajes</span>
-    </span>
-  </button>
-  <button class="tab-btn" data-tab="pedagogia" role="tab" aria-selected="false">
-    <span class="tab-icon"><i class="fas fa-graduation-cap"></i></span>
-    <span class="tab-text">
-      <span class="tab-title">Vibecoding Pedagógico</span>
-      <span class="tab-subtitle">Para Lic. en Pedagogía · TPACK · SAMR · DUA</span>
-    </span>
-  </button>
-  <button class="tab-btn" data-tab="ejemplos" role="tab" aria-selected="false">
-    <span class="tab-icon"><i class="fas fa-puzzle-piece"></i></span>
-    <span class="tab-text">
-      <span class="tab-title">Ejemplos Didácticos</span>
-      <span class="tab-subtitle">12 ejemplos funcionales copiables</span>
-    </span>
-  </button>
+  <!-- Botón toggle solo visible en móvil -->
+  <div class="tab-bar-toggle" onclick="toggleTabBar()">
+    <span><i class="fas fa-book"></i> Menú de manuales</span>
+    <i class="fas fa-chevron-down"></i>
+  </div>
+  <!-- Contenedor de botones de pestañas -->
+  <div class="tab-buttons-container">
+    <button class="tab-btn active" data-tab="tech" role="tab" aria-selected="true">
+      <span class="tab-icon"><i class="fas fa-code"></i></span>
+      <span class="tab-text">
+        <span class="tab-title">Vibecoding Tech</span>
+        <span class="tab-subtitle">Para programadores · 15+ lenguajes</span>
+      </span>
+    </button>
+    <button class="tab-btn" data-tab="pedagogia" role="tab" aria-selected="false">
+      <span class="tab-icon"><i class="fas fa-graduation-cap"></i></span>
+      <span class="tab-text">
+        <span class="tab-title">Vibecoding Pedagógico</span>
+        <span class="tab-subtitle">Para Lic. en Pedagogía · TPACK · SAMR · DUA</span>
+      </span>
+    </button>
+    <button class="tab-btn" data-tab="ejemplos" role="tab" aria-selected="false">
+      <span class="tab-icon"><i class="fas fa-puzzle-piece"></i></span>
+      <span class="tab-text">
+        <span class="tab-title">Ejemplos Didácticos</span>
+        <span class="tab-subtitle">12 ejemplos funcionales copiables</span>
+      </span>
+    </button>
+  </div>
   <!-- Botón Modo Oscuro Global -->
   <button class="dark-mode-btn-main" id="darkModeBtnMain" title="Modo oscuro global">
     <i class="fas fa-moon"></i>
@@ -6780,6 +6817,11 @@ const tabButtons = document.querySelectorAll('.tab-btn');
 const tabPanels = document.querySelectorAll('.tab-panel');
 const tabBar = document.querySelector('.tab-bar');
 
+// Función para colapsar/expandir la barra en móvil
+function toggleTabBar() {
+  tabBar.classList.toggle('collapsed');
+}
+
 function activateTab(tabName) {
   activeTab = tabName;
   tabButtons.forEach(b => {
@@ -6794,6 +6836,10 @@ function activateTab(tabName) {
   tabBar.setAttribute('data-active', tabName);
   loadIframe(tabName);
   history.replaceState(null, '', '#' + tabName);
+  // En móvil, colapsar la barra después de seleccionar una pestaña
+  if (window.innerWidth <= 800) {
+    tabBar.classList.add('collapsed');
+  }
 }
 
 tabButtons.forEach(btn => {
